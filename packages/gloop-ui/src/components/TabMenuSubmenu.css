@@ -17,6 +17,13 @@
   /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
 }
 
+/* In colonna (top/bottom) il pannello sta a destra, all'altezza del tab (top e width da TabMenuSubmenu.tsx) */
+.tab-menu-submenu:is([data-direction='top'], [data-direction='bottom']) .tab-menu-submenu__panel {
+  bottom: auto;
+  left: calc(100% + 14px);
+  right: auto;
+}
+
 .tab-menu-submenu__list-wrap {
   position: relative;
 }

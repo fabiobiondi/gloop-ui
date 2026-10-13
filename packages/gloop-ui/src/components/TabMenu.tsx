@@ -9,6 +9,7 @@ import {
 } from 'motion/react'
 import GooPill from './GooPill'
 import { GooFilter } from './goo'
+import type { TabMenuDirection } from './tab-drop'
 import './theme.css'
 import './TabMenuMotion.css'
 import './TabMenu.css'
@@ -22,6 +23,8 @@ export type TabMenuProps = {
   icon: ReactNode
   label: string
   tabs: Tab[]
+  /** Lato del "+" su cui compare la barra (sempre orizzontale): sopra, sotto o di fianco */
+  direction?: TabMenuDirection
 }
 
 const spring: Transition = { type: 'spring', duration: 0.5, bounce: 0.3 }
@@ -31,45 +34,83 @@ const TRIGGER_SIZE = 52
 const DRIP_SIZE = 32
 
 /*
- * La barra esce dal "+" come una goccia: parte stretta e schiacciata sopra il
- * trigger (attaccata a lui grazie al filtro goo), sale allargandosi e si stacca.
- * I tab entrano a cascata. In chiusura viene risucchiata, più in fretta.
+ * Verso in cui la barra si allontana dal "+": asse e segno.
+ * top: sale, bottom: scende, left/right: si sposta di lato.
  */
-const barVariants: Variants = {
-  hidden: { opacity: 0, scaleX: 0.25, scaleY: 0.6, y: 52 },
-  visible: {
-    opacity: 1,
-    scaleX: 1,
-    scaleY: 1,
-    y: 0,
-    transition: {
-      ...spring,
-      opacity: { duration: 0.1 },
-      delayChildren: stagger(0.04, { startDelay: 0.06 }),
-    },
-  },
-  exit: {
-    opacity: 0,
-    scaleX: 0.25,
-    scaleY: 0.6,
-    y: 52,
-    transition: {
-      type: 'spring',
-      stiffness: 520,
-      damping: 40,
-      opacity: { duration: 0.12, delay: 0.08 },
-    },
-  },
+const AWAY: Record<TabMenuDirection, { axis: 'x' | 'y'; sign: 1 | -1 }> = {
+  top: { axis: 'y', sign: -1 },
+  bottom: { axis: 'y', sign: 1 },
+  left: { axis: 'x', sign: -1 },
+  right: { axis: 'x', sign: 1 },
 }
 
-// Il "collo" tra trigger e barra: sale con lei, poi si assottiglia e si stacca
-const dripVariants: Variants = {
-  closed: { y: 0, scale: 0.6, transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] } },
-  open: {
-    y: [0, -28, -44],
-    scale: [0.6, 1, 0.2],
-    transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
-  },
+const along = (d: TabMenuDirection, value: number) => (AWAY[d].axis === 'y' ? { y: value } : { x: value })
+
+/*
+ * La barra esce dal "+" come una goccia: parte stretta e schiacciata contro il
+ * trigger (attaccata a lui grazie al filtro goo), si allontana allargandosi e si stacca.
+ * I tab entrano a cascata. In chiusura viene risucchiata, più in fretta.
+ */
+function barVariants(d: TabMenuDirection): Variants {
+  // Da nascosta sta 52px più vicina al "+"
+  const tucked = along(d, -AWAY[d].sign * 52)
+  return {
+    hidden: { opacity: 0, scaleX: 0.25, scaleY: 0.6, ...tucked },
+    visible: {
+      opacity: 1,
+      scaleX: 1,
+      scaleY: 1,
+      ...along(d, 0),
+      transition: {
+        ...spring,
+        opacity: { duration: 0.1 },
+        delayChildren: stagger(0.04, { startDelay: 0.06 }),
+      },
+    },
+    exit: {
+      opacity: 0,
+      scaleX: 0.25,
+      scaleY: 0.6,
+      ...tucked,
+      transition: {
+        type: 'spring',
+        stiffness: 520,
+        damping: 40,
+        opacity: { duration: 0.12, delay: 0.08 },
+      },
+    },
+  }
+}
+
+// Il "collo" tra trigger e barra: va verso di lei, poi si assottiglia e si stacca
+function dripVariants(d: TabMenuDirection): Variants {
+  const { axis, sign } = AWAY[d]
+  const path = [0, sign * 28, sign * 44]
+  return {
+    closed: { x: 0, y: 0, scale: 0.6, transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] } },
+    open: {
+      ...(axis === 'y' ? { y: path } : { x: path }),
+      scale: [0.6, 1, 0.2],
+      transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
+    },
+  }
+}
+
+// La goccia parte dal bordo del "+" rivolto verso la barra
+const DRIP_MID = (TRIGGER_SIZE - DRIP_SIZE) / 2
+const DRIP_START: Record<TabMenuDirection, { left: number; top: number }> = {
+  top: { left: DRIP_MID, top: 0 },
+  bottom: { left: DRIP_MID, top: TRIGGER_SIZE - DRIP_SIZE },
+  left: { left: 0, top: DRIP_MID },
+  right: { left: TRIGGER_SIZE - DRIP_SIZE, top: DRIP_MID },
+}
+
+// Centrata sul "+" sull'altro asse, ancorata dal lato del "+": cresce da lì
+const BAR_STYLE: Record<TabMenuDirection, object> = {
+  top: { x: '-50%', originX: 0.5, originY: 1 },
+  bottom: { x: '-50%', originX: 0.5, originY: 0 },
+  left: { y: '-50%', originX: 1, originY: 0.5 },
+  right: { y: '-50%', originX: 0, originY: 0.5 },
 }
 
 const tabVariants: Variants = {
@@ -77,7 +118,7 @@ const tabVariants: Variants = {
   visible: { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', transition: spring },
 }
 
-function TabMenu({ icon, label, tabs }: TabMenuProps) {
+function TabMenu({ icon, label, tabs, direction = 'top' }: TabMenuProps) {
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
@@ -113,28 +154,24 @@ function TabMenu({ icon, label, tabs }: TabMenuProps) {
       <div
         ref={rootRef}
         className="tab-menu"
+        data-direction={direction}
         style={{ filter: `url(#${CSS.escape(filterId)})` }}
       >
-        {/* Area ampia: la barra sta sopra il trigger, fuori dal suo riquadro */}
+        {/* Area ampia: la barra sta fuori dal riquadro del trigger, su qualsiasi lato */}
         <GooFilter
           id={filterId}
           region={{
-            x: -(tabs.length * TAB_WIDTH) / 2 - 60,
+            x: -(tabs.length * TAB_WIDTH) - 60,
             y: -160,
-            width: tabs.length * TAB_WIDTH + TRIGGER_SIZE + 120,
-            height: 260,
+            width: 2 * tabs.length * TAB_WIDTH + TRIGGER_SIZE + 120,
+            height: 2 * 160 + TRIGGER_SIZE,
           }}
         />
         <motion.span
           className="goo-drop"
           aria-hidden="true"
-          style={{
-            left: (TRIGGER_SIZE - DRIP_SIZE) / 2,
-            top: 0,
-            width: DRIP_SIZE,
-            height: DRIP_SIZE,
-          }}
-          variants={dripVariants}
+          style={{ ...DRIP_START[direction], width: DRIP_SIZE, height: DRIP_SIZE }}
+          variants={dripVariants(direction)}
           initial={false}
           animate={open ? 'open' : 'closed'}
         />
@@ -144,9 +181,8 @@ function TabMenu({ icon, label, tabs }: TabMenuProps) {
               id={barId}
               role="tablist"
               className="tab-menu__bar"
-              // Centrata sul trigger e ancorata in basso: cresce da lì
-              style={{ x: '-50%', originX: 0.5, originY: 1 }}
-              variants={barVariants}
+              style={BAR_STYLE[direction]}
+              variants={barVariants(direction)}
               initial="hidden"
               animate="visible"
               exit="exit"

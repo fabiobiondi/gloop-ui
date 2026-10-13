@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, MotionConfig, motion, type Transition } from 'motion/react'
 import GooPill from './GooPill'
 import { GooFilter } from './goo'
-import { pressed, tabDrop } from './tab-drop'
+import { TAB_HEIGHT, TAB_WIDTH, isVertical, pressed, tabDrop, visualIndex, type TabMenuDirection } from './tab-drop'
 import './theme.css'
 import './TabMenuMotion.css'
 
@@ -15,12 +15,18 @@ export type TabMenuMotionProps = {
   icon: ReactNode
   label: string
   tabs: Tab[]
+  /**
+   * Lato del "+" da cui esce la barra. left/right: barra orizzontale da quel lato;
+   * top/bottom: colonna sopra/sotto, con il primo tab vicino al "+"
+   */
+  direction?: TabMenuDirection
 }
 
 // Molla principale: il "+" si allarga e diventa la barra
 const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
 
-function TabMenuMotion({ icon, label, tabs }: TabMenuMotionProps) {
+function TabMenuMotion({ icon, label, tabs, direction = 'left' }: TabMenuMotionProps) {
+  const vertical = isVertical(direction)
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
@@ -63,12 +69,19 @@ function TabMenuMotion({ icon, label, tabs }: TabMenuMotionProps) {
         <motion.div
           layout
           className="tab-menu-motion"
+          data-direction={direction}
           // border-radius nello style: Motion lo corregge durante la morph
           style={{ borderRadius: 26 }}
         >
           <div id={barId} role="tablist" className="tab-menu-motion__tabs">
             <AnimatePresence initial={false}>
-              {open && active !== null && <GooPill index={active} step={68} />}
+              {open && active !== null && (
+                <GooPill
+                  index={visualIndex(active, tabs.length, direction)}
+                  step={vertical ? TAB_HEIGHT : TAB_WIDTH}
+                  axis={vertical ? 'y' : 'x'}
+                />
+              )}
             </AnimatePresence>
             <AnimatePresence mode="popLayout" initial={false}>
               {open &&
@@ -86,7 +99,7 @@ function TabMenuMotion({ icon, label, tabs }: TabMenuMotionProps) {
                       setOpen(false)
                       triggerRef.current?.focus()
                     }}
-                    {...tabDrop(i, tabs.length)}
+                    {...tabDrop(i, tabs.length, direction)}
                     // La pressione scala solo il contenuto: un transform sul bottone porterebbe
                     // la goccia (z-index -1) sopra la pillola, come un cerchio scuro
                     whileTap="pressed"

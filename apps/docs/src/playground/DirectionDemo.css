@@ -1,0 +1,44 @@
+/* Demo "Direction" dei TabMenu: selettore in alto, componente al centro dell'area */
+.dd {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.dd__picker {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-fg) 8%, var(--ui-bg));
+
+  & button {
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--ui-fg) 60%, transparent);
+    background: none;
+    cursor: pointer;
+
+    &[aria-checked='true'] {
+      color: var(--ui-fg);
+      background: color-mix(in srgb, var(--ui-fg) 16%, var(--ui-bg));
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ui-accent);
+      outline-offset: 2px;
+    }
+  }
+}
+
+/* Spazio per la barra su ogni lato, e per il sottomenu */
+.dd__stage {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+}

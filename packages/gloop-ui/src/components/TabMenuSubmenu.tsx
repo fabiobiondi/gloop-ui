@@ -9,7 +9,16 @@ import {
 import GooPill from './GooPill'
 import ListCore from './list/ListCore'
 import { GooFilter } from './goo'
-import { pressed, tabDrop } from './tab-drop'
+import {
+  TAB_HEIGHT,
+  TAB_WIDTH,
+  TRIGGER_SIZE,
+  isVertical,
+  pressed,
+  tabDrop,
+  visualIndex,
+  type TabMenuDirection,
+} from './tab-drop'
 import './theme.css'
 import './TabMenuMotion.css'
 import './TabMenuSubmenu.css'
@@ -24,33 +33,42 @@ export type TabMenuSubmenuProps = {
   icon: ReactNode
   label: string
   tabs: Tab[]
+  /**
+   * Lato del "+" da cui esce la barra. left/right: barra orizzontale, sottomenu sopra;
+   * top/bottom: colonna sopra/sotto, sottomenu a destra del tab
+   */
+  direction?: TabMenuDirection
 }
 
-const TAB_WIDTH = 68
-const TRIGGER_SIZE = 52
 const DRIP_SIZE = 28
+/** Distanza tra barra e pannello: oltre ~12px il filtro goo non li fonde da fermi */
+const PANEL_GAP = 14
+const PANEL_WIDTH = 200
 
 const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
 const exitFast: Transition = { duration: 0.12, ease: 'easeOut' }
 
-// Il contenuto del sottomenu scorre nella direzione del tab scelto
+// Il contenuto del sottomenu scorre nella direzione del tab scelto (in colonna, in verticale)
+type Slide = { dir: number; axis: 'x' | 'y' }
+const shift = ({ axis }: Slide, value: number) => (axis === 'y' ? { y: value } : { x: value })
 const slide: Variants = {
-  enter: (dir: number) => ({ opacity: 0, x: dir * 24, filter: 'blur(4px)' }),
-  center: { opacity: 1, x: 0, filter: 'blur(0px)' },
-  exit: (dir: number) => ({
+  enter: (s: Slide) => ({ opacity: 0, ...shift(s, s.dir * 24), filter: 'blur(4px)' }),
+  center: { opacity: 1, x: 0, y: 0, filter: 'blur(0px)' },
+  exit: (s: Slide) => ({
     opacity: 0,
-    x: dir * -24,
+    ...shift(s, s.dir * -24),
     filter: 'blur(4px)',
     transition: exitFast,
   }),
 }
 
-function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
+function TabMenuSubmenu({ icon, label, tabs, direction = 'left' }: TabMenuSubmenuProps) {
+  const vertical = isVertical(direction)
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
   const [submenu, setSubmenu] = useState<number | null>(null)
-  const [direction, setDirection] = useState(0)
+  const [slideDir, setDirection] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
@@ -71,7 +89,11 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
       triggerRef.current?.focus()
       return
     }
-    if (submenu !== null && submenu !== i) setDirection(Math.sign(i - submenu))
+    if (submenu !== null && submenu !== i) {
+      // Verso visivo: in colonna con 'top' l'ordine è rovesciato
+      const n = tabs.length
+      setDirection(Math.sign(visualIndex(i, n, direction) - visualIndex(submenu, n, direction)))
+    }
     setSubmenu(submenu === i ? null : i)
   }
 
@@ -103,19 +125,41 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
 
   const items = submenu !== null ? tabs[submenu].items : undefined
 
+  /*
+   * Geometria del tab che apre il sottomenu, rispetto all'angolo della barra.
+   * In riga il pannello sta sopra tutta la barra; in colonna a destra, all'altezza del tab.
+   */
+  const n = tabs.length
+  const v = submenu !== null ? visualIndex(submenu, n, direction) : 0
+  const tabStart = vertical
+    ? (direction === 'bottom' ? TRIGGER_SIZE : 0) + v * TAB_HEIGHT
+    : (direction === 'right' ? TRIGGER_SIZE : 0) + v * TAB_WIDTH
+  const drip = vertical
+    ? {
+        style: { left: TAB_WIDTH / 2 - DRIP_SIZE / 2, top: tabStart + TAB_HEIGHT / 2 - DRIP_SIZE / 2 },
+        to: { x: [0, 30, 48] },
+      }
+    : { style: { left: tabStart + TAB_WIDTH / 2 - DRIP_SIZE / 2, top: 0 }, to: { y: [0, -26, -42] } }
+  const panelStyle = vertical
+    ? { top: tabStart, width: PANEL_WIDTH, transformOrigin: `0px ${TAB_HEIGHT / 2}px` }
+    : { transformOrigin: `${tabStart + TAB_WIDTH / 2}px 100%` }
+  // Il pannello parte schiacciato verso il tab
+  const panelFrom = vertical ? { x: -16, y: 0 } : { x: 0, y: 16 }
+  const region = vertical
+    ? { x: -80, y: -120, width: TAB_WIDTH + PANEL_GAP + PANEL_WIDTH + 160, height: (n + 1) * TAB_HEIGHT + 440 }
+    : { x: -80, y: -280, width: n * TAB_WIDTH + TRIGGER_SIZE + 160, height: 400 }
+
   return (
     <MotionConfig transition={morph} reducedMotion="user">
       {/* Filtro goo su barra, pannello e gocce: si fondono come liquido */}
       <div
         ref={rootRef}
         className="tab-menu-submenu"
+        data-direction={direction}
         style={{ filter: `url(#${CSS.escape(filterId)})` }}
       >
         {/* Area ampia: il pannello sta sopra la barra, fuori dal suo riquadro */}
-        <GooFilter
-          id={filterId}
-          region={{ x: -80, y: -280, width: tabs.length * TAB_WIDTH + TRIGGER_SIZE + 160, height: 400 }}
-        />
+        <GooFilter id={filterId} region={region} />
 
         {/* Goccia che sale dal tab al pannello quando si apre un sottomenu */}
         <AnimatePresence>
@@ -124,19 +168,14 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
               key={submenu}
               className="goo-drop"
               aria-hidden="true"
-              style={{
-                left: submenu * TAB_WIDTH + TAB_WIDTH / 2 - DRIP_SIZE / 2,
-                top: 0,
-                width: DRIP_SIZE,
-                height: DRIP_SIZE,
-              }}
-              initial={{ y: 0, scale: 0.6 }}
+              style={{ ...drip.style, width: DRIP_SIZE, height: DRIP_SIZE }}
+              initial={{ x: 0, y: 0, scale: 0.6 }}
               animate={{
-                y: [0, -26, -42],
+                ...drip.to,
                 scale: [0.6, 1, 0.2],
                 transition: { duration: 0.45, ease: [0.23, 1, 0.32, 1] },
               }}
-              exit={{ y: 0, scale: 0.4, transition: exitFast }}
+              exit={{ x: 0, y: 0, scale: 0.4, transition: exitFast }}
             />
           )}
         </AnimatePresence>
@@ -149,16 +188,14 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
               layout
               className="tab-menu-submenu__panel"
               // Il pannello nasce dal tab che lo ha aperto
-              style={{
-                borderRadius: 20,
-                transformOrigin: `${submenu! * TAB_WIDTH + TAB_WIDTH / 2}px 100%`,
-              }}
+              style={{ borderRadius: 20, ...panelStyle }}
               // Come una goccia: parte stretta e schiacciata sul tab, poi si allarga
-              initial={{ opacity: 0, scaleX: 0.4, scaleY: 0.3, y: 16 }}
+              initial={{ opacity: 0, scaleX: 0.4, scaleY: 0.3, ...panelFrom }}
               animate={{
                 opacity: 1,
                 scaleX: 1,
                 scaleY: 1,
+                x: 0,
                 y: 0,
                 transition: { ...morph, opacity: { duration: 0.12 } },
               }}
@@ -166,16 +203,16 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
                 opacity: 0,
                 scaleX: 0.4,
                 scaleY: 0.3,
-                y: 16,
+                ...panelFrom,
                 transition: exitFast,
               }}
             >
-              <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+              <AnimatePresence mode="popLayout" initial={false} custom={{ dir: slideDir, axis: vertical ? 'y' : 'x' }}>
                 <motion.div
                   key={submenu}
                   layout="position"
                   className="tab-menu-submenu__list-wrap"
-                  custom={direction}
+                  custom={{ dir: slideDir, axis: vertical ? 'y' : 'x' }}
                   variants={slide}
                   initial="enter"
                   animate="center"
@@ -202,11 +239,18 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
         <motion.div
           layout
           className="tab-menu-motion"
+          data-direction={direction}
           style={{ borderRadius: 26 }}
         >
           <div id={barId} className="tab-menu-motion__tabs">
             <AnimatePresence initial={false}>
-              {open && active !== null && <GooPill index={active} step={68} />}
+              {open && active !== null && (
+                <GooPill
+                  index={visualIndex(active, n, direction)}
+                  step={vertical ? TAB_HEIGHT : TAB_WIDTH}
+                  axis={vertical ? 'y' : 'x'}
+                />
+              )}
             </AnimatePresence>
             <AnimatePresence mode="popLayout" initial={false}>
               {open &&
@@ -224,7 +268,7 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
                     aria-expanded={tab.items?.length ? submenu === i : undefined}
                     aria-controls={submenu === i ? submenuId : undefined}
                     onClick={() => onTabClick(i)}
-                    {...tabDrop(i, tabs.length)}
+                    {...tabDrop(i, tabs.length, direction)}
                     // La pressione scala solo il contenuto: un transform sul bottone porterebbe
                     // la goccia (z-index -1) sopra la pillola, come un cerchio scuro
                     whileTap="pressed"

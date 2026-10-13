@@ -38,6 +38,9 @@ const THEME_INLINE = `<div style={{ '--ui-bg': '#312e81', '--ui-accent': '#f472b
   <TabBar tabs={tabs} />
 </div>`
 
+// Pagina statica in public/: vive fuori dall'app React, quindi va caricata in un iframe
+const LOGO_DRAFTS_URL = `${import.meta.env.BASE_URL}logo-drafts.html`
+
 export const guides: Guide[] = [
   {
     id: 'getting-started',
@@ -94,6 +97,27 @@ export const guides: Guide[] = [
           <code>Dialog</code> renders in a portal on <code>&lt;body&gt;</code>, but it reads the variables from where
           you place it, so it follows the local theme too.
         </p>
+      </div>
+    ),
+  },
+  {
+    id: 'logo-draft',
+    name: 'Logo Draft',
+    description: 'Ideas for a gloop-ui logo. Work in progress: none of them is the official logo yet.',
+    content: (
+      <div className="pg-prose">
+        <p className="pg-callout">
+          <strong>Work in progress.</strong> These are early drafts we are still choosing from. Shapes, colors and
+          names may change, and some drafts will be dropped. Please don't use them as the gloop-ui logo yet.
+        </p>
+        <p>
+          Eight soft, blob-style concepts. Switch palette and background to compare them, and check how each one
+          reads at favicon size.{' '}
+          <a href={LOGO_DRAFTS_URL} target="_blank" rel="noreferrer">
+            Open in a new tab
+          </a>
+        </p>
+        <iframe className="pg-frame" src={LOGO_DRAFTS_URL} title="gloop-ui logo drafts" loading="lazy" />
       </div>
     ),
   },

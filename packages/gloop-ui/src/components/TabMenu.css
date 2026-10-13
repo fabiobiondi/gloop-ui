@@ -33,9 +33,30 @@
 
 .tab-menu__bar {
   position: absolute;
-  /* Oltre ~12px il filtro goo non le fonde: da ferme barra e trigger restano staccati */
-  bottom: calc(100% + 16px);
-  left: 50%;
   display: flex;
   border-radius: 26px;
+}
+
+/*
+ * direction: la barra sta a 16px dal "+" sul lato scelto, centrata sull'altro asse.
+ * Oltre ~12px il filtro goo non le fonde: da ferme barra e trigger restano staccati.
+ */
+.tab-menu[data-direction='top'] .tab-menu__bar {
+  bottom: calc(100% + 16px);
+  left: 50%;
+}
+
+.tab-menu[data-direction='bottom'] .tab-menu__bar {
+  top: calc(100% + 16px);
+  left: 50%;
+}
+
+.tab-menu[data-direction='left'] .tab-menu__bar {
+  right: calc(100% + 16px);
+  top: 50%;
+}
+
+.tab-menu[data-direction='right'] .tab-menu__bar {
+  left: calc(100% + 16px);
+  top: 50%;
 }

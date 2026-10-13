@@ -41,6 +41,7 @@ export type { TabBarProps, Tab as TabBarTab } from './components/TabBar'
 
 export { default as TabMenu } from './components/TabMenu'
 export type { TabMenuProps, Tab as TabMenuTab } from './components/TabMenu'
+export type { TabMenuDirection } from './components/tab-drop'
 
 export { default as TabMenuMotion } from './components/TabMenuMotion'
 export type { TabMenuMotionProps, Tab as TabMenuMotionTab } from './components/TabMenuMotion'

@@ -12,6 +12,13 @@ const tabMenuProps: PropDoc[] = [
   { name: 'tabs', type: '{ icon: ReactNode; label: string }[]', required: true, description: 'Tabs that drop out of the trigger.' },
 ]
 
+const direction = (fallback: string, description: string): PropDoc => ({
+  name: 'direction',
+  type: "'top' | 'bottom' | 'left' | 'right'",
+  default: `'${fallback}'`,
+  description,
+})
+
 // Props documentate per ogni componente, indicizzate con l'id della voce (vedi demos.tsx)
 export const propsById: Record<string, PropDoc[]> = {
   'expand-button': [
@@ -96,11 +103,15 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'radius', type: 'number', default: '14', description: 'Corner radius of the pill, in px.' },
     { name: 'className', type: 'string', description: 'Extra class on the root element.' },
   ],
-  'tab-menu': tabMenuProps,
-  'tab-menu-motion': tabMenuProps,
+  'tab-menu': [...tabMenuProps, direction('top', 'Side of the "+" where the bar appears. The bar is always a row: above, below or beside the "+".')],
+  'tab-menu-motion': [
+    ...tabMenuProps,
+    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar; top / bottom: a column, first tab next to the "+".'),
+  ],
   'tab-menu-submenu': [
     ...tabMenuProps.slice(0, 2),
     { name: 'tabs', type: '{ icon: ReactNode; label: string; items?: string[] }[]', required: true, description: 'Tabs that drop out of the trigger; items opens a sub-menu.' },
+    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar, sub-menus above; top / bottom: a column, sub-menus to the right of the tab.'),
   ],
   'tab-bar': [
     { name: 'tabs', type: '{ icon: ReactNode; label: string }[]', required: true, description: 'Tabs of the bar.' },

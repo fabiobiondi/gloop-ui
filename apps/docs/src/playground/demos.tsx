@@ -14,6 +14,7 @@ import {
 } from 'gloop-ui'
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo from './DialogDemo'
+import { DirectionDemo } from './DirectionDemo'
 import {
   ControlledPopover,
   DemoButton,
@@ -979,6 +980,38 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   ]}
 />`,
       },
+      {
+        title: 'Direction',
+        description:
+          'The bar always stays a row: top / bottom above or below the "+", left / right beside it. Default: top.',
+        stage: { minHeight: 460 },
+        preview: (
+          <DirectionDemo initial="top">
+            {(direction) => (
+              <TabMenu
+                icon={PlusIcon}
+                label="Open menu"
+                direction={direction}
+                tabs={[
+                  { icon: HomeIcon, label: 'Home' },
+                  { icon: SearchIcon, label: 'Search' },
+                  { icon: UserIcon, label: 'Profile' },
+                ]}
+              />
+            )}
+          </DirectionDemo>
+        ),
+        code: `<TabMenu
+  icon={PlusIcon}
+  label="Open menu"
+  direction="top" // 'top' | 'bottom' | 'left' | 'right'
+  tabs={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
     ],
   },
   {
@@ -1002,6 +1035,38 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
         code: `<TabMenuMotion
   icon={PlusIcon}
   label="Open menu"
+  tabs={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+      {
+        title: 'Direction',
+        description:
+          'left / right: horizontal bar on that side of the "+". top / bottom: a column above or below, with the first tab next to the "+". Default: left.',
+        stage: { minHeight: 460 },
+        preview: (
+          <DirectionDemo initial="left">
+            {(direction) => (
+              <TabMenuMotion
+                icon={PlusIcon}
+                label="Open menu"
+                direction={direction}
+                tabs={[
+                  { icon: HomeIcon, label: 'Home' },
+                  { icon: SearchIcon, label: 'Search' },
+                  { icon: UserIcon, label: 'Profile' },
+                ]}
+              />
+            )}
+          </DirectionDemo>
+        ),
+        code: `<TabMenuMotion
+  icon={PlusIcon}
+  label="Open menu"
+  direction="left" // 'top' | 'bottom' | 'left' | 'right'
   tabs={[
     { icon: HomeIcon, label: 'Home' },
     { icon: SearchIcon, label: 'Search' },
@@ -1033,6 +1098,38 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
         code: `<TabMenuSubmenu
   icon={PlusIcon}
   label="Open menu"
+  tabs={[
+    { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
+    { icon: SearchIcon, label: 'Search', items: ['Recent', 'Saved', 'Advanced filters'] },
+    { icon: UserIcon, label: 'Profile', items: ['Settings', 'Notifications', 'Log out'] },
+  ]}
+/>`,
+      },
+      {
+        title: 'Direction',
+        description:
+          'left / right: horizontal bar with sub-menus above it. top / bottom: a column, and each sub-menu opens to the right of its tab. Default: left.',
+        stage: { minHeight: 460 },
+        preview: (
+          <DirectionDemo initial="left">
+            {(direction) => (
+              <TabMenuSubmenu
+                icon={PlusIcon}
+                label="Open menu"
+                direction={direction}
+                tabs={[
+                  { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
+                  { icon: SearchIcon, label: 'Search', items: ['Recent', 'Saved', 'Advanced filters'] },
+                  { icon: UserIcon, label: 'Profile', items: ['Settings', 'Notifications', 'Log out'] },
+                ]}
+              />
+            )}
+          </DirectionDemo>
+        ),
+        code: `<TabMenuSubmenu
+  icon={PlusIcon}
+  label="Open menu"
+  direction="left" // 'top' | 'bottom' | 'left' | 'right'
   tabs={[
     { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
     { icon: SearchIcon, label: 'Search', items: ['Recent', 'Saved', 'Advanced filters'] },

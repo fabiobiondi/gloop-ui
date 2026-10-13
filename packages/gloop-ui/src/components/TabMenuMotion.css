@@ -13,6 +13,32 @@
   display: flex;
 }
 
+/*
+ * direction (TabMenuMotion, TabMenuSubmenu): nel DOM i tab vengono sempre prima del "+",
+ * la posizione la decide l'ordine flex. In colonna il primo tab è il più vicino al "+".
+ */
+.tab-menu-motion[data-direction='right'] {
+  flex-direction: row-reverse;
+}
+
+.tab-menu-motion:is([data-direction='top'], [data-direction='bottom']) {
+  flex-direction: column;
+  /* Larghezza dal contenuto: 68px da aperta (i tab), 52px da chiusa (il "+") */
+  height: auto;
+
+  & .tab-menu-motion__tabs {
+    flex-direction: column;
+  }
+}
+
+.tab-menu-motion[data-direction='top'] .tab-menu-motion__tabs {
+  flex-direction: column-reverse;
+}
+
+.tab-menu-motion[data-direction='bottom'] {
+  flex-direction: column-reverse;
+}
+
 .tab-menu-motion__tab {
   position: relative;
   display: grid;

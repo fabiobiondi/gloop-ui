@@ -497,6 +497,28 @@
     background: color-mix(in srgb, var(--pg-text) 7%, transparent);
   }
 
+  & a {
+    color: inherit;
+    font-weight: 600;
+  }
+
+  /* Avviso in evidenza (es. contenuti ancora in bozza) */
+  & .pg-callout {
+    padding: 12px 16px;
+    border: 1px solid color-mix(in srgb, #f59e0b 45%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, #f59e0b 12%, transparent);
+  }
+
+  /* Pagina statica incorporata (es. bozze del logo) */
+  & .pg-frame {
+    width: 100%;
+    height: min(80vh, 900px);
+    border: 1px solid var(--pg-border);
+    border-radius: 16px;
+    background: var(--pg-surface);
+  }
+
   /* Il CodeBlock delle demo ha gli angoli bassi arrotondati: qui è isolato */
   & .pg-code pre {
     border-radius: 12px;
