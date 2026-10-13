@@ -34,6 +34,7 @@ import { ExpandButton, TabBar } from 'gloop-ui'
 | --- | --- |
 | `ExpandButton` | Icon button that expands into a label with a pop and a burst |
 | `Search` | Magnifier that stretches into a search field |
+| `Slider` | Range slider with a liquid thumb that stretches while dragged and a dripping value |
 | `CircleMenu` | A "+" that throws icons around itself, with optional sub-menus |
 | `TabMenu` · `TabMenuMotion` · `TabMenuSubmenu` | Liquid tab menus that drop out of a trigger |
 | `TabBar` | Bottom navigation bar with a liquid selection pill |

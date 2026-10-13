@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
   CircleMenu,
@@ -10,6 +10,7 @@ import {
   List,
   Search,
   ShapeEditor,
+  Slider,
   TabBar,
   TabMenu,
   TabMenuMotion,
@@ -31,6 +32,7 @@ describe('render', () => {
     ['List', () => <List items={[{ id: 'a', label: 'A' }]} />],
     ['Search', () => <Search />],
     ['ShapeEditor', () => <ShapeEditor />],
+    ['Slider', () => <Slider label="Volume" marks />],
     ['TabBar', () => <TabBar tabs={tabs} />],
     ['TabMenu', () => <TabMenu icon={icon} label="Menu" tabs={tabs} />],
     ['TabMenuMotion', () => <TabMenuMotion icon={icon} label="Menu" tabs={tabs} />],
@@ -311,6 +313,114 @@ describe('Input', () => {
     )
     expect(root(screen.getByLabelText('Controlled')).hasAttribute('data-floated')).toBe(true)
     expect(root(screen.getByLabelText('Default')).hasAttribute('data-floated')).toBe(true)
+  })
+})
+
+describe('Slider', () => {
+  const root = (thumb: HTMLElement) => thumb.closest('.slider') as HTMLElement
+
+  it('exposes an accessible slider with formatted value text', () => {
+    render(<Slider label="Opacity" defaultValue={40} formatValue={(v) => `${v}%`} />)
+    const thumb = screen.getByRole('slider', { name: 'Opacity' })
+    expect(thumb.getAttribute('aria-valuenow')).toBe('40')
+    expect(thumb.getAttribute('aria-valuemin')).toBe('0')
+    expect(thumb.getAttribute('aria-valuemax')).toBe('100')
+    expect(thumb.getAttribute('aria-valuetext')).toBe('40%')
+  })
+
+  it('moves with the keyboard when uncontrolled and reports the end of the gesture', async () => {
+    const onChange = vi.fn()
+    const onChangeEnd = vi.fn()
+    render(<Slider label="Volume" defaultValue={50} step={5} onChange={onChange} onChangeEnd={onChangeEnd} />)
+    const thumb = screen.getByRole('slider')
+    thumb.focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(thumb.getAttribute('aria-valuenow')).toBe('55')
+    expect(onChange).toHaveBeenLastCalledWith(55)
+    expect(onChangeEnd).toHaveBeenLastCalledWith(55)
+    await userEvent.keyboard('{PageDown}')
+    expect(thumb.getAttribute('aria-valuenow')).toBe('45')
+    await userEvent.keyboard('{End}')
+    expect(thumb.getAttribute('aria-valuenow')).toBe('100')
+    await userEvent.keyboard('{Home}')
+    expect(thumb.getAttribute('aria-valuenow')).toBe('0')
+    // Già al minimo: nessun nuovo onChange
+    onChange.mockClear()
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('stays on the controlled value until the parent updates it', async () => {
+    const onChange = vi.fn()
+    render(<Slider label="Volume" value={20} onChange={onChange} />)
+    const thumb = screen.getByRole('slider')
+    thumb.focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(onChange).toHaveBeenCalledWith(21)
+    expect(thumb.getAttribute('aria-valuenow')).toBe('20')
+  })
+
+  it('jumps to the pointer, follows the drag and ends on release', () => {
+    const onChange = vi.fn()
+    const onChangeEnd = vi.fn()
+    const { container } = render(<Slider label="Volume" step={10} onChange={onChange} onChangeEnd={onChangeEnd} />)
+    const rail = container.querySelector('.slider__rail') as HTMLElement
+    rail.getBoundingClientRect = () => ({ left: 100, width: 200 }) as DOMRect
+    const thumb = screen.getByRole('slider')
+    const el = root(thumb)
+
+    fireEvent.pointerDown(el, { button: 0, pointerId: 1, clientX: 150 })
+    expect(thumb.getAttribute('aria-valuenow')).toBe('30')
+    expect(el.hasAttribute('data-dragging')).toBe(true)
+    expect(el.hasAttribute('data-active')).toBe(true)
+    expect(document.activeElement).toBe(thumb)
+
+    fireEvent.pointerMove(el, { pointerId: 1, clientX: 400 })
+    expect(thumb.getAttribute('aria-valuenow')).toBe('100')
+    fireEvent.pointerUp(el, { pointerId: 1, clientX: 400 })
+    expect(onChangeEnd).toHaveBeenCalledWith(100)
+    expect(el.hasAttribute('data-dragging')).toBe(false)
+    expect(onChange.mock.calls).toEqual([[30], [100]])
+  })
+
+  it('ignores pointer and keys when disabled', async () => {
+    const onChange = vi.fn()
+    render(<Slider label="Volume" defaultValue={10} disabled onChange={onChange} />)
+    const thumb = screen.getByRole('slider')
+    expect(thumb.getAttribute('aria-disabled')).toBe('true')
+    expect(thumb.getAttribute('tabindex')).toBe('-1')
+    fireEvent.pointerDown(root(thumb), { button: 0, pointerId: 1, clientX: 50 })
+    thumb.focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('submits through a hidden input and renders marks', () => {
+    const { container } = render(
+      <Slider label="Size" name="size" defaultValue={2} min={0} max={4} marks={[0, { value: 2, label: 'M' }, 4, 9]} />,
+    )
+    expect((container.querySelector('input[name="size"]') as HTMLInputElement).value).toBe('2')
+    expect(container.querySelectorAll('.slider__mark')).toHaveLength(3)
+    expect(container.querySelectorAll('.slider__mark[data-active]')).toHaveLength(2)
+    expect(screen.getByText('M')).toBeTruthy()
+    expect(root(screen.getByRole('slider')).hasAttribute('data-mark-labels')).toBe(true)
+  })
+
+  it('places the value drop on top by default or below with valuePlacement', () => {
+    render(
+      <>
+        <Slider label="Top" showValue="always" />
+        <Slider label="Bottom" showValue="always" valuePlacement="bottom" />
+      </>,
+    )
+    expect(root(screen.getByRole('slider', { name: 'Top' })).dataset.bubble).toBe('top')
+    expect(root(screen.getByRole('slider', { name: 'Bottom' })).dataset.bubble).toBe('bottom')
+  })
+
+  it('hides the value bubble with showValue="never"', () => {
+    const { container } = render(<Slider label="Volume" showValue="never" />)
+    expect(container.querySelector('.slider__bubble')).toBeNull()
+    expect(container.querySelector('.slider__value')).toBeNull()
   })
 })
 

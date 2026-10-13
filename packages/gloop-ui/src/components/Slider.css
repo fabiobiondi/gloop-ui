@@ -1,0 +1,218 @@
+/*
+ * Misure allineate con Slider.tsx (THUMB, BUBBLE_H, BUBBLE_GAP).
+ * Lo spazio della goccia sopra (o sotto) il binario è sempre riservato: quando esce il layout non salta.
+ */
+.slider {
+  --slider-thumb: 22px;
+  --slider-track-h: 6px;
+  --slider-bubble-h: 26px;
+  --slider-bubble-gap: 4px;
+  --slider-space: calc(var(--slider-bubble-h) + var(--slider-bubble-gap));
+  /* Testo e segni sopra il colore accent */
+  --slider-on-accent: #fff;
+
+  position: relative;
+  display: block;
+  width: 100%;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.slider[data-bubble='top'] {
+  padding-top: var(--slider-space);
+}
+
+.slider[data-bubble='bottom'] {
+  padding-bottom: var(--slider-space);
+}
+
+/* Le label dei segni stanno dal lato opposto alla goccia, così non si sovrappongono */
+.slider[data-mark-labels]:not([data-bubble='bottom']) {
+  padding-bottom: 22px;
+}
+
+.slider[data-mark-labels][data-bubble='bottom'] {
+  padding-top: 22px;
+}
+
+.slider[data-dragging] {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* Il filtro SVG non deve occupare spazio nel flusso */
+.slider__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/* Il centro del thumb va da un capo all'altro del binario: metà thumb di margine per lato */
+.slider__rail {
+  position: relative;
+  height: var(--slider-thumb);
+  margin-inline: calc(var(--slider-thumb) / 2);
+}
+
+.slider__track,
+.slider__fill {
+  position: absolute;
+  top: calc((var(--slider-thumb) - var(--slider-track-h)) / 2);
+  left: calc(var(--slider-thumb) / -2);
+  height: var(--slider-track-h);
+  border-radius: calc(var(--slider-track-h) / 2);
+}
+
+.slider__track {
+  right: calc(var(--slider-thumb) / -2);
+  background: color-mix(in srgb, var(--ui-fg) 15%, var(--ui-bg));
+}
+
+/* Solo forme accent: è il livello che passa dal filtro goo. Nessun bordo né ombra qui */
+.slider__goo {
+  position: absolute;
+  top: calc(-1 * var(--slider-space));
+  right: calc(var(--slider-thumb) / -2);
+  bottom: calc(-1 * var(--slider-space));
+  left: calc(var(--slider-thumb) / -2);
+  pointer-events: none;
+}
+
+.slider__goo-rail {
+  position: absolute;
+  top: var(--slider-space);
+  right: calc(var(--slider-thumb) / 2);
+  left: calc(var(--slider-thumb) / 2);
+  height: var(--slider-thumb);
+}
+
+.slider__fill {
+  background: var(--ui-accent);
+}
+
+.slider__blob,
+.slider__tail {
+  position: absolute;
+  top: 0;
+  width: var(--slider-thumb);
+  height: var(--slider-thumb);
+  border-radius: 50%;
+  background: var(--ui-accent);
+}
+
+/* La coda è più piccola: da ferma sparisce dentro la testa */
+.slider__tail {
+  top: calc(var(--slider-thumb) * 0.15);
+  width: calc(var(--slider-thumb) * 0.7);
+  height: calc(var(--slider-thumb) * 0.7);
+}
+
+.slider__bubble,
+.slider__value {
+  position: absolute;
+  top: calc(-1 * var(--slider-space));
+  box-sizing: border-box;
+  min-width: var(--slider-thumb);
+  height: var(--slider-bubble-h);
+  padding-inline: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--slider-bubble-h);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.slider[data-bubble='bottom'] :is(.slider__bubble, .slider__value) {
+  top: calc(var(--slider-thumb) + var(--slider-bubble-gap));
+}
+
+.slider__bubble {
+  border-radius: calc(var(--slider-bubble-h) / 2);
+  background: var(--ui-accent);
+}
+
+.slider__bubble-sizer {
+  visibility: hidden;
+}
+
+.slider__value {
+  color: var(--slider-on-accent);
+  pointer-events: none;
+}
+
+.slider__marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.slider__mark {
+  position: absolute;
+  top: calc(var(--slider-thumb) / 2 - 2px);
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ui-fg) 35%, transparent);
+}
+
+.slider__mark[data-active] {
+  background: color-mix(in srgb, var(--slider-on-accent) 70%, transparent);
+}
+
+.slider__mark-label {
+  position: absolute;
+  top: calc(var(--slider-thumb) / 2 + 4px);
+  left: 50%;
+  font-size: 11px;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--ui-fg) 55%, transparent);
+  transform: translateX(-50%);
+}
+
+.slider[data-bubble='bottom'] .slider__mark-label {
+  top: auto;
+  bottom: calc(var(--slider-thumb) / 2 + 4px);
+}
+
+/* L'elemento focusabile: trasparente sopra la goccia, porta il nucleo e l'anello di focus */
+.slider__thumb {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  width: var(--slider-thumb);
+  height: var(--slider-thumb);
+  border-radius: 50%;
+  outline: 0;
+  cursor: grab;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 8px;
+    height: 8px;
+    margin: auto;
+    border-radius: 50%;
+    background: var(--slider-on-accent);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-accent) 45%, transparent);
+  }
+}
+
+.slider[data-dragging] .slider__thumb {
+  cursor: grabbing;
+}
+
+.slider[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+
+  & .slider__thumb {
+    cursor: not-allowed;
+  }
+}

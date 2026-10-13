@@ -6,6 +6,7 @@ import {
   List,
   Search,
   ShapeEditor,
+  Slider,
   TabBar,
   TabMenu,
   TabMenuMotion,
@@ -15,6 +16,7 @@ import {
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo from './DialogDemo'
 import { DirectionDemo } from './DirectionDemo'
+import { ControlledSliderDemo } from './SliderDemo'
 import {
   ControlledPopover,
   DemoButton,
@@ -216,6 +218,103 @@ export const entries: Entry[] = [
   <Input label="Password" name="password" type="password" placeholder="At least 8 characters" />
   <Input label="Company" placeholder="Not editable" disabled />
 </form>`,
+      },
+    ],
+  },
+  {
+    id: 'slider',
+    name: 'Slider',
+    status: 'experimental',
+    description:
+      'A range slider whose thumb is a liquid drop: it stretches into a trail while dragged and its value drips out on top.',
+    demos: [
+      {
+        title: 'Default',
+        description: 'Drag, click anywhere on the track or use the arrow keys. The value drips out while dragging or focused from the keyboard.',
+        preview: (
+          <div style={{ width: 280 }}>
+            <Slider label="Volume" defaultValue={40} />
+          </div>
+        ),
+        code: `<Slider label="Volume" defaultValue={40} />`,
+      },
+      {
+        title: 'Controlled',
+        description: 'onChange fires at every step, onChangeEnd once the drag or the key is released.',
+        preview: <ControlledSliderDemo />,
+        code: `const [volume, setVolume] = useState(40)
+
+<Slider label="Volume" value={volume} onChange={setVolume} onChangeEnd={save} />`,
+      },
+      {
+        title: 'Steps and marks',
+        description: 'marks={true} draws a dot for every step (up to 50).',
+        preview: (
+          <div style={{ width: 280 }}>
+            <Slider label="Rating" min={0} max={10} step={1} defaultValue={6} marks />
+          </div>
+        ),
+        code: `<Slider label="Rating" min={0} max={10} step={1} defaultValue={6} marks />`,
+      },
+      {
+        title: 'Labelled marks',
+        description: 'Custom marks with labels, and formatValue for the drop and screen readers.',
+        preview: (
+          <div style={{ width: 280 }}>
+            <Slider
+              label="Temperature"
+              min={16}
+              max={28}
+              step={0.5}
+              defaultValue={21}
+              marks={[{ value: 16, label: '16°' }, { value: 22, label: '22°' }, { value: 28, label: '28°' }]}
+              formatValue={(v) => `${v.toFixed(1)}°C`}
+            />
+          </div>
+        ),
+        code: `<Slider
+  label="Temperature"
+  min={16}
+  max={28}
+  step={0.5}
+  defaultValue={21}
+  marks={[{ value: 16, label: '16°' }, { value: 22, label: '22°' }, { value: 28, label: '28°' }]}
+  formatValue={(v) => \`\${v.toFixed(1)}°C\`}
+/>`,
+      },
+      {
+        title: 'Value always visible',
+        description: 'The drop sits on top by default; valuePlacement="bottom" moves it underneath (mark labels switch to the top).',
+        preview: (
+          <div style={{ display: 'grid', gap: 24, width: 280 }}>
+            <Slider label="Opacity" defaultValue={75} showValue="always" formatValue={(v) => `${v}%`} />
+            <Slider
+              label="Brightness"
+              defaultValue={40}
+              showValue="always"
+              valuePlacement="bottom"
+              formatValue={(v) => `${v}%`}
+            />
+          </div>
+        ),
+        code: `<Slider label="Opacity" defaultValue={75} showValue="always" formatValue={(v) => \`\${v}%\`} />
+
+<Slider
+  label="Brightness"
+  defaultValue={40}
+  showValue="always"
+  valuePlacement="bottom"
+  formatValue={(v) => \`\${v}%\`}
+/>`,
+      },
+      {
+        title: 'Disabled',
+        preview: (
+          <div style={{ width: 280 }}>
+            <Slider label="Locked" defaultValue={30} disabled />
+          </div>
+        ),
+        code: `<Slider label="Locked" defaultValue={30} disabled />`,
       },
     ],
   },
