@@ -1,0 +1,88 @@
+.search-slot {
+  display: flex;
+  max-width: 100%;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  transform-origin: left center;
+  /* La forma la disegna il clip-path (con "round"): niente overflow/border-radius che sfarfallano */
+  will-change: clip-path, transform;
+}
+
+.search__trigger {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-fg);
+    outline-offset: -4px;
+  }
+}
+
+.search__icon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+
+  & svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+
+
+.search__field {
+  position: relative;
+  flex: 1;
+  /* Senza la X a destra il testo arriverebbe fino al bordo */
+  margin-right: 18px;
+  min-width: 0;
+  height: 100%;
+}
+
+.search__input {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ui-fg);
+  background: none;
+
+  /* Niente "x" nativa: c'è già il nostro bottone di chiusura */
+  &::-webkit-search-cancel-button {
+    appearance: none;
+  }
+}
+
+.search__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  color: color-mix(in srgb, var(--ui-fg) 45%, transparent);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.search__char {
+  display: inline-block;
+}

@@ -1,0 +1,41 @@
+/* Tab, icone e pillola liquida riusano gli stili di TabMenuMotion.css */
+
+.tab-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.tab-menu__trigger,
+.tab-menu__bar {
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+}
+
+.tab-menu__trigger {
+  /* Sopra la goccia (in position: absolute) */
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+
+  /* Contorno dentro il bottone: fuori, il filtro goo lo fonderebbe in un alone */
+  &:focus-visible {
+    outline: 2px solid var(--ui-fg);
+    outline-offset: -4px;
+  }
+}
+
+.tab-menu__bar {
+  position: absolute;
+  /* Oltre ~12px il filtro goo non le fonde: da ferme barra e trigger restano staccati */
+  bottom: calc(100% + 16px);
+  left: 50%;
+  display: flex;
+  border-radius: 26px;
+}

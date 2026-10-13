@@ -1,0 +1,155 @@
+.tab-menu-motion {
+  /* Sopra le gocce (che sono in position: absolute) */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 52px;
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+}
+
+.tab-menu-motion__tabs {
+  display: flex;
+}
+
+.tab-menu-motion__tab {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 3px;
+  width: 68px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--ui-fg) 55%, transparent);
+  background: none;
+  cursor: pointer;
+  transition: color 200ms ease;
+
+  &[aria-selected='true'] {
+    color: var(--ui-fg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-fg);
+    outline-offset: -4px;
+    border-radius: 22px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tab-menu-motion__tab:hover {
+    color: var(--ui-fg);
+  }
+}
+
+.tab-menu-motion__tab-icon,
+.tab-menu-motion__tab-label {
+  position: relative;
+}
+
+.tab-menu-motion__tab-content {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.tab-menu-motion__tab-icon {
+  display: grid;
+  width: 18px;
+  height: 18px;
+
+  & svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.tab-menu-motion__trigger {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-fg);
+    outline-offset: -4px;
+  }
+}
+
+.tab-menu-motion__trigger-icon {
+  display: grid;
+  width: 22px;
+  height: 22px;
+
+  & svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* ---------- Pillola liquida (GooPill) ---------- */
+
+.tab-menu-motion__tabs {
+  position: relative;
+}
+
+.goo-pill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.goo-pill__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.goo-pill__blob {
+  position: absolute;
+  background: var(--ui-fg);
+}
+
+/* ---------- Effetto goo di apertura (goo.tsx) ---------- */
+
+.tab-menu-motion-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.goo-filter {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.goo-drop {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ui-bg);
+}
+
+/*
+ * Goccia sotto ogni tab: z-index -1 la porta dietro lo sfondo della barra,
+ * quindi si vede solo quando il tab è fuori dalla barra (apertura e chiusura)
+ */
+.tab-menu-motion__drop {
+  position: absolute;
+  z-index: -1;
+  inset: 4px 12px;
+  border-radius: 50%;
+  background: var(--ui-bg);
+}

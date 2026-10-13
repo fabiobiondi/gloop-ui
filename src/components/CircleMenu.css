@@ -1,0 +1,92 @@
+.circle-menu {
+  position: relative;
+  flex: none;
+}
+
+.circle-menu__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.circle-menu__blobs,
+.circle-menu__icons {
+  position: absolute;
+  inset: 0;
+}
+
+.circle-menu__blobs {
+  pointer-events: none;
+}
+
+/*
+ * Tutti partono dal bottone centrale (--origin-x/y, calcolati in CircleMenu.tsx:
+ * con un arco non è al centro del riquadro). La posizione la danno x/y animati da Motion.
+ */
+.circle-menu__blob,
+.circle-menu__btn {
+  position: absolute;
+  top: var(--origin-y, 50%);
+  left: var(--origin-x, 50%);
+  border-radius: 50%;
+}
+
+.circle-menu__blob {
+  background: var(--ui-bg);
+}
+
+.circle-menu__btn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  color: var(--ui-fg);
+  background: none;
+  cursor: pointer;
+
+  & svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &[data-hidden] {
+    pointer-events: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Il centro sta sopra le icone che vi rientrano */
+.circle-menu__btn--center {
+  z-index: 1;
+
+  & svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.circle-menu__btn--child svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Indicatore "ha un sottomenu": posizione e rotazione le calcola CircleMenu.tsx */
+.circle-menu__btn .circle-menu__more {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--ui-fg) 85%, transparent);
+  background: color-mix(in srgb, var(--ui-fg) 14%, transparent);
+
+  & svg {
+    width: 10px;
+    height: 10px;
+  }
+}

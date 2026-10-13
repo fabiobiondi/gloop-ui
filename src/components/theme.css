@@ -1,0 +1,14 @@
+/*
+ * Colori condivisi da tutti i componenti. Si personalizzano ridefinendo le variabili
+ * su un antenato (anche solo attorno a un componente):
+ *   .my-area { --ui-bg: #fff; --ui-fg: #18181b; --ui-accent: #e11d48; }
+ * Le sfumature (testo attenuato, bordi, hover) si ricavano da queste con color-mix.
+ */
+:root {
+  /* Superficie di barre, bottoni e blob */
+  --ui-bg: #18181b;
+  /* Testo e icone sopra la superficie */
+  --ui-fg: #fff;
+  /* Focus, selezione e stati attivi */
+  --ui-accent: #4f7cff;
+}

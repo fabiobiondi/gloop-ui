@@ -1,0 +1,20 @@
+/* Tab, icone e pillola liquida riusano gli stili di TabMenuMotion.css */
+
+.tab-bar {
+  position: fixed;
+  z-index: 50;
+  /* Sopra la "home indicator" degli iPhone */
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  display: flex;
+  border-radius: 26px;
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  box-shadow:
+    0 12px 32px -8px rgb(0 0 0 / 0.3),
+    0 4px 8px -4px rgb(0 0 0 / 0.12);
+
+  & .tab-menu-motion__tab[aria-current='page'] {
+    color: var(--ui-fg);
+  }
+}
