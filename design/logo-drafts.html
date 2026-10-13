@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gloop-UI Logo Drafts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap">
+<style>
+  /* Layout: header + toolbar, poi griglia di "provini" — ogni card è un banco prova del marchio (mark, lockup, favicon). */
+  :root {
+    --bg: #fbf8fd;
+    --surface: #ffffff;
+    --fg: #241b33;
+    --muted: #6e6380;
+    --line: #ece4f3;
+    --chip: #f3ecf9;
+    --c1: #ff7ab6;
+    --c2: #c86bfa;
+    --c3: #7b5cff;
+    --font-display: 'Fredoka', 'Nunito', ui-rounded, system-ui, sans-serif;
+    --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151019; --surface: #1f1826; --fg: #f3edf8; --muted: #a597b3; --line: #2e2538; --chip: #2a2132;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151019; --surface: #1f1826; --fg: #f3edf8; --muted: #a597b3; --line: #2e2538; --chip: #2a2132;
+    color-scheme: dark;
+  }
+  body[data-palette="slime"] { --c1: #c6f24e; --c2: #4fd9a6; --c3: #12a7b8; }
+  body[data-palette="grape"] { --c1: #a46bff; --c2: #5b7bff; --c3: #39c2ff; }
+  body[data-palette="mono"]  { --c1: var(--fg); --c2: var(--fg); --c3: var(--fg); }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 40px 64px; }
+
+  header { display: grid; gap: 8px; margin-bottom: 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(34px, 6vw, 56px); line-height: 1.05; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+  h1 .goo { background: linear-gradient(100deg, var(--c1), var(--c2) 55%, var(--c3)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { color: var(--muted); max-width: 62ch; margin: 0; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding-block: 14px; border-block: 1px solid var(--line); margin-bottom: 28px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 2; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .group > span { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-family: var(--font-mono); }
+  .seg { display: inline-flex; background: var(--chip); border-radius: 999px; padding: 3px; gap: 2px; }
+  .seg button { border: 0; background: transparent; color: var(--fg); font: 600 13px var(--font-body); padding: 6px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .seg button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
+  .seg button:focus-visible, .fav:focus-visible { outline: 2px solid var(--c3); outline-offset: 2px; }
+  .sw { width: 12px; height: 12px; border-radius: 50%; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+  .stage { --stage-bg: var(--surface); --stage-fg: var(--fg); --stage-muted: var(--muted); background: var(--stage-bg); color: var(--stage-fg); display: grid; place-items: center; padding-block: 28px 20px; gap: 18px; border-bottom: 1px solid var(--line); }
+  body[data-stage="light"] .stage { --stage-bg: #ffffff; --stage-fg: #241b33; --stage-muted: #8a7f99; }
+  body[data-stage="dark"] .stage { --stage-bg: #120d17; --stage-fg: #f6f0fb; --stage-muted: #9a8fa8; }
+  body[data-stage="light"][data-palette="mono"] .stage { --c1: #241b33; --c2: #241b33; --c3: #241b33; }
+  body[data-stage="dark"][data-palette="mono"] .stage { --c1: #f6f0fb; --c2: #f6f0fb; --c3: #f6f0fb; }
+
+  .mark { width: 168px; height: 168px; max-width: 100%; overflow: visible; transition: transform .5s cubic-bezier(.34,1.56,.64,1); }
+  .stage:hover .mark { transform: scale(1.06) rotate(-3deg); }
+  .lockup { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 30px; letter-spacing: -.01em; line-height: 1; }
+  .lockup svg { width: 42px; height: 42px; overflow: visible; }
+  .lockup .ui { color: var(--stage-muted); font-weight: 500; }
+  .lockup.inline svg { width: 46px; height: 30px; margin-inline: -1px; }
+
+  .meta { padding: 16px 18px 18px; display: grid; gap: 10px; }
+  .meta-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .meta h2 { font-family: var(--font-display); font-weight: 600; font-size: 20px; margin: 0; }
+  .num { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .meta p { margin: 0; color: var(--muted); font-size: 14px; }
+  .sizes { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .tab { display: inline-flex; align-items: center; gap: 8px; background: var(--chip); border-radius: 10px 10px 4px 4px; padding: 6px 12px 6px 8px; font-size: 12px; color: var(--muted); }
+  .tab svg { width: 16px; height: 16px; }
+  .sizes .s32 { width: 32px; height: 32px; }
+  .fav { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 4px 10px; font: 600 12px var(--font-body); cursor: pointer; }
+  .fav[aria-pressed="true"] { color: var(--fg); background: var(--chip); border-color: transparent; }
+  .fav[aria-pressed="true"]::before { content: "♥ "; color: var(--c1); }
+  .fav[aria-pressed="false"]::before { content: "♡ "; }
+
+  footer { margin-top: 32px; color: var(--muted); font-size: 14px; }
+  footer code { font-family: var(--font-mono); font-size: 13px; background: var(--chip); padding: 1px 6px; border-radius: 6px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mark { transition: none; }
+    .stage:hover .mark { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Defs condivise: gradienti, filtri goo e i simboli degli 8 marchi (viewBox 200×200) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-main" gradientUnits="userSpaceOnUse" x1="20" y1="20" x2="180" y2="190">
+      <stop offset="0" style="stop-color:var(--c1)"/>
+      <stop offset=".55" style="stop-color:var(--c2)"/>
+      <stop offset="1" style="stop-color:var(--c3)"/>
+    </linearGradient>
+    <radialGradient id="g-jelly" gradientUnits="userSpaceOnUse" cx="80" cy="60" r="150">
+      <stop offset="0" style="stop-color:var(--c1)"/>
+      <stop offset=".5" style="stop-color:var(--c2)"/>
+      <stop offset="1" style="stop-color:var(--c3)"/>
+    </radialGradient>
+    <filter id="goo" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/>
+      <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10"/>
+    </filter>
+    <filter id="goo-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>
+      <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8"/>
+    </filter>
+    <filter id="jelly-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#3a1a5a" flood-opacity=".22"/>
+    </filter>
+
+    <!-- 1 Goo Drop -->
+    <symbol id="m1" viewBox="0 0 200 200">
+      <g filter="url(#goo)" fill="url(#g-main)">
+        <circle cx="100" cy="84" r="58"/>
+        <circle cx="100" cy="150" r="18">
+          <animate attributeName="cy" values="140;176;140" dur="3.2s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/>
+          <animate attributeName="r" values="20;15;20" dur="3.2s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/>
+        </circle>
+      </g>
+      <ellipse cx="76" cy="60" rx="16" ry="10" fill="#fff" opacity=".55" transform="rotate(-30 76 60)"/>
+    </symbol>
+
+    <!-- 2 Triple Gloop -->
+    <symbol id="m2" viewBox="0 0 200 200">
+      <g filter="url(#goo)" fill="url(#g-main)">
+        <circle cx="68" cy="78" r="38"><animate attributeName="r" values="36;42;36" dur="4s" repeatCount="indefinite"/></circle>
+        <circle cx="132" cy="78" r="38"><animate attributeName="r" values="40;35;40" dur="4s" repeatCount="indefinite"/></circle>
+        <circle cx="100" cy="134" r="38"><animate attributeName="r" values="37;43;37" dur="4s" begin="-1.3s" repeatCount="indefinite"/></circle>
+      </g>
+      <circle cx="56" cy="64" r="9" fill="#fff" opacity=".5"/>
+      <circle cx="120" cy="64" r="6" fill="#fff" opacity=".4"/>
+    </symbol>
+
+    <!-- 3 Jelly G -->
+    <symbol id="m3" viewBox="0 0 200 200">
+      <g filter="url(#jelly-shadow)">
+        <g fill="none" stroke="url(#g-jelly)" stroke-width="34" stroke-linecap="round">
+          <circle cx="98" cy="84" r="42"/>
+          <path d="M140 76 V128 Q140 172 96 172 Q70 172 58 156"/>
+        </g>
+      </g>
+      <path d="M66 70 A36 36 0 0 1 98 48" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".6"/>
+      <circle cx="122" cy="52" r="4" fill="#fff" opacity=".6"/>
+    </symbol>
+
+    <!-- 4 Blob Face -->
+    <symbol id="m4" viewBox="0 0 200 200">
+      <path fill="url(#g-main)">
+        <animate attributeName="d" dur="6s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"
+          values="M100 30 C146 28 172 62 170 104 C168 146 136 172 98 170 C58 168 30 142 32 100 C34 60 56 32 100 30Z;
+                  M104 34 C150 36 174 70 166 110 C158 150 132 170 94 168 C54 166 26 136 32 96 C38 58 62 32 104 34Z;
+                  M100 30 C146 28 172 62 170 104 C168 146 136 172 98 170 C58 168 30 142 32 100 C34 60 56 32 100 30Z"/>
+      </path>
+      <g fill="#fff">
+        <ellipse cx="80" cy="96" rx="13" ry="15"><animate attributeName="ry" values="15;15;2;15;15" keyTimes="0;.9;.94;.98;1" dur="4.5s" repeatCount="indefinite"/></ellipse>
+        <ellipse cx="122" cy="96" rx="13" ry="15"><animate attributeName="ry" values="15;15;2;15;15" keyTimes="0;.9;.94;.98;1" dur="4.5s" repeatCount="indefinite"/></ellipse>
+      </g>
+      <g fill="#241b33">
+        <circle cx="83" cy="99" r="6"/>
+        <circle cx="125" cy="99" r="6"/>
+      </g>
+      <path d="M90 128 Q101 138 112 128" fill="none" stroke="#241b33" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="64" cy="122" r="7" fill="#fff" opacity=".35"/>
+      <circle cx="138" cy="122" r="7" fill="#fff" opacity=".35"/>
+    </symbol>
+
+    <!-- 5 Morph Loop -->
+    <symbol id="m5" viewBox="0 0 200 200">
+      <path fill="url(#g-main)">
+        <animate attributeName="d" dur="9s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1"
+          values="M100 28 C150 28 172 60 172 100 C172 145 140 172 100 172 C55 172 28 142 28 100 C28 58 52 28 100 28Z;
+                  M108 24 C156 34 180 72 166 112 C152 154 128 176 90 168 C48 160 22 130 32 90 C42 52 64 16 108 24Z;
+                  M96 34 C140 20 178 54 170 98 C162 140 146 166 104 174 C62 182 34 148 30 106 C26 66 54 46 96 34Z;
+                  M100 28 C150 28 172 60 172 100 C172 145 140 172 100 172 C55 172 28 142 28 100 C28 58 52 28 100 28Z"/>
+      </path>
+      <circle cx="74" cy="70" r="14" fill="#fff" opacity=".45">
+        <animate attributeName="cy" values="70;62;70" dur="4.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="96" cy="58" r="6" fill="#fff" opacity=".35">
+        <animate attributeName="cy" values="58;52;58" dur="3.6s" repeatCount="indefinite"/>
+      </circle>
+    </symbol>
+
+    <!-- 6 Stacked Pills -->
+    <symbol id="m6" viewBox="0 0 200 200">
+      <g filter="url(#goo-soft)" fill="url(#g-main)">
+        <rect x="50" y="34" width="100" height="32" rx="16"/>
+        <rect x="36" y="90" width="128" height="40" rx="20"/>
+        <circle cx="62" cy="110" r="27">
+          <animate attributeName="cx" values="62;138;138;62;62" keyTimes="0;.35;.5;.85;1" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines=".6 0 .3 1;0 0 1 1;.6 0 .3 1;0 0 1 1"/>
+        </circle>
+        <rect x="58" y="152" width="84" height="26" rx="13"/>
+      </g>
+      <circle cx="62" cy="110" r="13" fill="#fff" opacity=".85">
+        <animate attributeName="cx" values="62;138;138;62;62" keyTimes="0;.35;.5;.85;1" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines=".6 0 .3 1;0 0 1 1;.6 0 .3 1;0 0 1 1"/>
+      </circle>
+    </symbol>
+
+    <!-- 7 Liquid "oo" -->
+    <symbol id="m7" viewBox="0 0 200 200">
+      <g filter="url(#goo-soft)" fill="none" stroke="url(#g-main)" stroke-width="26">
+        <circle cx="66" cy="100" r="36"><animate attributeName="cx" values="66;72;66" dur="3s" repeatCount="indefinite"/></circle>
+        <circle cx="134" cy="100" r="36"><animate attributeName="cx" values="134;128;134" dur="3s" repeatCount="indefinite"/></circle>
+      </g>
+    </symbol>
+    <symbol id="m7-word" viewBox="20 50 160 100">
+      <g filter="url(#goo-soft)" fill="none" stroke="url(#g-main)" stroke-width="22">
+        <circle cx="66" cy="100" r="34"/>
+        <circle cx="134" cy="100" r="34"/>
+      </g>
+    </symbol>
+
+    <!-- 8 Squircle Splat -->
+    <symbol id="m8" viewBox="0 0 200 200">
+      <g filter="url(#goo)" fill="url(#g-main)">
+        <rect x="30" y="12" width="140" height="132" rx="50"/>
+        <circle cx="68" cy="146" r="13"><animate attributeName="cy" values="144;168;144" dur="3.4s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/></circle>
+        <circle cx="118" cy="148" r="16"><animate attributeName="cy" values="146;174;146" dur="4.2s" begin="-1s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/></circle>
+        <circle cx="148" cy="142" r="9"><animate attributeName="cy" values="140;156;140" dur="2.8s" begin="-.6s" repeatCount="indefinite"/></circle>
+      </g>
+      <text x="100" y="104" text-anchor="middle" font-family="Fredoka, Nunito, sans-serif" font-weight="700" font-size="100" fill="#fff">g</text>
+      <ellipse cx="60" cy="36" rx="14" ry="8" fill="#fff" opacity=".4" transform="rotate(-25 60 36)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">gloop-ui · visual identity · drafts v1</div>
+    <h1>Logo <span class="goo">Drafts</span></h1>
+    <p class="lede">Logo drafts for Gloop-UI, all built from shapes that melt into each other like jelly. Switch palette and background to see how they hold up, check them at 16 and 32 px, and heart the ones you like.</p>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="Preview options">
+    <div class="group">
+      <span>Palette</span>
+      <div class="seg" data-key="palette">
+        <button id="p-bubble" data-val="bubble" aria-pressed="true"><i class="sw" style="background:linear-gradient(135deg,#ff7ab6,#7b5cff)"></i>Bubblegum</button>
+        <button id="p-slime" data-val="slime" aria-pressed="false"><i class="sw" style="background:linear-gradient(135deg,#c6f24e,#12a7b8)"></i>Slime</button>
+        <button id="p-grape" data-val="grape" aria-pressed="false"><i class="sw" style="background:linear-gradient(135deg,#a46bff,#39c2ff)"></i>Grape Soda</button>
+        <button id="p-mono" data-val="mono" aria-pressed="false"><i class="sw" style="background:var(--fg)"></i>Mono</button>
+      </div>
+    </div>
+    <div class="group">
+      <span>Background</span>
+      <div class="seg" data-key="stage">
+        <button id="s-auto" data-val="auto" aria-pressed="true">Theme</button>
+        <button id="s-light" data-val="light" aria-pressed="false">Light</button>
+        <button id="s-dark" data-val="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="grid" id="grid"></main>
+
+  <footer>Pick your favorites by number (e.g. <code>#1 + #5</code>). They move on to a v2 with shape variants, wordmark weight and a final palette, then the favicon and the docs header.</footer>
+</div>
+
+<script>
+  const drafts = [
+    { id: 'm1', name: 'Goo Drop', note: 'A drop that breaks off and falls back into the mass. The simplest "gloop" gesture, and it doubles as an animated loader.' },
+    { id: 'm2', name: 'Triple Gloop', note: 'Three components that breathe and merge into one system. Readable at 16 px, a strong favicon.' },
+    { id: 'm3', name: 'Jelly G', note: 'A puffy, glossy lowercase "g", like a gummy candy. The most letter-like option and the easiest to remember.' },
+    { id: 'm4', name: 'Blob Face', note: 'A mascot: a blob that blinks. Gives personality to the docs, empty states and 404 pages.' },
+    { id: 'm5', name: 'Morph Loop', note: 'A shape that keeps changing without losing its identity, like components adapting to their context.' },
+    { id: 'm6', name: 'Stacked Pills', note: 'Button, toggle and card melting into each other. Reads as a UI library right away, with a sliding toggle knob.' },
+    { id: 'm7', name: 'Liquid oo', note: 'The two "o"s in gloop become bubbles joined by goo. The mark lives inside the wordmark.', word: true },
+    { id: 'm8', name: 'Squircle Splat', note: 'An app icon with color dripping off the edge. Ready for npm, GitHub and social avatars.' },
+  ];
+
+  const use = (id, cls = '') => `<svg class="${cls}" viewBox="0 0 200 200" aria-hidden="true"><use href="#${id}"/></svg>`;
+  let favs = [];
+  try { favs = JSON.parse(localStorage.getItem('gloop-favs') || '[]'); } catch (e) { favs = []; }
+
+  document.getElementById('grid').innerHTML = drafts.map((d, i) => `
+    <article class="card">
+      <div class="stage">
+        <svg class="mark" viewBox="0 0 200 200" role="img" aria-label="Logo ${d.name}"><use href="#${d.id}"/></svg>
+        ${d.word
+          ? `<div class="lockup inline"><span>gl</span><svg viewBox="20 50 160 100" aria-hidden="true"><use href="#m7-word"/></svg><span>p</span><span class="ui">-ui</span></div>`
+          : `<div class="lockup">${use(d.id)}<span>gloop<span class="ui">-ui</span></span></div>`}
+      </div>
+      <div class="meta">
+        <div class="meta-top">
+          <h2>${d.name} <span class="num">#${i + 1}</span></h2>
+          <button class="fav" id="fav-${i + 1}" data-n="${i + 1}" aria-pressed="${favs.includes(i + 1)}">Favorite</button>
+        </div>
+        <p>${d.note}</p>
+        <div class="sizes">
+          ${use(d.id, 's32')}
+          <span class="tab">${use(d.id)}Gloop-UI · Docs</span>
+        </div>
+      </div>
+    </article>`).join('');
+
+  document.getElementById('grid').addEventListener('click', e => {
+    const b = e.target.closest('.fav');
+    if (!b) return;
+    const n = +b.dataset.n;
+    const on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', on);
+    favs = on ? [...favs, n] : favs.filter(x => x !== n);
+    try { localStorage.setItem('gloop-favs', JSON.stringify(favs)); } catch (e) {}
+  });
+
+  document.querySelectorAll('.seg').forEach(seg => {
+    seg.addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      document.body.dataset[seg.dataset.key] = b.dataset.val;
+    });
+  });
+
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('animate, animateTransform').forEach(a => a.remove());
+  }
+</script>
+</body>
+</html>
