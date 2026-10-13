@@ -51,9 +51,25 @@ describe('computePosition', () => {
     expect(pos.placement).toBe('left')
   })
 
-  it('keeps the side when the opposite one has even less room', () => {
+  it('falls back to a perpendicular side when neither the side nor its opposite has room', () => {
+    // Bolla alta 500: non entra né sopra né sotto, a destra sì
     const tall = { width: 200, height: 500 }
     const pos = computePosition({ ...trigger, top: 500 }, tall, base)
+    expect(pos.placement).toBe('right')
+  })
+
+  it('falls back to top/bottom when a left/right bubble has no room on either side', () => {
+    // Area stretta: 320px di larghezza, trigger al centro, bolla larga 200
+    const boundary = { top: 0, left: 340, width: 320, height: 800 }
+    const pos = computePosition(trigger, size, { ...base, placement: 'left', boundary })
+    expect(pos.placement).toBe('top')
+    expect(pos.x).toBeGreaterThanOrEqual(348)
+    expect(pos.x + size.width).toBeLessThanOrEqual(652)
+  })
+
+  it('keeps the side that leaves out the least when nothing fits', () => {
+    const huge = { width: 990, height: 500 }
+    const pos = computePosition({ ...trigger, top: 500 }, huge, base)
     expect(pos.placement).toBe('top')
   })
 
@@ -76,6 +92,49 @@ describe('computePosition', () => {
   it('centers the arrow on bubbles too small for the inset', () => {
     const pos = computePosition(trigger, { width: 30, height: 30 }, base)
     expect(pos.arrowOffset).toBe(15)
+  })
+
+  describe('boundary', () => {
+    // Area 400×300 al centro del viewport: il trigger sta sul suo bordo alto
+    const boundary = { top: 250, left: 300, width: 400, height: 300 }
+    const edge = { top: 260, left: 450, width: 100, height: 40 }
+
+    it('flips inside the boundary even with room in the viewport', () => {
+      const pos = computePosition(edge, size, { ...base, boundary })
+      expect(pos.placement).toBe('bottom')
+    })
+
+    it('shifts inside the boundary', () => {
+      const pos = computePosition({ ...edge, left: 300, width: 40 }, size, { ...base, boundary })
+      expect(pos.x).toBe(308)
+    })
+
+    it('picks the auto side inside the boundary', () => {
+      const pos = computePosition(edge, size, { ...base, placement: 'auto', boundary })
+      expect(pos.placement).toBe('bottom')
+    })
+  })
+
+  describe("placement 'auto'", () => {
+    const auto: PositionOptions = { ...base, placement: 'auto' }
+
+    it('prefers the top when it fits', () => {
+      expect(computePosition(trigger, size, auto).placement).toBe('top')
+    })
+
+    it.each([
+      ['bottom', { ...trigger, top: 20 }],
+      ['right', { top: 20, left: 450, width: 100, height: 760 }],
+      ['left', { top: 20, left: 900, width: 100, height: 760 }],
+    ] as const)('falls back to %s', (expected, rect) => {
+      expect(computePosition(rect, size, auto).placement).toBe(expected)
+    })
+
+    it('picks the side that leaves out the least when nothing fits', () => {
+      // Trigger quasi a tutto viewport: sotto restano 30px, sopra 12
+      const pos = computePosition({ top: 20, left: 0, width: 1000, height: 742 }, size, auto)
+      expect(pos.placement).toBe('bottom')
+    })
   })
 
   it('returns the measured size', () => {

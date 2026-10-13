@@ -53,4 +53,7 @@ export { default as ShapeEditor } from './components/shape-toolbar/ShapeEditor'
 export { default as Tooltip } from './components/Tooltip'
 export type { TooltipProps } from './components/Tooltip'
 
-export type { FloatingPlacement, FloatingAlign } from './components/floating/position'
+export { default as FloatingBoundary } from './components/FloatingBoundary'
+export type { FloatingBoundaryProps } from './components/FloatingBoundary'
+
+export type { FloatingPlacement, FloatingSide, FloatingAlign } from './components/floating/position'

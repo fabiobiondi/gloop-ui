@@ -12,11 +12,12 @@ import {
   TabMenuSubmenu,
   Tooltip,
 } from 'gloop-ui'
-import { CircleMenuPanelsDemo } from './CircleMenuPanels'
+import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo from './DialogDemo'
 import {
   ControlledPopover,
   DemoButton,
+  EdgeTest,
   HoverCard,
   NestedPopover,
   ProfilePopover,
@@ -545,6 +546,42 @@ export const entries: Entry[] = [
 />`,
       },
       {
+        title: 'Context menu · right-click',
+        description:
+          'Controlled with open / onOpenChange and reserveSpace={false}: right-click anywhere in the area and the menu opens at that point, with the same panels as above. Shift+F10 opens it from the keyboard.',
+        stage: { minHeight: 380 },
+        preview: <CircleMenuContextDemo />,
+        code: `const [pos, setPos] = useState({ x: 0, y: 0 })
+const [open, setOpen] = useState(false)
+
+function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
+  e.preventDefault()
+  const area = e.currentTarget.getBoundingClientRect()
+  // Icons are placed relative to the "+": move it and open it in the same render
+  setPos({ x: e.clientX - area.left, y: e.clientY - area.top })
+  setOpen(true)
+}
+
+<div className="canvas" style={{ position: 'relative' }} onContextMenu={onContextMenu}>
+  {/* Always mounted, hidden while closed. It only takes the "+" (56px): center it on the click */}
+  <div
+    className="context-menu"
+    data-open={open || undefined}
+    style={{ position: 'absolute', left: pos.x - 28, top: pos.y - 28 }}
+  >
+    <CircleMenu
+      label="style"
+      reserveSpace={false}
+      open={open}
+      onOpenChange={setOpen}
+      items={[color, opacity, fontSize, strokeStyle, strokeWidth]}
+    />
+  </div>
+</div>
+
+/* .context-menu:not([data-open]) { opacity: 0; visibility: hidden; transition: … } */`,
+      },
+      {
         title: 'Custom panels · arc · sub-menus',
         description:
           'Panels work on the last branch too: Text and Line open a sub-menu, and each of its icons opens its own panel.',
@@ -797,6 +834,18 @@ export const entries: Entry[] = [
         stage: { minHeight: 220 },
       },
       {
+        title: 'Edge test',
+        description:
+          'The dashed area is a FloatingBoundary: it acts as the viewport, so there is no room outside it. Triggers sit in the corners, on the edges and in the center; pick a placement (auto by default) and align: the tooltip flips and shifts to stay inside, and the arrow keeps pointing at the trigger.',
+        preview: <EdgeTest kind="tooltip" />,
+        stage: { minHeight: 560 },
+        code: `<FloatingBoundary>
+  <Tooltip content="..." placement="auto">
+    <button>top-left</button>
+  </Tooltip>
+</FloatingBoundary>`,
+      },
+      {
         title: 'Custom delays',
         preview: (
           <Tooltip content="Instant" delay={0} closeDelay={300}>
@@ -886,6 +935,18 @@ export const entries: Entry[] = [
   <button>Style</button>
 </Popover>`,
         stage: { minHeight: 260 },
+      },
+      {
+        title: 'Edge test',
+        description:
+          'The dashed area is a FloatingBoundary that acts as the viewport. Popovers in the corners, on the edges and in the center, placement auto by default; "Open all" opens all nine at once to check flip, shift and arrow at a glance.',
+        preview: <EdgeTest kind="popover" />,
+        stage: { minHeight: 560 },
+        code: `<FloatingBoundary>
+  <Popover content={<Card />} placement="auto">
+    <button>bottom-left</button>
+  </Popover>
+</FloatingBoundary>`,
       },
     ],
   },

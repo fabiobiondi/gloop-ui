@@ -192,6 +192,37 @@ describe('CircleMenu panel', () => {
   })
 })
 
+describe('CircleMenu controlled', () => {
+  it('opens from outside and reports closing through onOpenChange', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    const { rerender } = render(<CircleMenu open={false} onOpenChange={onOpenChange} items={[{ icon, label: 'Copy' }]} />)
+    expect(screen.getByRole('button', { name: 'Open Menu' })).toBeTruthy()
+
+    rerender(<CircleMenu open onOpenChange={onOpenChange} items={[{ icon, label: 'Copy' }]} />)
+    expect(screen.getByRole('button', { name: 'Close Menu' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+    expect(onOpenChange).toHaveBeenLastCalledWith(false)
+    // Controllato: resta aperto finché il genitore non cambia open
+    expect(screen.getByRole('button', { name: 'Close Menu' })).toBeTruthy()
+  })
+
+  it('closes on outside pointerdown', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    render(
+      <div>
+        <p>outside</p>
+        <CircleMenu defaultOpen onOpenChange={onOpenChange} items={[{ icon, label: 'Copy' }]} />
+      </div>,
+    )
+    await user.click(screen.getByText('outside'))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+    expect(screen.getByRole('button', { name: 'Open Menu' })).toBeTruthy()
+  })
+})
+
 describe('Dialog', () => {
   it('applies backdrop color, opacity and blur', () => {
     render(<Dialog open onClose={() => {}} title="Hi" backdropColor="#312e81" backdropOpacity={2} backdropBlur={8} />)

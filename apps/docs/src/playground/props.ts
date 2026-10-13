@@ -46,6 +46,8 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'radius', type: 'number', default: 'auto', description: 'Distance of the items from the center, in px. Defaults to the minimum that keeps them apart.' },
     { name: 'subRadius', type: 'number', default: '60', description: 'Distance of sub-menu items from their parent, in px.' },
     { name: 'reserveSpace', type: 'boolean', default: 'true', description: 'true: the open menu area is reserved in the layout. false: only the "+" takes space and icons open on a layer above surrounding content (clipped by ancestors with overflow: hidden).' },
+    { name: 'open / defaultOpen', type: 'boolean', description: 'Controlled / initial open state, e.g. to open the menu from a right-click (context menu).' },
+    { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called when the menu opens or closes: "+", Escape, outside click, a choice or close() from a panel.' },
   ],
   dialog: [
     { name: 'open', type: 'boolean', required: true, description: 'Whether the dialog is shown.' },
@@ -61,7 +63,7 @@ export const propsById: Record<string, PropDoc[]> = {
   tooltip: [
     { name: 'content', type: 'ReactNode', required: true, description: 'Text or JSX shown in the bubble.' },
     { name: 'children', type: 'ReactElement', required: true, description: 'The trigger: a single element that accepts a ref (e.g. a <button>). Wrap disabled buttons in a <span>.' },
-    { name: 'placement', type: "'top' | 'right' | 'bottom' | 'left'", default: "'top'", description: 'Side of the trigger. Flips when there is no room.' },
+    { name: 'placement', type: "'top' | 'right' | 'bottom' | 'left' | 'auto'", default: "'top'", description: "Side of the trigger. Flips when there is no room. 'auto' picks the first side where it fits: top, bottom, right, left." },
     { name: 'align', type: "'start' | 'center' | 'end'", default: "'center'", description: 'Alignment along the trigger edge. Shifts to stay inside the viewport.' },
     { name: 'delay', type: 'number', default: '400', description: 'Delay before opening on hover, in ms. Keyboard focus opens right away.' },
     { name: 'closeDelay', type: 'number', default: '100', description: 'Delay before closing after the pointer leaves, in ms.' },
@@ -74,7 +76,7 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'open', type: 'boolean', description: 'Controlled mode.' },
     { name: 'defaultOpen', type: 'boolean', default: 'false', description: 'Initial state in uncontrolled mode.' },
     { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called whenever the popover asks to open or close.' },
-    { name: 'placement', type: "'top' | 'right' | 'bottom' | 'left'", default: "'bottom'", description: 'Side of the trigger. Flips when there is no room.' },
+    { name: 'placement', type: "'top' | 'right' | 'bottom' | 'left' | 'auto'", default: "'bottom'", description: "Side of the trigger. Flips when there is no room. 'auto' picks the first side where it fits: top, bottom, right, left." },
     { name: 'align', type: "'start' | 'center' | 'end'", default: "'center'", description: 'Alignment along the trigger edge.' },
     { name: 'closeOnOutsideClick', type: 'boolean', default: 'true', description: 'Close on a click outside trigger and popover (nested popovers count as inside).' },
     { name: 'closeOnEscape', type: 'boolean', default: 'true', description: 'Close on Escape; only the innermost popover closes.' },

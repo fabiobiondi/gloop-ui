@@ -2,6 +2,7 @@ import {
   isValidElement,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -95,6 +96,14 @@ export type CircleMenuProps = {
    * false: occupa solo il "+" e le icone si aprono su un livello sopra il contenuto vicino.
    */
   reserveSpace?: boolean
+  /**
+   * Modalità controllata: apre e chiude il menu dall'esterno
+   * (es. un menu contestuale aperto con il tasto destro)
+   */
+  open?: boolean
+  defaultOpen?: boolean
+  /** Chiamata quando il menu si apre o si chiude (dal "+", Esc, clic fuori, scelta fatta) */
+  onOpenChange?: (open: boolean) => void
 }
 
 const CENTER_SIZE = 56
@@ -182,8 +191,21 @@ function CircleMenu({
   radius,
   subRadius = 60,
   reserveSpace = true,
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
 }: CircleMenuProps) {
-  const [open, setOpen] = useState(false)
+  const [uncontrolled, setUncontrolled] = useState(defaultOpen)
+  const open = openProp ?? uncontrolled
+  // I listener su document leggono sempre l'ultima onOpenChange
+  const onOpenChangeRef = useRef(onOpenChange)
+  useLayoutEffect(() => {
+    onOpenChangeRef.current = onOpenChange
+  })
+  function setOpen(next: boolean) {
+    if (openProp === undefined) setUncontrolled(next)
+    onOpenChangeRef.current?.(next)
+  }
   const [sub, setSub] = useState<number | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
   /** Item con il pannello aperto: "i" nel primo livello, "i-j" nel sottomenu */
@@ -252,6 +274,26 @@ function CircleMenu({
   }
 
   /*
+   * Chiuso dall'esterno (modalità controllata): sottomenu e pannello ripartono da zero.
+   * Si aggiorna durante il render, senza un effect che farebbe un render in più.
+   */
+  const [wasOpen, setWasOpen] = useState(open)
+  if (wasOpen !== open) {
+    setWasOpen(open)
+    if (!open) {
+      setSub(null)
+      setPanel(null)
+      setHovered(null)
+    }
+  }
+
+  // I listener su document chiamano sempre l'ultima closeAll
+  const closeAllRef = useRef(closeAll)
+  useLayoutEffect(() => {
+    closeAllRef.current = closeAll
+  })
+
+  /*
    * Clic fuori. Gli eventi sintetici di React risalgono anche dai portal: un clic dentro
    * un pannello passa da onPointerDownCapture sulla radice e non chiude il menu.
    */
@@ -261,14 +303,14 @@ function CircleMenu({
 
     function onPointerDown() {
       if (inside.current) inside.current = false
-      else closeAll()
+      else closeAllRef.current()
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return
       // Esc chiude prima il pannello, poi il sottomenu, poi tutto
       if (panel !== null) setPanel(null)
       else if (sub !== null) setSub(null)
-      else closeAll(true)
+      else closeAllRef.current(true)
     }
 
     document.addEventListener('pointerdown', onPointerDown)

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Popover, Tooltip, usePopover, type FloatingPlacement } from 'gloop-ui'
+import { FloatingBoundary, Popover, Tooltip, usePopover, type FloatingAlign, type FloatingPlacement } from 'gloop-ui'
 import './FloatingDemos.css'
 
 // Trigger semplici: Tooltip e Popover clonano il figlio, che deve accettare un ref
@@ -154,5 +154,107 @@ export function NestedPopover() {
     >
       <DemoButton>Style</DemoButton>
     </Popover>
+  )
+}
+
+/* ---------- Edge test: trigger negli angoli, sui bordi e al centro di un'area chiusa ---------- */
+
+// FloatingBoundary fa da viewport: fuori dal riquadro non c'è spazio, le bolle girano e scorrono dentro
+const spots = [
+  'top-left',
+  'top',
+  'top-right',
+  'left',
+  'center',
+  'right',
+  'bottom-left',
+  'bottom',
+  'bottom-right',
+] as const
+type Spot = (typeof spots)[number]
+
+const aligns: FloatingAlign[] = ['start', 'center', 'end']
+
+export function EdgeTest({ kind }: { kind: 'tooltip' | 'popover' }) {
+  const [placement, setPlacement] = useState<FloatingPlacement>('auto')
+  const [align, setAlign] = useState<FloatingAlign>('center')
+  const [opened, setOpened] = useState<Partial<Record<Spot, boolean>>>({})
+
+  const trigger = (spot: Spot) =>
+    kind === 'tooltip' ? (
+      <Tooltip content={`Tooltip at ${spot}, a bit longer to need some room`} placement={placement} align={align}>
+        <DemoButton>{spot}</DemoButton>
+      </Tooltip>
+    ) : (
+      <Popover
+        label={spot}
+        placement={placement}
+        align={align}
+        open={opened[spot] ?? false}
+        onOpenChange={(open) => setOpened((o) => ({ ...o, [spot]: open }))}
+        content={
+          <div className="fd-card fd-card--wide">
+            <strong>{spot}</strong>
+            <span>
+              placement {placement} · align {align}. A wide bubble that has to flip and shift to stay inside the
+              viewport.
+            </span>
+          </div>
+        }
+      >
+        <DemoButton>{spot}</DemoButton>
+      </Popover>
+    )
+
+  return (
+    <FloatingBoundary className="fd-edge">
+      {spots.map((spot) => (
+        <div key={spot} className="fd-edge__spot" data-spot={spot}>
+          {trigger(spot)}
+          {spot === 'top' && (
+            <div className="fd-edge__controls">
+              <div className="fd-row">
+                {(['auto', ...placements] as FloatingPlacement[]).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className="fd-btn fd-btn--ghost"
+                    aria-pressed={placement === p}
+                    onClick={() => setPlacement(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+              <div className="fd-row">
+                {aligns.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    className="fd-btn fd-btn--ghost"
+                    aria-pressed={align === a}
+                    onClick={() => setAlign(a)}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+              <div className="fd-row">
+                {kind === 'popover' && (
+                  <button
+                    type="button"
+                    className="fd-btn fd-btn--ghost"
+                    // Un clic fuori li chiude tutti: qui si apre soltanto
+                    onClick={() => setOpened(Object.fromEntries(spots.map((s) => [s, true])))}
+                  >
+                    Open all
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </FloatingBoundary>
   )
 }

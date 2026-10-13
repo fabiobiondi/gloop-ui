@@ -2,7 +2,7 @@ import { useId, type CSSProperties, type HTMLAttributes, type ReactNode, type Re
 import { createPortal } from 'react-dom'
 import { AnimatePresence, MotionConfig, motion, type Transition, type Variants } from 'motion/react'
 import { GooFilter } from '../goo'
-import type { FloatingPlacement, FloatingPosition } from './position'
+import type { FloatingPosition, FloatingSide } from './position'
 import { ARROW } from './useFloating'
 import '../theme.css'
 import './Floating.css'
@@ -30,7 +30,7 @@ const spread: Transition = { type: 'spring', stiffness: 300, damping: 21, delay:
 const suck: Transition = { type: 'spring', stiffness: 520, damping: 40 }
 const drip: Transition = { type: 'spring', stiffness: 600, damping: 26 }
 
-const isVertical = (p: FloatingPlacement) => p === 'top' || p === 'bottom'
+const isVertical = (p: FloatingSide) => p === 'top' || p === 'bottom'
 
 /*
  * Scala della goccia iniziale. La bolla parte da una goccia di DROP px attaccata alla freccia

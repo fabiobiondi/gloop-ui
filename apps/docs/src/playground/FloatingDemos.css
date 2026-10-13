@@ -129,3 +129,53 @@
   width: 14px;
   height: 14px;
 }
+
+.fd-card--wide {
+  width: 280px;
+}
+
+.fd-btn--ghost[aria-pressed='true'] {
+  color: #fff;
+  background: var(--ui-accent);
+  box-shadow: none;
+}
+
+/* Edge test: griglia 3×3 di trigger; il bordo tratteggiato è il "viewport" delle bolle */
+.fd-edge {
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  align-self: stretch;
+  width: 100%;
+  min-height: 480px;
+  padding: 4px;
+  border: 1px dashed var(--pg-muted);
+  border-radius: 12px;
+  color: var(--pg-text);
+}
+
+.fd-edge__spot {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &[data-spot^='top'] { justify-content: flex-start; }
+  &[data-spot='left'], &[data-spot='center'], &[data-spot='right'] { justify-content: center; }
+  &[data-spot^='bottom'] { justify-content: flex-end; }
+
+  &[data-spot$='left'] { align-items: flex-start; }
+  &[data-spot='top'], &[data-spot='center'], &[data-spot='bottom'] { align-items: center; }
+  &[data-spot$='right'] { align-items: flex-end; }
+}
+
+.fd-edge__controls {
+  /* In fondo alla cella in alto: lontano dalle bolle del centro e dei bordi */
+  display: grid;
+  margin-top: auto;
+  gap: 8px;
+
+  & .fd-btn {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+}

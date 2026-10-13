@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import { CircleMenu, type CircleMenuItem, type CircleMenuPanelApi } from 'gloop-ui'
 import './CircleMenuPanels.css'
 
@@ -205,60 +205,133 @@ function Sample({ style }: { style: Style }) {
   )
 }
 
-/*
- * variant 'circle': tutti i pannelli al primo livello.
- * variant 'arc': i pannelli stanno nell'ultimo ramo, dentro i sottomenu.
- */
-export function CircleMenuPanelsDemo({ variant }: { variant: 'circle' | 'arc' }) {
+// Stile della forma di prova e un item con pannello per ogni proprietà
+function useStyleItems() {
   const [style, setStyle] = useState(INITIAL)
   const set =
     <K extends keyof Style>(key: K) =>
     (v: Style[K]) =>
       setStyle((s) => ({ ...s, [key]: v }))
 
-  const color: CircleMenuItem = {
-    icon: PaletteIcon,
-    label: 'Color',
-    tooltip: true,
-    panel: (api) => <ColorPanel value={style.color} onChange={set('color')} api={api} />,
-  }
-  const opacity: CircleMenuItem = {
-    icon: OpacityIcon,
-    label: 'Opacity',
-    tooltip: true,
-    panel: (api) => <OpacityPanel value={style.opacity} onChange={set('opacity')} api={api} />,
-  }
-  const fontSize: CircleMenuItem = {
-    icon: SizeIcon,
-    label: 'Font size',
-    tooltip: true,
-    panel: (api) => <FontSizePanel value={style.fontSize} onChange={set('fontSize')} api={api} />,
-  }
-  const strokeStyle: CircleMenuItem = {
-    icon: DashIcon,
-    label: 'Stroke style',
-    tooltip: true,
-    panel: (api) => <StrokeStylePanel value={style.strokeStyle} onChange={set('strokeStyle')} api={api} />,
-  }
-  const strokeWidth: CircleMenuItem = {
-    icon: WidthIcon,
-    label: 'Stroke width',
-    tooltip: true,
-    panel: (api) => <StrokeWidthPanel value={style.strokeWidth} onChange={set('strokeWidth')} api={api} />,
-  }
+  const items = {
+    color: {
+      icon: PaletteIcon,
+      label: 'Color',
+      tooltip: true,
+      panel: (api) => <ColorPanel value={style.color} onChange={set('color')} api={api} />,
+    },
+    opacity: {
+      icon: OpacityIcon,
+      label: 'Opacity',
+      tooltip: true,
+      panel: (api) => <OpacityPanel value={style.opacity} onChange={set('opacity')} api={api} />,
+    },
+    fontSize: {
+      icon: SizeIcon,
+      label: 'Font size',
+      tooltip: true,
+      panel: (api) => <FontSizePanel value={style.fontSize} onChange={set('fontSize')} api={api} />,
+    },
+    strokeStyle: {
+      icon: DashIcon,
+      label: 'Stroke style',
+      tooltip: true,
+      panel: (api) => <StrokeStylePanel value={style.strokeStyle} onChange={set('strokeStyle')} api={api} />,
+    },
+    strokeWidth: {
+      icon: WidthIcon,
+      label: 'Stroke width',
+      tooltip: true,
+      panel: (api) => <StrokeWidthPanel value={style.strokeWidth} onChange={set('strokeWidth')} api={api} />,
+    },
+  } satisfies Record<string, CircleMenuItem>
 
+  return { style, items }
+}
+
+/*
+ * variant 'circle': tutti i pannelli al primo livello.
+ * variant 'arc': i pannelli stanno nell'ultimo ramo, dentro i sottomenu.
+ */
+export function CircleMenuPanelsDemo({ variant }: { variant: 'circle' | 'arc' }) {
+  const { style, items: it } = useStyleItems()
   const items: CircleMenuItem[] =
     variant === 'circle'
-      ? [color, opacity, fontSize, strokeStyle, strokeWidth]
+      ? [it.color, it.opacity, it.fontSize, it.strokeStyle, it.strokeWidth]
       : [
-          color,
-          { icon: TypeIcon, label: 'Text', tooltip: true, items: [fontSize, opacity] },
-          { icon: LineIcon, label: 'Line', tooltip: true, items: [strokeStyle, strokeWidth] },
+          it.color,
+          { icon: TypeIcon, label: 'Text', tooltip: true, items: [it.fontSize, it.opacity] },
+          { icon: LineIcon, label: 'Line', tooltip: true, items: [it.strokeStyle, it.strokeWidth] },
         ]
 
   return (
     <div className="cmp-demo" data-variant={variant}>
       <CircleMenu label="style" items={items} direction={variant === 'arc' ? 'right' : undefined} />
+      <Sample style={style} />
+    </div>
+  )
+}
+
+/* ---------- Menu contestuale: si apre dove si clicca con il tasto destro ---------- */
+
+const CENTER = 56
+
+export function CircleMenuContextDemo() {
+  const { style, items: it } = useStyleItems()
+  const items = [it.color, it.opacity, it.fontSize, it.strokeStyle, it.strokeWidth]
+  const areaRef = useRef<HTMLDivElement>(null)
+  // Il menu è sempre montato (nascosto da chiuso): spostarlo e aprirlo nello stesso render
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const [open, setOpen] = useState(false)
+
+  function onContextMenu(e: MouseEvent<HTMLDivElement>) {
+    e.preventDefault()
+    // Tasto destro sul menu già aperto: resta dov'è
+    if (open && (e.target as Element).closest('.cmp-context')) return
+    const el = e.currentTarget
+    const area = el.getBoundingClientRect()
+    // Da tastiera (tasto Menu, Maiusc+F10) non c'è un punto: si apre al centro
+    const fromKeyboard = e.clientX === 0 && e.clientY === 0
+    // left/top del menu partono dal bordo interno: si toglie lo spessore del bordo
+    setPos({
+      x: fromKeyboard ? el.clientWidth / 2 : e.clientX - area.left - el.clientLeft,
+      y: fromKeyboard ? el.clientHeight / 2 : e.clientY - area.top - el.clientTop,
+    })
+    /*
+     * Le icone sono posizionate rispetto al "+", quindi escono dal nuovo punto.
+     * Se il menu era aperto, il pointerdown del tasto destro lo ha appena chiuso (clic fuori).
+     */
+    setOpen(true)
+  }
+
+  // Chiuso, il "+" sparisce: se aveva il focus, torna all'area
+  function onOpenChange(next: boolean) {
+    setOpen(next)
+    if (next) return
+    requestAnimationFrame(() => {
+      const area = areaRef.current
+      if (area && area !== document.activeElement && area.contains(document.activeElement)) area.focus()
+    })
+  }
+
+  return (
+    <div className="cmp-demo">
+      <div
+        ref={areaRef}
+        className="cmp-canvas"
+        tabIndex={0}
+        aria-label="Canvas: right-click, or press Shift+F10, to open the style menu"
+        onContextMenu={onContextMenu}
+      >
+        {!pos && <span className="cmp-canvas__hint">Right-click anywhere</span>}
+        <div
+          className="cmp-context"
+          data-open={open || undefined}
+          style={pos ? { left: pos.x - CENTER / 2, top: pos.y - CENTER / 2 } : { left: 0, top: 0 }}
+        >
+          <CircleMenu label="style" items={items} reserveSpace={false} open={open} onOpenChange={onOpenChange} />
+        </div>
+      </div>
       <Sample style={style} />
     </div>
   )
