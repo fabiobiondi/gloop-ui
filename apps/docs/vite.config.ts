@@ -9,6 +9,16 @@ export default defineConfig(({ command, isPreview }) => ({
   // GitHub Pages serve il sito su /gloop-ui/ (anche in dev e preview, per non avere sorprese)
   base: '/gloop-ui/',
   plugins: [react()],
+  build: {
+    rolldownOptions: {
+      output: {
+        // Shiki (grammatiche + motore regex) in un chunk a parte: cambia di rado, resta in cache tra un deploy e l'altro
+        codeSplitting: {
+          groups: [{ name: 'shiki', test: /node_modules[\\/](shiki|@shikijs|oniguruma-)/ }],
+        },
+      },
+    },
+  },
   resolve: {
     // In dev si usano i sorgenti della libreria (HMR immediato, i .css arrivano con i componenti).
     // In build si usa il pacchetto compilato (dist), cioè esattamente quello pubblicato su npm.

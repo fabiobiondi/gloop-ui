@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { tokenize, type Lang } from './highlight'
 
-export function CodeBlock({ code }: { code: string }) {
+export function CodeBlock({ code, lang = 'tsx' }: { code: string; lang?: Lang }) {
   const [copied, setCopied] = useState(false)
+  const lines = useMemo(() => tokenize(code, lang), [code, lang])
 
   useEffect(() => {
     if (!copied) return
@@ -13,7 +15,18 @@ export function CodeBlock({ code }: { code: string }) {
   return (
     <div className="pg-code">
       <pre>
-        <code>{code}</code>
+        <code>
+          {lines.map((line, i) => (
+            <Fragment key={i}>
+              {i > 0 && '\n'}
+              {line.map((token, j) => (
+                <span key={j} style={{ color: token.color }}>
+                  {token.content}
+                </span>
+              ))}
+            </Fragment>
+          ))}
+        </code>
       </pre>
       <button
         type="button"

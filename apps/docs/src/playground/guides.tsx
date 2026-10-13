@@ -49,7 +49,7 @@ export const guides: Guide[] = [
         <p>
           <code>react</code> and <code>react-dom</code> 19 and <code>motion</code> 14 are peer dependencies.
         </p>
-        <CodeBlock code={INSTALL} />
+        <CodeBlock code={INSTALL} lang="bash" />
 
         <h2>Import the styles</h2>
         <p>All the CSS ships in a single file. Import it once, before your own styles.</p>
@@ -83,11 +83,11 @@ export const guides: Guide[] = [
       <div className="pg-prose">
         <h2>The variables</h2>
         <p>Shades (muted text, borders, hover) are derived from these three with <code>color-mix</code>.</p>
-        <CodeBlock code={THEME_GLOBAL} />
+        <CodeBlock code={THEME_GLOBAL} lang="css" />
 
         <h2>Scoped themes</h2>
         <p>The variables are inherited, so you can redefine them on any ancestor to theme just one area.</p>
-        <CodeBlock code={THEME_LOCAL} />
+        <CodeBlock code={THEME_LOCAL} lang="css" />
         <p>Or inline, right around a component:</p>
         <CodeBlock code={THEME_INLINE} />
         <p>
