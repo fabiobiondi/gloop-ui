@@ -7,6 +7,7 @@ import {
   type Variants,
 } from 'motion/react'
 import GooPill from './GooPill'
+import ListCore from './list/ListCore'
 import { GooFilter } from './goo'
 import { pressed, tabDrop } from './tab-drop'
 import './theme.css'
@@ -28,9 +29,6 @@ export type TabMenuSubmenuProps = {
 const TAB_WIDTH = 68
 const TRIGGER_SIZE = 52
 const DRIP_SIZE = 28
-// Devono combaciare con altezza e gap delle voci in TabMenuSubmenu.css
-const ITEM_HEIGHT = 40
-const ITEM_GAP = 2
 
 const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
 const exitFast: Transition = { duration: 0.12, ease: 'easeOut' }
@@ -53,7 +51,6 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
   const [active, setActive] = useState<number | null>(null)
   const [submenu, setSubmenu] = useState<number | null>(null)
   const [direction, setDirection] = useState(0)
-  const [hovered, setHovered] = useState<number | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
@@ -75,7 +72,6 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
       return
     }
     if (submenu !== null && submenu !== i) setDirection(Math.sign(i - submenu))
-    setHovered(null)
     setSubmenu(submenu === i ? null : i)
   }
 
@@ -184,43 +180,19 @@ function TabMenuSubmenu({ icon, label, tabs }: TabMenuSubmenuProps) {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  onPointerLeave={() => setHovered(null)}
                 >
-                  {/* Stessa pillola liquida della tabbar, in verticale, che segue il cursore */}
-                  <AnimatePresence>
-                    {hovered !== null && (
-                      <GooPill
-                        index={hovered}
-                        step={ITEM_HEIGHT + ITEM_GAP}
-                        length={ITEM_HEIGHT}
-                        inset={0}
-                        axis="y"
-                        radius={14}
-                        opacity={0.1}
-                      />
-                    )}
-                  </AnimatePresence>
-                  <ul className="tab-menu-submenu__list">
-                    {items.map((item, i) => (
-                      <li key={item}>
-                        <motion.button
-                          type="button"
-                          role="menuitem"
-                          className="tab-menu-submenu__item"
-                          onClick={() => {
-                            close()
-                            triggerRef.current?.focus()
-                          }}
-                          onPointerEnter={() => setHovered(i)}
-                          onFocus={() => setHovered(i)}
-                          onBlur={() => setHovered(null)}
-                          whileTap={{ scale: 0.97 }}
-                        >
-                          {item}
-                        </motion.button>
-                      </li>
-                    ))}
-                  </ul>
+                  {/* Stesse voci di List, con la pillola liquida che segue il cursore */}
+                  <ListCore
+                    items={items.map((item) => ({ id: item, label: item }))}
+                    hover
+                    // Qui la pillola è l'unico indicatore: più marcata che in List
+                    hoverOpacity={0.1}
+                    itemRole="menuitem"
+                    onItemClick={() => {
+                      close()
+                      triggerRef.current?.focus()
+                    }}
+                  />
                 </motion.div>
               </AnimatePresence>
             </motion.div>

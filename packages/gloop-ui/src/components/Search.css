@@ -5,6 +5,8 @@
 
 .search {
   display: flex;
+  /* Larghezza fissa anche quando lo slot è più stretto (reserveSpace={false}) */
+  flex: none;
   align-items: center;
   height: 44px;
   color: var(--ui-fg);
@@ -85,4 +87,11 @@
 
 .search__char {
   display: inline-block;
+}
+
+/* Lo slot segue il campo: il form, più largo, non deve creare overflow nel layout */
+.search-slot[data-push] {
+  flex: none;
+  /* clip, non hidden: hidden è scrollabile e il focus dell'input sposterebbe il campo */
+  overflow: clip;
 }

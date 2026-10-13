@@ -1,0 +1,82 @@
+/*
+ * Livello della bolla: è grande quanto la bolla, la freccia sporge da un lato.
+ * Posizionato con transform (non left/top): così la larghezza "max-content"
+ * non si restringe quando la bolla sta vicino al bordo destro.
+ */
+.floating {
+  position: fixed;
+  z-index: 110;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: calc(100vw - 16px);
+  color: var(--ui-fg);
+}
+
+/* Niente box-shadow esterna: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+.floating__bubble {
+  position: relative;
+  max-width: inherit;
+  background: var(--ui-bg);
+  /* Bordo interno sottile: stacca la bolla dal fondo anche in tema scuro */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-fg) 10%, transparent);
+  outline: none;
+}
+
+.floating__arrow {
+  position: absolute;
+  width: var(--floating-arrow);
+  height: var(--floating-arrow);
+  border-radius: 2px;
+  background: var(--ui-bg);
+  pointer-events: auto;
+}
+
+/* Il centro della freccia sta sul bordo della bolla rivolto al trigger */
+.floating[data-placement='top'] .floating__arrow {
+  top: 100%;
+  left: var(--floating-arrow-offset);
+}
+
+.floating[data-placement='bottom'] .floating__arrow {
+  top: 0;
+  left: var(--floating-arrow-offset);
+}
+
+.floating[data-placement='left'] .floating__arrow {
+  top: var(--floating-arrow-offset);
+  left: 100%;
+}
+
+.floating[data-placement='right'] .floating__arrow {
+  top: var(--floating-arrow-offset);
+  left: 0;
+}
+
+/* ---------- Tooltip ---------- */
+
+.floating--tooltip {
+  max-width: min(var(--floating-max-width, 240px), calc(100vw - 16px));
+}
+
+.floating--tooltip .floating__bubble {
+  padding: 7px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* ---------- Popover ---------- */
+
+.floating--popover .floating__bubble {
+  border-radius: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Lo scroll sta nel contenuto: la bolla (e la sua forma goo) resta intera */
+.floating--popover .floating__content {
+  max-height: min(70vh, 560px);
+  padding: 16px;
+  overflow: auto;
+}

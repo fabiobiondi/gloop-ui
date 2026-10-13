@@ -1,12 +1,61 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import {
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from 'react'
 import { MotionConfig, motion, useReducedMotion, type Variants } from 'motion/react'
+import Popover from './Popover'
+import Tooltip from './Tooltip'
+import type { FloatingPlacement } from './floating/position'
 import './theme.css'
 import './CircleMenu.css'
+
+export type CircleMenuTooltip = {
+  content: ReactNode
+  /** Default: il lato rivolto verso l'esterno del menu, così non copre le altre icone */
+  placement?: FloatingPlacement
+  /** Ritardo prima di aprirsi al passaggio del mouse, in ms */
+  delay?: number
+}
+
+export type CircleMenuPanelApi = {
+  /** Chiude pannello e menu, e riporta il focus sul "+" (es. dopo una scelta) */
+  close: () => void
+  /** Chiude solo il pannello: si torna alle icone */
+  back: () => void
+}
+
+/** Qualsiasi contenuto, oppure una funzione che riceve { close, back } */
+export type CircleMenuPanelContent = ReactNode | ((api: CircleMenuPanelApi) => ReactNode)
+
+export type CircleMenuPanel = {
+  content: CircleMenuPanelContent
+  /** Default: il lato rivolto verso l'esterno del menu */
+  placement?: FloatingPlacement
+  /** Nome accessibile del pannello (default: la label dell'item) */
+  label?: string
+}
 
 export type CircleMenuItem = {
   icon: ReactNode
   label: string
   onSelect?: () => void
+  /**
+   * Pannello personalizzato (slider, liste, colori, form…) che si apre accanto all'icona
+   * al clic, al posto di onSelect. Contenuto/render-prop oppure { content, placement, label }.
+   * Su un item con sottomenu viene ignorato: vale per le foglie.
+   */
+  panel?: CircleMenuPanelContent | CircleMenuPanel
+  /**
+   * Tooltip dell'icona: true mostra la label, oppure testo/JSX,
+   * oppure { content, placement, delay }
+   */
+  tooltip?: ReactNode | CircleMenuTooltip
   /** Sottomenu: da 2 a 5 icone che escono ad arco da questa */
   items?: Omit<CircleMenuItem, 'items'>[]
 }
@@ -41,6 +90,11 @@ export type CircleMenuProps = {
   radius?: number
   /** Distanza delle icone del sottomenu dalla loro icona, in px */
   subRadius?: number
+  /**
+   * true: il riquadro del menu aperto è già riservato nel layout.
+   * false: occupa solo il "+" e le icone si aprono su un livello sopra il contenuto vicino.
+   */
+  reserveSpace?: boolean
 }
 
 const CENTER_SIZE = 56
@@ -91,6 +145,28 @@ const DIRECTION_ANGLE: Record<CircleMenuDirection, number> = {
 const rad = (deg: number) => (deg * Math.PI) / 180
 const polar = (r: number, deg: number) => ({ x: Math.cos(rad(deg)) * r, y: Math.sin(rad(deg)) * r })
 
+// Lato del tooltip che guarda fuori dal menu, nella stessa direzione dell'icona
+function outward(deg: number): FloatingPlacement {
+  const { x, y } = polar(1, deg)
+  if (Math.abs(x) > Math.abs(y) + 1e-6) return x > 0 ? 'right' : 'left'
+  return y > 0 ? 'bottom' : 'top'
+}
+
+function tooltipOf(item: Omit<CircleMenuItem, 'items'>): CircleMenuTooltip | null {
+  const t = item.tooltip
+  if (t === undefined || t === null || t === false || t === '') return null
+  if (t === true) return { content: item.label }
+  if (typeof t === 'object' && !isValidElement(t) && 'content' in t) return t as CircleMenuTooltip
+  return { content: t as ReactNode }
+}
+
+function panelOf(item: CircleMenuItem): CircleMenuPanel | null {
+  const p = item.panel
+  if (item.items?.length || p === undefined || p === null || p === false) return null
+  if (typeof p === 'object' && !isValidElement(p) && 'content' in p) return p as CircleMenuPanel
+  return { content: p as CircleMenuPanelContent }
+}
+
 /*
  * Due livelli sovrapposti, animati con le stesse identiche molle:
  * - "blob": cerchi scuri con un filtro SVG goo che li fonde come liquido
@@ -105,10 +181,15 @@ function CircleMenu({
   arc,
   radius,
   subRadius = 60,
+  reserveSpace = true,
 }: CircleMenuProps) {
   const [open, setOpen] = useState(false)
   const [sub, setSub] = useState<number | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
+  /** Item con il pannello aperto: "i" nel primo livello, "i-j" nel sottomenu */
+  const [panel, setPanel] = useState<string | null>(null)
+  // pointerdown "dentro" il menu, anche nei pannelli e tooltip in portal (vedi Popover)
+  const inside = useRef(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const filterId = useId()
@@ -165,20 +246,28 @@ function CircleMenu({
   function closeAll(focusTrigger = false) {
     setOpen(false)
     setSub(null)
+    setPanel(null)
     setHovered(null)
     if (focusTrigger) triggerRef.current?.focus()
   }
 
+  /*
+   * Clic fuori. Gli eventi sintetici di React risalgono anche dai portal: un clic dentro
+   * un pannello passa da onPointerDownCapture sulla radice e non chiude il menu.
+   */
   useEffect(() => {
     if (!open) return
+    inside.current = false
 
-    function onPointerDown(e: PointerEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) closeAll()
+    function onPointerDown() {
+      if (inside.current) inside.current = false
+      else closeAll()
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return
-      // Esc chiude prima il sottomenu, poi tutto
-      if (sub !== null) setSub(null)
+      // Esc chiude prima il pannello, poi il sottomenu, poi tutto
+      if (panel !== null) setPanel(null)
+      else if (sub !== null) setSub(null)
       else closeAll(true)
     }
 
@@ -188,7 +277,57 @@ function CircleMenu({
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [open, sub])
+  }, [open, sub, panel])
+
+  // Icona del primo livello "in primo piano": quella con il sottomenu o il pannello aperto
+  const focused = sub ?? (panel !== null && !panel.includes('-') ? Number(panel) : null)
+
+  /*
+   * Avvolge il bottone in Popover (se l'item ha un pannello) e Tooltip (se ne ha uno).
+   * shown: l'icona è visibile; quiet: il tooltip non deve comparire.
+   */
+  function decorate(
+    item: CircleMenuItem,
+    key: string,
+    deg: number,
+    shown: boolean,
+    quiet: boolean,
+    button: ReactElement,
+  ) {
+    let el = button
+    const p = panelOf(item)
+    if (p) {
+      el = (
+        <Popover
+          key={key}
+          open={shown && panel === key}
+          onOpenChange={(next) => setPanel((cur) => (next ? key : cur === key ? null : cur))}
+          placement={p.placement ?? outward(deg)}
+          label={p.label ?? item.label}
+          content={(api) =>
+            typeof p.content === 'function' ? p.content({ close: () => closeAll(true), back: api.close }) : p.content
+          }
+        >
+          {el}
+        </Popover>
+      )
+    }
+    const t = tooltipOf(item)
+    if (t) {
+      el = (
+        <Tooltip
+          key={key}
+          content={t.content}
+          placement={t.placement ?? outward(deg)}
+          delay={t.delay}
+          disabled={!shown || quiet || panel === key}
+        >
+          {el}
+        </Tooltip>
+      )
+    }
+    return el
+  }
 
   /* ---------- Posizioni e transizioni (condivise dai due livelli) ---------- */
 
@@ -197,8 +336,8 @@ function CircleMenu({
     const key = String(i)
     const scale = !open
       ? 0.4
-      : sub !== null && sub !== i
-        ? 0.8 // con un sottomenu aperto, le altre icone si fanno da parte
+      : focused !== null && focused !== i
+        ? 0.8 // con un sottomenu o un pannello aperto, le altre icone si fanno da parte
         : hovered === key
           ? 1.12
           : 1
@@ -253,209 +392,250 @@ function CircleMenu({
       <div
         ref={rootRef}
         className="circle-menu"
+        onPointerDownCapture={() => {
+          inside.current = true
+        }}
+        data-overlay={reserveSpace ? undefined : true}
+        data-open={open || undefined}
         style={
           {
-            width: maxX - minX,
-            height: maxY - minY,
+            width: reserveSpace ? maxX - minX : CENTER_SIZE,
+            height: reserveSpace ? maxY - minY : CENTER_SIZE,
             '--origin-x': `${-minX}px`,
             '--origin-y': `${-minY}px`,
           } as CSSProperties
         }
       >
-        {/* ---------- Livello blob (decorativo) ---------- */}
-        <svg className="circle-menu__defs" aria-hidden="true">
-          <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" result="goo" />
-            {/*
-              La forma si riempie con un colore pieno invece dei colori sfocati: con un blur
-              così ampio il browser li calcola a bassa risoluzione e si vedrebbero scalini
-            */}
-            <feFlood style={{ floodColor: 'var(--ui-bg)' }} result="color" />
-            <feComposite in="color" in2="goo" operator="in" />
-            <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#000" floodOpacity="0.25" />
-          </filter>
-        </svg>
-
+        {/*
+          Senza reserveSpace la radice è grande quanto il "+": il livello ha l'ingombro
+          del menu aperto ed è spostato perché il suo origin coincida con il centro della radice
+        */}
         <div
-          className="circle-menu__blobs"
-          aria-hidden="true"
-          style={{ filter: reduceMotion ? undefined : `url(#${CSS.escape(filterId)})` }}
+          className="circle-menu__layer"
+          style={
+            reserveSpace
+              ? undefined
+              : {
+                  left: CENTER_SIZE / 2 + minX,
+                  top: CENTER_SIZE / 2 + minY,
+                  width: maxX - minX,
+                  height: maxY - minY,
+                }
+          }
         >
-          {items.slice(0, n).map((item, i) =>
-            item.items?.map((_, j, all) => {
-              const c = childState(i, j, all.length)
-              return [
-                !reduceMotion && (
+          {/* ---------- Livello blob (decorativo) ---------- */}
+          <svg className="circle-menu__defs" aria-hidden="true">
+            <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+              <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" result="goo" />
+              {/*
+                La forma si riempie con un colore pieno invece dei colori sfocati: con un blur
+                così ampio il browser li calcola a bassa risoluzione e si vedrebbero scalini
+              */}
+              <feFlood style={{ floodColor: 'var(--ui-bg)' }} result="color" />
+              <feComposite in="color" in2="goo" operator="in" />
+              <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#000" floodOpacity="0.25" />
+            </filter>
+          </svg>
+
+          <div
+            className="circle-menu__blobs"
+            aria-hidden="true"
+            style={{ filter: reduceMotion ? undefined : `url(#${CSS.escape(filterId)})` }}
+          >
+            {items.slice(0, n).map((item, i) =>
+              item.items?.map((_, j, all) => {
+                const c = childState(i, j, all.length)
+                return [
+                  !reduceMotion && (
+                    <motion.span
+                      key={`${i}-${j}-tail`}
+                      className="circle-menu__blob"
+                      style={blobStyle(CHILD_SIZE)}
+                      initial={false}
+                      animate={{ ...c.target, scale: c.shown ? TAIL_SCALE : 0.3 }}
+                      transition={tailTransition(c.transition)}
+                    />
+                  ),
                   <motion.span
-                    key={`${i}-${j}-tail`}
+                    key={`${i}-${j}`}
                     className="circle-menu__blob"
                     style={blobStyle(CHILD_SIZE)}
                     initial={false}
-                    animate={{ ...c.target, scale: c.shown ? TAIL_SCALE : 0.3 }}
-                    transition={tailTransition(c.transition)}
+                    animate={c.target}
+                    transition={c.transition}
+                  />,
+                ]
+              }),
+            )}
+            {items.slice(0, n).map((_, i) => {
+              const s = itemState(i)
+              return [
+                !reduceMotion && (
+                  <motion.span
+                    key={`${i}-tail`}
+                    className="circle-menu__blob"
+                    style={blobStyle(ITEM_SIZE)}
+                    initial={false}
+                    animate={{ ...s.target, scale: open ? TAIL_SCALE : 0.4 }}
+                    transition={tailTransition(s.transition)}
                   />
                 ),
                 <motion.span
-                  key={`${i}-${j}`}
-                  className="circle-menu__blob"
-                  style={blobStyle(CHILD_SIZE)}
-                  initial={false}
-                  animate={c.target}
-                  transition={c.transition}
-                />,
-              ]
-            }),
-          )}
-          {items.slice(0, n).map((_, i) => {
-            const s = itemState(i)
-            return [
-              !reduceMotion && (
-                <motion.span
-                  key={`${i}-tail`}
+                  key={i}
                   className="circle-menu__blob"
                   style={blobStyle(ITEM_SIZE)}
                   initial={false}
-                  animate={{ ...s.target, scale: open ? TAIL_SCALE : 0.4 }}
-                  transition={tailTransition(s.transition)}
-                />
-              ),
-              <motion.span
-                key={i}
-                className="circle-menu__blob"
-                style={blobStyle(ITEM_SIZE)}
-                initial={false}
-                animate={s.target}
-                transition={s.transition}
-              />,
-            ]
-          })}
-          <motion.span
-            className="circle-menu__blob"
-            style={blobStyle(CENTER_SIZE)}
-            variants={centerVariants}
-            initial={false}
-            animate={open ? 'open' : 'closed'}
-          />
-        </div>
-
-        {/* ---------- Livello icone (interattivo) ---------- */}
-        <div className="circle-menu__icons">
-          <motion.button
-            ref={triggerRef}
-            type="button"
-            className="circle-menu__btn circle-menu__btn--center"
-            style={blobStyle(CENTER_SIZE)}
-            aria-label={open ? `Close ${label}` : `Open ${label}`}
-            aria-expanded={open}
-            variants={centerVariants}
-            initial={false}
-            animate={open ? 'open' : 'closed'}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => (open ? closeAll() : setOpen(true))}
-          >
-            {/* Il "+" ruota e diventa una "×" */}
-            <motion.svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              aria-hidden="true"
+                  animate={s.target}
+                  transition={s.transition}
+                />,
+              ]
+            })}
+            <motion.span
+              className="circle-menu__blob"
+              style={blobStyle(CENTER_SIZE)}
+              variants={centerVariants}
               initial={false}
-              animate={{ rotate: open ? 135 : 0 }}
-              transition={open ? openSpring : closeSpring}
+              animate={open ? 'open' : 'closed'}
+            />
+          </div>
+
+          {/* ---------- Livello icone (interattivo) ---------- */}
+          <div className="circle-menu__icons">
+            <motion.button
+              ref={triggerRef}
+              type="button"
+              className="circle-menu__btn circle-menu__btn--center"
+              style={blobStyle(CENTER_SIZE)}
+              aria-label={open ? `Close ${label}` : `Open ${label}`}
+              aria-expanded={open}
+              variants={centerVariants}
+              initial={false}
+              animate={open ? 'open' : 'closed'}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => (open ? closeAll() : setOpen(true))}
             >
-              <path d="M12 5v14M5 12h14" />
-            </motion.svg>
-          </motion.button>
-
-          {items.slice(0, n).map((item, i) => {
-            const s = itemState(i)
-            const hasSub = !!item.items?.length
-            return (
-              <motion.button
-                key={i}
-                type="button"
-                className="circle-menu__btn"
-                style={blobStyle(ITEM_SIZE)}
-                aria-label={item.label}
-                aria-hidden={!open}
-                tabIndex={open ? 0 : -1}
-                aria-haspopup={hasSub ? 'menu' : undefined}
-                aria-expanded={hasSub ? sub === i : undefined}
-                data-hidden={!open || undefined}
+              {/* Il "+" ruota e diventa una "×" */}
+              <motion.svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
                 initial={false}
-                animate={{ ...s.target, opacity: open ? 1 : 0 }}
-                transition={s.transition}
-                whileTap={{ scale: 0.9 }}
-                {...hoverProps(String(i))}
-                onClick={() => {
-                  if (hasSub) {
-                    setHovered(null)
-                    setSub(sub === i ? null : i)
-                    return
-                  }
-                  item.onSelect?.()
-                  closeAll(true)
-                }}
+                animate={{ rotate: open ? 135 : 0 }}
+                transition={open ? openSpring : closeSpring}
               >
-                {item.icon}
-                {/*
-                  Ha un sottomenu: freccina sul bordo dell'icona, dal lato da cui usciranno
-                  i figli, e rivolta verso di loro. Sparisce quando sono fuori.
-                */}
-                {hasSub && (
-                  <motion.span
-                    className="circle-menu__more"
-                    aria-hidden="true"
-                    style={{
-                      left: ITEM_SIZE / 2 + polar(MORE_OFFSET, angleOf(i)).x - MORE_SIZE / 2,
-                      top: ITEM_SIZE / 2 + polar(MORE_OFFSET, angleOf(i)).y - MORE_SIZE / 2,
-                      rotate: angleOf(i),
-                    }}
-                    initial={false}
-                    animate={{ opacity: sub === i ? 0 : 1, scale: sub === i ? 0.5 : 1 }}
-                    transition={hoverSpring}
-                  >
-                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4.5 3 7.5 6l-3 3" />
-                    </svg>
-                  </motion.span>
-                )}
-              </motion.button>
-            )
-          })}
+                <path d="M12 5v14M5 12h14" />
+              </motion.svg>
+            </motion.button>
 
-          {items.slice(0, n).map((item, i) =>
-            item.items?.map((child, j, all) => {
-              const c = childState(i, j, all.length)
-              return (
+            {items.slice(0, n).map((item, i) => {
+              const s = itemState(i)
+              const hasSub = !!item.items?.length
+              const hasPanel = !!panelOf(item)
+              return decorate(
+                item,
+                String(i),
+                angleOf(i),
+                open,
+                sub !== null,
                 <motion.button
-                  key={`${i}-${j}`}
+                  key={i}
                   type="button"
-                  className="circle-menu__btn circle-menu__btn--child"
-                  style={blobStyle(CHILD_SIZE)}
-                  aria-label={child.label}
-                  aria-hidden={!c.shown}
-                  tabIndex={c.shown ? 0 : -1}
-                  data-hidden={!c.shown || undefined}
+                  className="circle-menu__btn"
+                  style={blobStyle(ITEM_SIZE)}
+                  aria-label={item.label}
+                  aria-hidden={!open}
+                  tabIndex={open ? 0 : -1}
+                  aria-haspopup={hasSub ? 'menu' : undefined}
+                  aria-expanded={hasSub ? sub === i : undefined}
+                  data-hidden={!open || undefined}
                   initial={false}
-                  animate={{ ...c.target, opacity: c.shown ? 1 : 0 }}
-                  transition={c.transition}
+                  animate={{ ...s.target, opacity: open ? 1 : 0 }}
+                  transition={s.transition}
                   whileTap={{ scale: 0.9 }}
-                  {...hoverProps(`${i}-${j}`)}
-                  // Scelta fatta: tutto rientra nel centro
+                  {...hoverProps(String(i))}
                   onClick={() => {
-                    child.onSelect?.()
+                    if (hasSub) {
+                      setHovered(null)
+                      setSub(sub === i ? null : i)
+                      return
+                    }
+                    // Il pannello lo apre e chiude il Popover attorno al bottone
+                    if (hasPanel) {
+                      setHovered(null)
+                      return
+                    }
+                    item.onSelect?.()
                     closeAll(true)
                   }}
                 >
-                  {child.icon}
-                </motion.button>
+                  {item.icon}
+                  {/*
+                    Ha un sottomenu: freccina sul bordo dell'icona, dal lato da cui usciranno
+                    i figli, e rivolta verso di loro. Sparisce quando sono fuori.
+                  */}
+                  {hasSub && (
+                    <motion.span
+                      className="circle-menu__more"
+                      aria-hidden="true"
+                      style={{
+                        left: ITEM_SIZE / 2 + polar(MORE_OFFSET, angleOf(i)).x - MORE_SIZE / 2,
+                        top: ITEM_SIZE / 2 + polar(MORE_OFFSET, angleOf(i)).y - MORE_SIZE / 2,
+                        rotate: angleOf(i),
+                      }}
+                      initial={false}
+                      animate={{ opacity: sub === i ? 0 : 1, scale: sub === i ? 0.5 : 1 }}
+                      transition={hoverSpring}
+                    >
+                      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4.5 3 7.5 6l-3 3" />
+                      </svg>
+                    </motion.span>
+                  )}
+                </motion.button>,
               )
-            }),
-          )}
+            })}
+
+            {items.slice(0, n).map((item, i) =>
+              item.items?.map((child, j, all) => {
+                const c = childState(i, j, all.length)
+                const hasPanel = !!panelOf(child)
+                return decorate(
+                  child,
+                  `${i}-${j}`,
+                  angleOf(i) + (j - (all.length - 1) / 2) * subArc(all.length).step,
+                  c.shown,
+                  false,
+                  <motion.button
+                    key={`${i}-${j}`}
+                    type="button"
+                    className="circle-menu__btn circle-menu__btn--child"
+                    style={blobStyle(CHILD_SIZE)}
+                    aria-label={child.label}
+                    aria-hidden={!c.shown}
+                    tabIndex={c.shown ? 0 : -1}
+                    data-hidden={!c.shown || undefined}
+                    initial={false}
+                    animate={{ ...c.target, opacity: c.shown ? 1 : 0 }}
+                    transition={c.transition}
+                    whileTap={{ scale: 0.9 }}
+                    {...hoverProps(`${i}-${j}`)}
+                    // Scelta fatta: tutto rientra nel centro
+                    onClick={() => {
+                      if (hasPanel) return setHovered(null)
+                      child.onSelect?.()
+                      closeAll(true)
+                    }}
+                  >
+                    {child.icon}
+                  </motion.button>,
+                )
+              }),
+            )}
+          </div>
         </div>
       </div>
     </MotionConfig>

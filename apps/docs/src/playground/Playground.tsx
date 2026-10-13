@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { GooPill } from 'gloop-ui'
+import { List } from 'gloop-ui'
 import { version } from 'gloop-ui/package.json'
 import { CodeBlock } from './CodeBlock'
 import { entries, type Demo, type Entry } from './demos'
@@ -9,10 +9,6 @@ import './Playground.css'
 
 const REPO_URL = 'https://github.com/fabiobiondi/gloop-ui'
 const NPM_URL = 'https://www.npmjs.com/package/gloop-ui'
-
-// Devono combaciare con altezza e gap delle voci in Playground.css
-const NAV_ITEM_HEIGHT = 36
-const NAV_ITEM_GAP = 2
 
 type Page = Guide | Entry
 const pages: Page[] = [...guides, ...entries]
@@ -183,37 +179,30 @@ function PropsTable({ props }: { props: PropDoc[] }) {
   )
 }
 
-// Voci della sidebar: ogni gruppo ha la sua pillola liquida, visibile solo se la pagina è lì
+// Voci della sidebar: ogni gruppo è una List, con la pillola fissa solo se la pagina è lì
 function NavGroup({ title, items, current }: { title: string; items: Page[]; current: Page }) {
-  const activeIndex = items.indexOf(current)
-
   return (
     <>
       <p className="pg-sidebar__title">{title}</p>
-      <nav aria-label={title} className="pg-nav">
-        {activeIndex >= 0 && (
-          <GooPill
-            index={activeIndex}
-            step={NAV_ITEM_HEIGHT + NAV_ITEM_GAP}
-            length={NAV_ITEM_HEIGHT}
-            inset={0}
-            axis="y"
-            radius={10}
-            opacity={0.1}
-          />
-        )}
-        {items.map((p) => (
-          <a
-            key={p.id}
-            href={`#${p.id}`}
-            className="pg-nav__item"
-            aria-current={p === current ? 'page' : undefined}
-          >
-            {p.name}
-            {'demos' in p && <span className="pg-nav__count">{p.demos.length}</span>}
-          </a>
-        ))}
-      </nav>
+      <List
+        label={title}
+        className="pg-nav"
+        itemHeight={36}
+        radius={10}
+        value={items.includes(current) ? current.id : null}
+        items={items.map((p) => ({
+          id: p.id,
+          label: p.name,
+          href: `#${p.id}`,
+          meta:
+            'demos' in p ? (
+              <>
+                {p.status === 'experimental' && <span className="pg-badge pg-badge--sm">Exp</span>}
+                {p.demos.length}
+              </>
+            ) : undefined,
+        }))}
+      />
     </>
   )
 }
@@ -260,8 +249,16 @@ function Playground() {
         {/* key: cambiando pagina le demo ripartono da zero (menu chiusi) */}
         <div key={page.id} className="pg-page">
           <header className="pg-page__header">
-            <h1>{page.name}</h1>
+            <h1>
+              {page.name}
+              {'status' in page && page.status === 'experimental' && <span className="pg-badge">Experimental</span>}
+            </h1>
             <p>{page.description}</p>
+            {'notice' in page && page.notice && (
+              <p className="pg-notice" role="note">
+                {page.notice}
+              </p>
+            )}
           </header>
           {'demos' in page ? page.demos.map((demo) => <DemoCard key={demo.title} demo={demo} />) : page.content}
           {props && props.length > 0 && <PropsTable props={props} />}

@@ -7,6 +7,8 @@
 :root {
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
+  /* Spazio della scrollbar sempre riservato: quando Dialog blocca lo scroll (overflow: hidden) la pagina non si sposta */
+  scrollbar-gutter: stable;
 }
 
 body {

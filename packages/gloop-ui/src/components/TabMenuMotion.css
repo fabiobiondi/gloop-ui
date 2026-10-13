@@ -100,27 +100,10 @@
   }
 }
 
-/* ---------- Pillola liquida (GooPill) ---------- */
+/* ---------- Pillola liquida (stili in GooPill.css) ---------- */
 
 .tab-menu-motion__tabs {
   position: relative;
-}
-
-.goo-pill {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.goo-pill__defs {
-  position: absolute;
-  width: 0;
-  height: 0;
-}
-
-.goo-pill__blob {
-  position: absolute;
-  background: var(--ui-fg);
 }
 
 /* ---------- Effetto goo di apertura (goo.tsx) ---------- */

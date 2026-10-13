@@ -2,14 +2,26 @@ import type { ReactNode } from 'react'
 import {
   CircleMenu,
   ExpandButton,
+  Input,
+  List,
   Search,
   ShapeEditor,
   TabBar,
   TabMenu,
   TabMenuMotion,
   TabMenuSubmenu,
+  Tooltip,
 } from 'gloop-ui'
+import { CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo from './DialogDemo'
+import {
+  ControlledPopover,
+  DemoButton,
+  HoverCard,
+  NestedPopover,
+  ProfilePopover,
+  TooltipPlacements,
+} from './FloatingDemos'
 import {
   AlertIcon,
   BookmarkIcon,
@@ -54,6 +66,10 @@ export type Entry = {
   id: string
   name: string
   description: string
+  /** Componente non ancora stabile: badge in sidebar e nell'intestazione */
+  status?: 'experimental'
+  /** Avviso mostrato sotto la descrizione */
+  notice?: string
   demos: Demo[]
 }
 
@@ -112,6 +128,92 @@ export const entries: Entry[] = [
   width={220}
   onSearch={(query) => console.log(query)}
 />`,
+      },
+      {
+        title: 'Buttons on the right · pushed aside',
+        description:
+          'With reserveSpace={false} the buttons sit right next to the magnifier. Open the search: they slide to the right with the same spring, and slide back when it closes.',
+        preview: (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Search placeholder="Search docs…" width={220} reserveSpace={false} />
+            <Tooltip content="Open the docs">
+              <DemoButton>Docs</DemoButton>
+            </Tooltip>
+            <Tooltip content="Profile">
+              <DemoButton aria-label="Profile">{UserIcon}</DemoButton>
+            </Tooltip>
+          </div>
+        ),
+        code: `<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+  <Search placeholder="Search docs…" width={220} reserveSpace={false} />
+  <button>Docs</button>
+  <button aria-label="Profile"><UserIcon /></button>
+</div>`,
+      },
+      {
+        title: 'Buttons on the right · fixed',
+        description:
+          'Default (reserveSpace={true}). The open width is reserved up front: the buttons never move, at the cost of an empty gap while the search is closed.',
+        preview: (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Search placeholder="Search docs…" width={220} />
+            <Tooltip content="Open the docs">
+              <DemoButton>Docs</DemoButton>
+            </Tooltip>
+            <Tooltip content="Profile">
+              <DemoButton aria-label="Profile">{UserIcon}</DemoButton>
+            </Tooltip>
+          </div>
+        ),
+        code: `<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+  <Search placeholder="Search docs…" width={220} />
+  <button>Docs</button>
+  <button aria-label="Profile"><UserIcon /></button>
+</div>`,
+      },
+    ],
+  },
+  {
+    id: 'input',
+    name: 'Input',
+    description:
+      'A text field whose label drips out on top as a liquid tab when focused; the placeholder shows up underneath.',
+    demos: [
+      {
+        title: 'Default',
+        preview: (
+          <div style={{ width: 280 }}>
+            <Input label="Email" type="email" placeholder="name@mail.com" />
+          </div>
+        ),
+        code: `<Input label="Email" type="email" placeholder="name@mail.com" />`,
+      },
+      {
+        title: 'With value',
+        description: 'With a value the label stays on top.',
+        preview: (
+          <div style={{ width: 280 }}>
+            <Input label="Name" defaultValue="Ada Lovelace" placeholder="Your name" />
+          </div>
+        ),
+        code: `<Input label="Name" defaultValue="Ada Lovelace" placeholder="Your name" />`,
+      },
+      {
+        title: 'Form',
+        preview: (
+          <form style={{ display: 'grid', gap: 12, width: 280 }} onSubmit={(e) => e.preventDefault()}>
+            <Input label="Name" name="name" placeholder="Ada Lovelace" autoComplete="name" />
+            <Input label="Email" name="email" type="email" placeholder="ada@mail.com" autoComplete="email" />
+            <Input label="Password" name="password" type="password" placeholder="At least 8 characters" />
+            <Input label="Company" placeholder="Not editable" disabled />
+          </form>
+        ),
+        code: `<form style={{ display: 'grid', gap: 12 }}>
+  <Input label="Name" name="name" placeholder="Ada Lovelace" autoComplete="name" />
+  <Input label="Email" name="email" type="email" placeholder="ada@mail.com" autoComplete="email" />
+  <Input label="Password" name="password" type="password" placeholder="At least 8 characters" />
+  <Input label="Company" placeholder="Not editable" disabled />
+</form>`,
       },
     ],
   },
@@ -260,6 +362,59 @@ export const entries: Entry[] = [
 />`,
       },
       {
+        title: 'Arc · bottom-left · overlay',
+        description:
+          'With reserveSpace={false} the menu only takes the size of the "+": icons open on a layer above the content, which never moves.',
+        stage: { minHeight: 280 },
+        preview: (
+          <div className="pg-overlay-card">
+            <p>
+              The text wraps right next to the "+", because the closed menu only takes 56px. Open it: the
+              icons and the Message sub-menu drop over this paragraph without pushing it. Nothing in this card
+              moves or reflows while the menu opens and closes, and once it is closed the text underneath can be
+              selected and clicked again, right up to the edge of the button.
+            </p>
+            <CircleMenu
+              label="share"
+              direction="bottom-left"
+              reserveSpace={false}
+              items={[
+                { icon: MailIcon, label: 'Email' },
+                { icon: LinkIcon, label: 'Copy link' },
+                {
+                  icon: MessageIcon,
+                  label: 'Message',
+                  items: [
+                    { icon: ImageIcon, label: 'Photo' },
+                    { icon: VideoIcon, label: 'Video' },
+                  ],
+                },
+              ]}
+            />
+          </div>
+        ),
+        code: `<div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+  <p style={{ flex: 1 }}>Some content…</p>
+  <CircleMenu
+    label="share"
+    direction="bottom-left"
+    reserveSpace={false}
+    items={[
+      { icon: MailIcon, label: 'Email' },
+      { icon: LinkIcon, label: 'Copy link' },
+      {
+        icon: MessageIcon,
+        label: 'Message',
+        items: [
+          { icon: ImageIcon, label: 'Photo' },
+          { icon: VideoIcon, label: 'Video' },
+        ],
+      },
+    ]}
+  />
+</div>`,
+      },
+      {
         title: 'Arc · top-right · 5 icons',
         description: 'With a narrow arc the icons move further out so they never touch.',
         preview: (
@@ -298,6 +453,124 @@ export const entries: Entry[] = [
     },
     { icon: HeartIcon, label: 'Favorites' },
     { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+      {
+        title: 'Tooltips',
+        description:
+          'Set tooltip on any item, sub-menu items included: true shows the label, or pass text/JSX, or { content, placement, delay }. By default it opens on the side facing away from the menu.',
+        stage: { minHeight: 300 },
+        preview: (
+          <CircleMenu
+            label="quick actions"
+            items={[
+              { icon: HomeIcon, label: 'Home', tooltip: true },
+              { icon: SearchIcon, label: 'Search', tooltip: 'Search the docs' },
+              {
+                icon: ShareIcon,
+                label: 'Share',
+                tooltip: { content: 'Share with…', delay: 0 },
+                items: [
+                  { icon: MailIcon, label: 'Email', tooltip: true },
+                  { icon: LinkIcon, label: 'Copy link', tooltip: true },
+                  { icon: MessageIcon, label: 'Message', tooltip: true },
+                ],
+              },
+            ]}
+          />
+        ),
+        code: `<CircleMenu
+  label="quick actions"
+  items={[
+    { icon: HomeIcon, label: 'Home', tooltip: true },
+    { icon: SearchIcon, label: 'Search', tooltip: 'Search the docs' },
+    {
+      icon: ShareIcon,
+      label: 'Share',
+      tooltip: { content: 'Share with…', delay: 0 },
+      items: [
+        { icon: MailIcon, label: 'Email', tooltip: true },
+        { icon: LinkIcon, label: 'Copy link', tooltip: true },
+        { icon: MessageIcon, label: 'Message', tooltip: true },
+      ],
+    },
+  ]}
+/>`,
+      },
+      {
+        title: 'Custom panels · circle',
+        description:
+          'panel opens any component next to the icon: a slider, a list, swatches, a form… It receives { close, back }: close() closes everything, back() only the panel. Here every item is a panel.',
+        stage: { minHeight: 380 },
+        preview: <CircleMenuPanelsDemo variant="circle" />,
+        code: `const [style, setStyle] = useState(initial)
+
+<CircleMenu
+  label="style"
+  items={[
+    {
+      icon: PaletteIcon,
+      label: 'Color',
+      tooltip: true,
+      panel: ({ back }) => (
+        <ColorPanel value={style.color} onChange={(color) => { setStyle({ ...style, color }); back() }} />
+      ),
+    },
+    {
+      icon: OpacityIcon,
+      label: 'Opacity',
+      tooltip: true,
+      // Stays open: closes on outside click or Escape
+      panel: (
+        <input type="range" min={0} max={100} value={style.opacity}
+          onChange={(e) => setStyle({ ...style, opacity: +e.target.value })} />
+      ),
+    },
+    {
+      icon: SizeIcon,
+      label: 'Font size',
+      tooltip: true,
+      // { content, placement, label } for full control
+      panel: {
+        label: 'Font size',
+        content: ({ close }) => (
+          <FontSizeList value={style.fontSize} onChange={(fontSize) => { setStyle({ ...style, fontSize }); close() }} />
+        ),
+      },
+    },
+    { icon: DashIcon, label: 'Stroke style', tooltip: true, panel: (api) => <StrokeStylePanel {...api} /> },
+    { icon: WidthIcon, label: 'Stroke width', tooltip: true, panel: (api) => <StrokeWidthPanel {...api} /> },
+  ]}
+/>`,
+      },
+      {
+        title: 'Custom panels · arc · sub-menus',
+        description:
+          'Panels work on the last branch too: Text and Line open a sub-menu, and each of its icons opens its own panel.',
+        stage: { minHeight: 420 },
+        preview: <CircleMenuPanelsDemo variant="arc" />,
+        code: `<CircleMenu
+  label="style"
+  direction="right"
+  items={[
+    { icon: PaletteIcon, label: 'Color', panel: (api) => <ColorPanel {...api} /> },
+    {
+      icon: TypeIcon,
+      label: 'Text',
+      items: [
+        { icon: SizeIcon, label: 'Font size', panel: (api) => <FontSizePanel {...api} /> },
+        { icon: OpacityIcon, label: 'Opacity', panel: <OpacitySlider /> },
+      ],
+    },
+    {
+      icon: LineIcon,
+      label: 'Line',
+      items: [
+        { icon: DashIcon, label: 'Stroke style', panel: (api) => <StrokeStylePanel {...api} /> },
+        { icon: WidthIcon, label: 'Stroke width', panel: (api) => <StrokeWidthPanel {...api} /> },
+      ],
+    },
   ]}
 />`,
       },
@@ -441,6 +714,179 @@ export const entries: Entry[] = [
   ]}
 />`,
       },
+      {
+        title: 'Custom backdrop · color, opacity, blur',
+        description: 'backdropColor, backdropOpacity (0–1) and backdropBlur (px) restyle the layer behind the dialog.',
+        preview: (
+          <DialogDemo
+            trigger="Focus mode"
+            title="Focus mode is on"
+            body={<p>Everything behind this dialog is tinted and blurred.</p>}
+            icon={SparkleIcon}
+            actions={[{ label: 'Got it', icon: CheckIcon, color: '#4f46e5', autoFocus: true }]}
+            backdropColor="#312e81"
+            backdropOpacity={0.3}
+            backdropBlur={8}
+          />
+        ),
+        code: `<Dialog
+  open={open}
+  onClose={() => setOpen(false)}
+  title="Focus mode is on"
+  icon={SparkleIcon}
+  actions={[{ label: 'Got it', icon: CheckIcon, color: '#4f46e5', autoFocus: true }]}
+  backdropColor="#312e81"
+  backdropOpacity={0.3}
+  backdropBlur={8}
+>
+  <p>Everything behind this dialog is tinted and blurred.</p>
+</Dialog>`,
+      },
+    ],
+  },
+  {
+    id: 'tooltip',
+    name: 'Tooltip',
+    description:
+      'Hover or focus the trigger: after a delay a drop leaks out of the arrow and swells into a bubble. Text or JSX.',
+    demos: [
+      {
+        title: 'Text',
+        description: 'Opens after 400ms on hover, right away on keyboard focus. You can move the pointer onto it.',
+        preview: (
+          <Tooltip content="Copy link to clipboard">
+            <DemoButton>Hover me</DemoButton>
+          </Tooltip>
+        ),
+        code: `<Tooltip content="Copy link to clipboard">
+  <button>Hover me</button>
+</Tooltip>`,
+      },
+      {
+        title: 'JSX content',
+        preview: (
+          <Tooltip
+            maxWidth={200}
+            content={
+              <span>
+                <strong>Search</strong> everything. Press <kbd>⌘K</kbd> anywhere.
+              </span>
+            }
+          >
+            <DemoButton aria-label="Search">{SearchIcon}</DemoButton>
+          </Tooltip>
+        ),
+        code: `<Tooltip
+  maxWidth={200}
+  content={
+    <span>
+      <strong>Search</strong> everything. Press <kbd>⌘K</kbd> anywhere.
+    </span>
+  }
+>
+  <button aria-label="Search"><SearchIcon /></button>
+</Tooltip>`,
+      },
+      {
+        title: 'Placement',
+        description: 'top, right, bottom, left. Without room it flips to the other side and shifts inside the viewport.',
+        preview: <TooltipPlacements />,
+        code: `<Tooltip content="Placement: right" placement="right">
+  <button>right</button>
+</Tooltip>`,
+        stage: { minHeight: 220 },
+      },
+      {
+        title: 'Custom delays',
+        preview: (
+          <Tooltip content="Instant" delay={0} closeDelay={300}>
+            <DemoButton>No delay</DemoButton>
+          </Tooltip>
+        ),
+        code: `<Tooltip content="Instant" delay={0} closeDelay={300}>
+  <button>No delay</button>
+</Tooltip>`,
+      },
+    ],
+  },
+  {
+    id: 'popover',
+    name: 'Popover',
+    description:
+      'Click the trigger: a liquid bubble drips out of the arrow and can hold forms and other components. Closes on outside click, Escape, from code or on rollout.',
+    demos: [
+      {
+        title: 'Form · close from inside',
+        description: 'Cancel uses the render-prop close; Save is a nested component that calls usePopover().close.',
+        preview: <ProfilePopover />,
+        code: `function SaveButton() {
+  const { close } = usePopover()
+  return <button onClick={() => { save(); close() }}>Save</button>
+}
+
+<Popover
+  label="Edit profile"
+  content={({ close }) => (
+    <form>
+      <label>Name <input /></label>
+      <button type="button" onClick={close}>Cancel</button>
+      <SaveButton />
+    </form>
+  )}
+>
+  <button>Ada Lovelace</button>
+</Popover>`,
+        stage: { minHeight: 320 },
+      },
+      {
+        title: 'Close on rollout',
+        description: 'closeOnLeave: it closes when the pointer leaves both trigger and bubble.',
+        preview: <HoverCard />,
+        code: `<Popover
+  closeOnLeave
+  placement="top"
+  content={<div><strong>Ada Lovelace</strong> First programmer</div>}
+>
+  <button>@ada</button>
+</Popover>`,
+        stage: { minHeight: 220 },
+      },
+      {
+        title: 'Controlled',
+        preview: <ControlledPopover />,
+        code: `const [open, setOpen] = useState(false)
+
+<Popover open={open} onOpenChange={setOpen} placement="right" content={<p>Opened from outside.</p>}>
+  <button>Popover</button>
+</Popover>
+<button onClick={() => setOpen((o) => !o)}>Toggle</button>`,
+      },
+      {
+        title: 'Nested · tooltips inside',
+        description: 'Clicks inside a nested popover do not close the parent; Escape closes the innermost one.',
+        preview: <NestedPopover />,
+        code: `<Popover
+  label="Style"
+  content={
+    <Popover
+      label="Color"
+      placement="right"
+      content={({ close }) =>
+        colors.map((c) => (
+          <Tooltip key={c} content={c} placement="bottom">
+            <button aria-label={c} onClick={() => { setColor(c); close() }} />
+          </Tooltip>
+        ))
+      }
+    >
+      <button>Color</button>
+    </Popover>
+  }
+>
+  <button>Style</button>
+</Popover>`,
+        stage: { minHeight: 260 },
+      },
     ],
   },
   {
@@ -536,6 +982,93 @@ export const entries: Entry[] = [
     ],
   },
   {
+    id: 'list',
+    name: 'List',
+    description: 'Vertical list with a liquid pill on the selected item and a lighter one that follows hover and focus.',
+    demos: [
+      {
+        title: 'Selectable',
+        description: 'Uncontrolled: the pill moves to the clicked item.',
+        preview: (
+          <div style={{ width: 240 }}>
+            <List
+              label="Mailbox"
+              defaultValue="inbox"
+              items={[
+                { id: 'inbox', label: 'Inbox', icon: MailIcon, meta: 12 },
+                { id: 'starred', label: 'Starred', icon: StarIcon, meta: 3 },
+                { id: 'saved', label: 'Saved', icon: BookmarkIcon },
+                { id: 'trash', label: 'Trash', icon: TrashIcon },
+              ]}
+            />
+          </div>
+        ),
+        code: `<List
+  label="Mailbox"
+  defaultValue="inbox"
+  items={[
+    { id: 'inbox', label: 'Inbox', icon: MailIcon, meta: 12 },
+    { id: 'starred', label: 'Starred', icon: StarIcon, meta: 3 },
+    { id: 'saved', label: 'Saved', icon: BookmarkIcon },
+    { id: 'trash', label: 'Trash', icon: TrashIcon },
+  ]}
+  onChange={(id) => console.log(id)}
+/>`,
+      },
+      {
+        title: 'Hover only',
+        description: 'No selection: the pill only follows the cursor and keyboard focus.',
+        preview: (
+          <div style={{ width: 240 }}>
+            <List
+              label="Actions"
+              highlight="hover"
+              items={[
+                { id: 'share', label: 'Share', icon: ShareIcon },
+                { id: 'copy', label: 'Copy link', icon: LinkIcon },
+                { id: 'download', label: 'Download', icon: DownloadIcon },
+              ]}
+            />
+          </div>
+        ),
+        code: `<List
+  label="Actions"
+  highlight="hover"
+  items={[
+    { id: 'share', label: 'Share', icon: ShareIcon },
+    { id: 'copy', label: 'Copy link', icon: LinkIcon },
+    { id: 'download', label: 'Download', icon: DownloadIcon },
+  ]}
+/>`,
+      },
+      {
+        title: 'Disabled item',
+        preview: (
+          <div style={{ width: 240 }}>
+            <List
+              label="Profile"
+              defaultValue="profile"
+              items={[
+                { id: 'profile', label: 'Profile', icon: UserIcon },
+                { id: 'messages', label: 'Messages', icon: MessageIcon },
+                { id: 'billing', label: 'Billing', icon: AlertIcon, disabled: true },
+              ]}
+            />
+          </div>
+        ),
+        code: `<List
+  label="Profile"
+  defaultValue="profile"
+  items={[
+    { id: 'profile', label: 'Profile', icon: UserIcon },
+    { id: 'messages', label: 'Messages', icon: MessageIcon },
+    { id: 'billing', label: 'Billing', icon: AlertIcon, disabled: true },
+  ]}
+/>`,
+      },
+    ],
+  },
+  {
     id: 'tab-bar',
     name: 'TabBar',
     description: 'Always-visible bar fixed to the bottom of the screen, with a liquid selection pill.',
@@ -570,6 +1103,9 @@ export const entries: Entry[] = [
     id: 'shape-editor',
     name: 'ShapeEditor',
     description: 'Excalidraw-style toolbar with nested popovers, revealed when the shape is selected.',
+    status: 'experimental',
+    notice:
+      "This component is an early prototype: it doesn't accept any props yet, so colors, tools and shapes can't be customized. We're working on it, and the API may change.",
     demos: [
       {
         title: 'Click the rectangle',

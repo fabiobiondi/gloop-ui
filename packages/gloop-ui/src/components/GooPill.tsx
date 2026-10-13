@@ -7,6 +7,8 @@ import {
   useTransform,
   useVelocity,
 } from 'motion/react'
+import './theme.css'
+import './GooPill.css'
 
 export type GooPillProps = {
   /** Indice dell'elemento evidenziato */

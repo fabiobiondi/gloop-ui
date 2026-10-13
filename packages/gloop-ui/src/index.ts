@@ -1,6 +1,14 @@
 // API pubblica di gloop-ui: tutto ciò che non è esportato qui resta interno
 export { default as CircleMenu } from './components/CircleMenu'
-export type { CircleMenuProps, CircleMenuItem, CircleMenuDirection } from './components/CircleMenu'
+export type {
+  CircleMenuProps,
+  CircleMenuItem,
+  CircleMenuDirection,
+  CircleMenuTooltip,
+  CircleMenuPanel,
+  CircleMenuPanelApi,
+  CircleMenuPanelContent,
+} from './components/CircleMenu'
 
 export { default as Dialog } from './components/Dialog'
 export type { DialogProps, DialogAction } from './components/Dialog'
@@ -17,6 +25,17 @@ export type { GooFilterProps } from './components/goo'
 export { default as Search } from './components/Search'
 export type { SearchProps } from './components/Search'
 
+export { default as Input } from './components/Input'
+export type { InputProps } from './components/Input'
+
+export { default as List } from './components/List'
+export type { ListProps, ListItem } from './components/List'
+
+export { default as Popover } from './components/Popover'
+export type { PopoverProps } from './components/Popover'
+export { usePopover } from './components/floating/popover-context'
+export type { PopoverApi } from './components/floating/popover-context'
+
 export { default as TabBar } from './components/TabBar'
 export type { TabBarProps, Tab as TabBarTab } from './components/TabBar'
 
@@ -30,3 +49,8 @@ export { default as TabMenuSubmenu } from './components/TabMenuSubmenu'
 export type { TabMenuSubmenuProps, Tab as TabMenuSubmenuTab } from './components/TabMenuSubmenu'
 
 export { default as ShapeEditor } from './components/shape-toolbar/ShapeEditor'
+
+export { default as Tooltip } from './components/Tooltip'
+export type { TooltipProps } from './components/Tooltip'
+
+export type { FloatingPlacement, FloatingAlign } from './components/floating/position'

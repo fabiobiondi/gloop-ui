@@ -34,10 +34,13 @@ import { ExpandButton, TabBar } from 'gloop-ui'
 | --- | --- |
 | `ExpandButton` | Icon button that expands into a label with a pop and a burst |
 | `Search` | Magnifier that stretches into a search field |
+| `Input` | Text field whose label drips out on top as a liquid tab |
 | `CircleMenu` | A "+" that throws icons around itself, with optional sub-menus |
 | `TabMenu` · `TabMenuMotion` · `TabMenuSubmenu` | Liquid tab menus that drop out of a trigger |
 | `TabBar` | Bottom navigation bar with a liquid selection pill |
 | `Dialog` | Liquid modal with icon badge and dripping actions |
+| `Tooltip` | Hover/focus tooltip that drips out of its arrow, with delay, flip and shift |
+| `Popover` | Liquid popover for forms and components: outside click, Escape, `close()` / `usePopover()`, rollout |
 | `ShapeEditor` | Excalidraw-style shape toolbar with nested popovers |
 | `GooPill` · `GooFilter` | Building blocks of the liquid effect |
 

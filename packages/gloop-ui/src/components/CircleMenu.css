@@ -9,10 +9,29 @@
   height: 0;
 }
 
+.circle-menu__layer,
 .circle-menu__blobs,
 .circle-menu__icons {
   position: absolute;
   inset: 0;
+}
+
+/*
+ * reserveSpace={false}: il livello sporge sul contenuto vicino. Da chiuso non deve
+ * bloccarne click e selezione; da aperto sta sopra i fratelli che seguono.
+ */
+.circle-menu[data-overlay] {
+  & .circle-menu__layer {
+    pointer-events: none;
+  }
+
+  & .circle-menu__btn:not([data-hidden]) {
+    pointer-events: auto;
+  }
+
+  &[data-open] {
+    z-index: 10;
+  }
 }
 
 .circle-menu__blobs {

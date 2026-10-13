@@ -21,45 +21,6 @@
   position: relative;
 }
 
-.tab-menu-submenu__list {
-  position: relative;
-  display: grid;
-  gap: 2px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tab-menu-submenu__item {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 40px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 14px;
-  font: inherit;
-  font-size: 14px;
-  text-align: left;
-  color: color-mix(in srgb, var(--ui-fg) 80%, transparent);
-  background: none;
-  cursor: pointer;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease;
-
-  &:focus-visible {
-    outline: 2px solid var(--ui-fg);
-    outline-offset: -2px;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .tab-menu-submenu__item:hover {
-    color: var(--ui-fg);
-  }
-}
-
 /* Qui i tab sono bottoni con sottomenu, non role="tab": lo stato attivo è aria-pressed */
 .tab-menu-submenu .tab-menu-motion__tab[aria-pressed='true'] {
   color: var(--ui-fg);

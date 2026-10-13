@@ -1,8 +1,9 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, MotionConfig, motion, type Transition } from 'motion/react'
 import ExpandButton from './ExpandButton'
 import { GooFilter } from './goo'
+import { useThemeVars } from './floating/useThemeVars'
 import './theme.css'
 import './Dialog.css'
 
@@ -27,6 +28,12 @@ export type DialogProps = {
   icon?: ReactNode
   /** Da 0 a N pulsanti, con o senza icona (sono ExpandButton in modalità action) */
   actions?: DialogAction[]
+  /** Colore dello sfondo dietro il dialog (default nero) */
+  backdropColor?: string
+  /** Opacità dello sfondo, da 0 a 1 (default 0.45) */
+  backdropOpacity?: number
+  /** Sfocatura della pagina dietro il dialog, in px (default 0) */
+  backdropBlur?: number
 }
 
 // Gli spazi tra badge, scheda e pulsanti: oltre ~12px il filtro goo non li fonde da fermi
@@ -39,8 +46,6 @@ const swell: Transition = { type: 'spring', stiffness: 380, damping: 22, mass: 0
 const drip: Transition = { type: 'spring', stiffness: 300, damping: 18 }
 const suck: Transition = { type: 'spring', stiffness: 520, damping: 40 }
 
-const THEME_VARS = ['--ui-bg', '--ui-fg', '--ui-accent']
-
 /*
  * Dialog "liquido". Tre forme dentro un filtro goo:
  * - la scheda, che nasce piccola e schiacciata e si gonfia con un piccolo rimbalzo
@@ -51,23 +56,33 @@ const THEME_VARS = ['--ui-bg', '--ui-fg', '--ui-accent']
  * È renderizzato in un portal su <body>: i colori del tema (--ui-*) vengono letti
  * dal punto in cui il Dialog è usato e riapplicati, così segue il tema locale.
  */
-function Dialog({ open, onClose, title, children, icon, actions = [] }: DialogProps) {
+function Dialog({
+  open,
+  onClose,
+  title,
+  children,
+  icon,
+  actions = [],
+  backdropColor,
+  backdropOpacity,
+  backdropBlur,
+}: DialogProps) {
   const anchorRef = useRef<HTMLSpanElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
-  const [themeVars, setThemeVars] = useState<CSSProperties>({})
+  // Colori del tema dal punto di utilizzo (il dialog è in un portal)
+  const themeVars = useThemeVars(anchorRef, open)
   const titleId = useId()
   const bodyId = useId()
   const filterId = useId()
 
-  // Colori del tema dal punto di utilizzo, prima del primo frame (niente lampo di colori)
-  useLayoutEffect(() => {
-    if (!open || !anchorRef.current) return
-    const style = getComputedStyle(anchorRef.current)
-    setThemeVars(
-      Object.fromEntries(THEME_VARS.map((v) => [v, style.getPropertyValue(v).trim()])) as CSSProperties,
-    )
-  }, [open])
+  // Solo i valori passati: per gli altri valgono i default del CSS
+  const backdropVars = {
+    '--dialog-backdrop-color': backdropColor,
+    '--dialog-backdrop-opacity': backdropOpacity === undefined ? undefined : Math.min(1, Math.max(0, backdropOpacity)),
+    '--dialog-backdrop-blur': backdropBlur === undefined ? undefined : `${Math.max(0, backdropBlur)}px`,
+  } as CSSProperties
+
 
   useEffect(() => {
     if (!open) return
@@ -127,6 +142,7 @@ function Dialog({ open, onClose, title, children, icon, actions = [] }: DialogPr
                 <motion.div
                   className="dialog-backdrop"
                   aria-hidden="true"
+                  style={backdropVars}
                   onClick={onClose}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1, transition: { duration: 0.2 } }}

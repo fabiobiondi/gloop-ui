@@ -18,6 +18,11 @@ export type SearchProps = {
   /** Larghezza da aperto, in px */
   width?: number
   onSearch?: (query: string) => void
+  /**
+   * true: lo spazio da aperto è riservato subito, il contenuto a destra resta fermo.
+   * false: lo slot cresce con il campo e spinge il contenuto a destra.
+   */
+  reserveSpace?: boolean
 }
 
 const CLOSED_WIDTH = 44
@@ -98,7 +103,12 @@ function SearchCloseIcon({ open }: { open: boolean }) {
   )
 }
 
-function Search({ placeholder = 'Search…', width = 280, onSearch }: SearchProps) {
+function Search({
+  placeholder = 'Search…',
+  width = 280,
+  onSearch,
+  reserveSpace = true,
+}: SearchProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLFormElement>(null)
@@ -115,6 +125,8 @@ function Search({ placeholder = 'Search…', width = 280, onSearch }: SearchProp
   // Gelatina: più la molla corre, più il campo si schiaccia; da fermo torna normale
   const velocity = useVelocity(progress)
   const scaleY = useTransform(velocity, [-8, 0, 8], [0.86, 1, 0.86])
+  // Il bordo destro visibile del campo: lo slot lo segue (molla compresa) e spinge i vicini
+  const slotWidth = useTransform(progress, (p) => CLOSED_WIDTH + p * hidden)
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
@@ -133,8 +145,15 @@ function Search({ placeholder = 'Search…', width = 280, onSearch }: SearchProp
 
   return (
     <MotionConfig reducedMotion="user">
-      {/* Lo slot ha già la larghezza da aperto: il campo cresce solo verso destra */}
-      <div className="search-slot" style={{ width: width + OVERSHOOT }}>
+      {/*
+       * reserveSpace: lo slot ha già la larghezza da aperto, il campo cresce solo verso destra.
+       * Altrimenti lo slot coincide con il bordo del clip-path e taglia il resto del form.
+       */}
+      <motion.div
+        className="search-slot"
+        data-push={reserveSpace ? undefined : true}
+        style={{ width: reserveSpace ? width + OVERSHOOT : slotWidth }}
+      >
         <motion.form
           ref={rootRef}
           role="search"
@@ -211,7 +230,7 @@ function Search({ placeholder = 'Search…', width = 280, onSearch }: SearchProp
             )}
           </AnimatePresence>
         </motion.form>
-      </div>
+      </motion.div>
     </MotionConfig>
   )
 }

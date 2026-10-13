@@ -1,0 +1,86 @@
+/* Misure impostate da ListCore (--list-item-height, --list-gap, --list-radius) */
+.list__body {
+  position: relative;
+
+  /* Colore della pillola: si personalizza con --list-pill */
+  & .goo-pill__blob {
+    background: var(--list-pill, var(--ui-fg));
+  }
+}
+
+.list__items {
+  position: relative;
+  display: grid;
+  gap: var(--list-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: var(--list-item-height);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--list-radius);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  color: var(--list-fg-muted, color-mix(in srgb, var(--ui-fg) 80%, transparent));
+  background: none;
+  cursor: pointer;
+  transition: color 150ms ease;
+
+  &[aria-current]:not([aria-current='false']) {
+    font-weight: 500;
+    color: var(--list-fg, var(--ui-fg));
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--list-focus, var(--ui-fg));
+    outline-offset: -2px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .list__item:not(:disabled, [aria-disabled='true']):hover {
+    color: var(--list-fg, var(--ui-fg));
+  }
+}
+
+.list__icon {
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+
+  & svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.list__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list__meta {
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--list-fg-muted, color-mix(in srgb, var(--ui-fg) 60%, transparent));
+}

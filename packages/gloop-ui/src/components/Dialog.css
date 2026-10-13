@@ -10,7 +10,12 @@
 .dialog-backdrop {
   position: absolute;
   inset: 0;
-  background: rgb(0 0 0 / 0.45);
+  background: color-mix(
+    in srgb,
+    var(--dialog-backdrop-color, #000) calc(var(--dialog-backdrop-opacity, 0.45) * 100%),
+    transparent
+  );
+  backdrop-filter: blur(var(--dialog-backdrop-blur, 0px));
 }
 
 /* Badge, scheda e pulsanti in colonna: il filtro goo li fonde mentre si muovono */
