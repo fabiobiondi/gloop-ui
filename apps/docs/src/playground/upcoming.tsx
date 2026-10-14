@@ -2,10 +2,21 @@ import { useId } from 'react'
 import type { Guide } from './guides'
 import './upcoming.css'
 
-// Una goccia che si stacca e rientra (filtro goo SVG, come il logo)
+// Ingresso: una gocciolina cade dall'alto, si schiaccia sul fondo, rimbalza
+// e si gonfia fino al blob; poi inizia a colare (filtro goo SVG, come il logo)
+const INTRO = 1.2
+const intro = {
+  dur: `${INTRO}s`,
+  fill: 'freeze',
+  calcMode: 'spline',
+  keyTimes: '0;.4;.52;.78;.9;1',
+  // caduta accelerata, schiacciata, gonfiata in salita, assestamento
+  keySplines: '.55 0 1 .45;0 0 .2 1;.2 .8 .3 1;.45 0 .55 1;.45 0 .55 1',
+} as const
+
 function Drop() {
   const id = useId()
-  const ease = { calcMode: 'spline', keySplines: '.45 0 .55 1;.45 0 .55 1', repeatCount: 'indefinite' } as const
+  const ease = { calcMode: 'spline', keySplines: '.45 0 .55 1;.45 0 .55 1', repeatCount: 'indefinite', begin: `${INTRO}s` } as const
   return (
     <svg className="soon__blob" viewBox="0 0 100 120" aria-hidden="true">
       <defs>
@@ -19,13 +30,21 @@ function Drop() {
         </filter>
       </defs>
       <g filter={`url(#${id}-goo)`} fill={`url(#${id}-g)`}>
-        <circle cx="50" cy="42" r="32" />
-        <circle cx="50" cy="78" r="12">
-          <animate attributeName="cy" values="74;102;74" dur="2.8s" {...ease} />
+        <ellipse cx="50" cy="0" rx="9" ry="9" opacity="0">
+          <animate attributeName="opacity" values="0;1" dur=".15s" fill="freeze" />
+          <animate attributeName="cy" values="0;96;100;36;44;42" {...intro} />
+          <animate attributeName="rx" values="9;8;18;29;34;32" {...intro} />
+          <animate attributeName="ry" values="9;11;9;36;30;32" {...intro} />
+        </ellipse>
+        {/* Nascosta (r=0) finché il blob non è formato; ogni ciclo parte da dentro il blob */}
+        <circle cx="50" cy="56" r="0">
+          <animate attributeName="cy" values="56;102;56" dur="2.8s" {...ease} />
           <animate attributeName="r" values="13;10;13" dur="2.8s" {...ease} />
         </circle>
       </g>
-      <ellipse cx="38" cy="28" rx="9" ry="5" fill="#fff" opacity=".45" transform="rotate(-30 38 28)" />
+      <ellipse cx="38" cy="28" rx="9" ry="5" fill="#fff" opacity="0" transform="rotate(-30 38 28)">
+        <animate attributeName="opacity" values="0;.45" begin={`${INTRO - 0.3}s`} dur=".3s" fill="freeze" />
+      </ellipse>
     </svg>
   )
 }
