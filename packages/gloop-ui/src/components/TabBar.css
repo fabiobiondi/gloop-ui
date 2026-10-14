@@ -1,13 +1,6 @@
 /* Tab, icone e pillola liquida riusano gli stili di TabMenuMotion.css */
 
 .tab-bar {
-  position: fixed;
-  z-index: 50;
-  /* Sopra la "home indicator" degli iPhone */
-  bottom: max(16px, env(safe-area-inset-bottom));
-  left: 50%;
-  /* Centratura con translate: transform resta libero per l'animazione d'ingresso */
-  translate: -50% 0;
   display: flex;
   border-radius: 26px;
   color: var(--ui-fg);
@@ -23,4 +16,85 @@
   & .tab-menu-motion__tab[aria-current='page'] {
     color: var(--ui-fg);
   }
+}
+
+.tab-bar[data-position='fixed'] {
+  position: fixed;
+  z-index: 50;
+  /* Sopra la "home indicator" degli iPhone */
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  /* Centratura con translate: transform resta libero per l'animazione d'ingresso */
+  translate: -50% 0;
+}
+
+.tab-bar[data-position='static'] {
+  /* Contenitore della pillola (position: absolute) */
+  position: relative;
+  display: inline-flex;
+}
+
+/* ---------- Layout inline: icona, label e value in riga, larghezza dal contenuto ---------- */
+
+.tab-bar[data-layout='inline'] {
+  padding: 4px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ui-fg) 8%, transparent);
+
+  & .tab-menu-motion__tab {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    width: auto;
+    height: 44px;
+    padding: 0 16px;
+    font-size: 15px;
+    white-space: nowrap;
+
+    &:focus-visible {
+      border-radius: 16px;
+    }
+  }
+
+  & .tab-bar__value {
+    position: relative;
+  }
+}
+
+/* ---------- Value: contatore accanto alla label ---------- */
+
+.tab-bar__value {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: color-mix(in srgb, var(--ui-fg) 75%, transparent);
+  background: color-mix(in srgb, var(--ui-fg) 12%, transparent);
+  transition:
+    color 200ms ease,
+    background-color 200ms ease;
+}
+
+.tab-menu-motion__tab[aria-current='page'] .tab-bar__value {
+  color: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-fg));
+  background: color-mix(in srgb, var(--ui-accent) 22%, transparent);
+}
+
+/* Stacked: il value diventa un badge in alto a destra dell'icona */
+.tab-bar[data-layout='stacked'] .tab-bar__value {
+  position: absolute;
+  top: 4px;
+  left: calc(50% + 4px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
 }

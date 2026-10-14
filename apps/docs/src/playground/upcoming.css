@@ -11,23 +11,15 @@
   background: var(--pg-surface);
 }
 
-.soon__blob {
-  width: 96px;
-  height: 116px;
-  margin-bottom: 4px;
-  overflow: visible;
-}
+.soon__loading {
+  & .gloop-loading__title {
+    font-family: Fredoka, ui-rounded, system-ui, sans-serif;
+  }
 
-.soon__title {
-  margin: 0;
-  font-family: Fredoka, ui-rounded, system-ui, sans-serif;
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.soon__text {
-  margin: 0;
-  color: var(--pg-muted);
+  & .gloop-loading__description {
+    opacity: 1;
+    color: var(--pg-muted);
+  }
 }
 
 .soon__ideas {

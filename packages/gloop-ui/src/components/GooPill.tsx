@@ -15,7 +15,7 @@ export type GooPillProps = {
   index: number
   /** Distanza tra un elemento e il successivo lungo l'asse, in px */
   step: number
-  /** Lunghezza della pillola lungo l'asse (default: step) */
+  /** Lunghezza della pillola lungo l'asse (default: step); se cambia si allunga con la stessa molla */
   length?: number
   /** Distanza della pillola dai bordi dell'elemento, in px */
   inset?: number
@@ -27,6 +27,9 @@ export type GooPillProps = {
   /** Ritardo della comparsa, in secondi */
   delay?: number
 }
+
+const headSpring = { stiffness: 520, damping: 34 }
+const tailSpring = { stiffness: 170, damping: 20 }
 
 /*
  * Pillola "liquida": due gocce seguono l'elemento evidenziato con molle diverse.
@@ -48,8 +51,13 @@ function GooPill({
   const reduceMotion = useReducedMotion()
 
   const target = useMotionValue(index * step)
-  const head = useSpring(target, { stiffness: 520, damping: 34 })
-  const tail = useSpring(target, { stiffness: 170, damping: 20 })
+  const head = useSpring(target, headSpring)
+  const tail = useSpring(target, tailSpring)
+
+  // Elementi di larghezza diversa (TabBar inline): anche la lunghezza segue testa e coda
+  const size = useMotionValue(length - inset * 2)
+  const headSize = useSpring(size, headSpring)
+  const tailSize = useSpring(size, tailSpring)
 
   // Più va veloce, più la testa si allunga lungo l'asse e si assottiglia (squash & stretch)
   const velocity = useVelocity(head)
@@ -60,10 +68,14 @@ function GooPill({
     target.set(index * step)
   }, [index, step, target])
 
-  const box =
+  useEffect(() => {
+    size.set(length - inset * 2)
+  }, [length, inset, size])
+
+  const box = (value: typeof size) =>
     axis === 'x'
-      ? { top: inset, bottom: inset, left: inset, width: length - inset * 2 }
-      : { left: inset, right: inset, top: inset, height: length - inset * 2 }
+      ? { top: inset, bottom: inset, left: inset, width: value }
+      : { left: inset, right: inset, top: inset, height: value }
 
   const move = (value: typeof head) => (axis === 'x' ? { x: value } : { y: value })
   const deform = reduceMotion
@@ -89,12 +101,12 @@ function GooPill({
       </svg>
 
       {!reduceMotion && (
-        <motion.span className="goo-pill__blob" style={{ ...box, borderRadius: radius, ...move(tail) }} />
+        <motion.span className="goo-pill__blob" style={{ ...box(tailSize), borderRadius: radius, ...move(tail) }} />
       )}
       <motion.span
         className="goo-pill__blob"
         style={{
-          ...box,
+          ...box(reduceMotion ? size : headSize),
           borderRadius: radius,
           ...move(reduceMotion ? target : head),
           ...deform,

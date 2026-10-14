@@ -16,6 +16,9 @@ export type { DialogProps, DialogAction } from './components/Dialog'
 export { default as ExpandButton } from './components/ExpandButton'
 export type { ExpandButtonProps } from './components/ExpandButton'
 
+export { default as GloopLoading } from './components/GloopLoading'
+export type { GloopLoadingProps } from './components/GloopLoading'
+
 export { default as GooPill } from './components/GooPill'
 export type { GooPillProps } from './components/GooPill'
 

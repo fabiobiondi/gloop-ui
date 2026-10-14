@@ -67,6 +67,12 @@ export const MailIcon = (
   </svg>
 )
 
+export const FolderIcon = (
+  <svg {...svgProps}>
+    <path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+  </svg>
+)
+
 export const LinkIcon = (
   <svg {...svgProps}>
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />

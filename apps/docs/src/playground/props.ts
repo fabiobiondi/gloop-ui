@@ -140,10 +140,22 @@ export const propsById: Record<string, PropDoc[]> = {
     attached('A liquid neck keeps the open sub-menu joined to its tab. false: no drop between them, the sub-menu appears on its own without melting into the tab.'),
   ],
   'tab-bar': [
-    { name: 'tabs', type: '{ icon: ReactNode; label: string }[]', required: true, description: 'Tabs of the bar.' },
+    { name: 'tabs', type: '{ icon: ReactNode; label: string; value?: ReactNode }[]', required: true, description: 'Tabs of the bar. value: a counter or badge next to the label (inline) or on the icon (stacked).' },
     { name: 'label', type: 'string', default: "'Main'", description: 'Accessible name of the navigation.' },
     { name: 'onChange', type: '(index: number) => void', description: 'Called with the index of the selected tab.' },
     { name: 'enterFrom', type: "'bottom' | 'top' | 'left' | 'right' | false", default: "'bottom'", description: 'Side the bar slides in from on mount. false: no entrance animation.' },
+    { name: 'layout', type: "'stacked' | 'inline'", default: "'stacked'", description: 'stacked: icon above the label, fixed-width tabs. inline: icon, label and value on one row, each tab as wide as its content.' },
+    { name: 'position', type: "'fixed' | 'static'", default: "'fixed'", description: 'fixed: pinned to the bottom of the viewport. static: in the page flow, e.g. inside a header.' },
+  ],
+  'gloop-loading': [
+    { name: 'title', type: 'ReactNode', description: 'Text under the blob, e.g. "Loading". Announced by screen readers (role="status").' },
+    { name: 'description', type: 'ReactNode', description: 'Secondary, dimmer text under the title.' },
+    { name: 'label', type: 'string', default: "'Loading'", description: 'Accessible name when there is no title.' },
+    { name: 'size', type: 'number', default: '96', description: 'Width of the blob, in px; the height follows (×1.2).' },
+    { name: 'color', type: 'string | [string, string]', default: "['#ff7ab6', '#7b5cff']", description: 'Solid color, or a [from, to] diagonal gradient.' },
+    { name: 'speed', type: 'number', default: '1', description: 'Speed multiplier of the fall and the drip: 2 is twice as fast, 0.5 half as fast.' },
+    { name: 'intro', type: 'boolean', default: 'true', description: 'The drop falls in, bounces and swells before dripping. false: the blob is there from the start. Static with prefers-reduced-motion.' },
+    { name: 'className / style', type: 'string / CSSProperties', description: 'Applied to the root element.' },
   ],
   'shape-editor': [],
 }

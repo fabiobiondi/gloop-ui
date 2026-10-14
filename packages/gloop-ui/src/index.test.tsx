@@ -6,6 +6,7 @@ import {
   CircleMenu,
   Dialog,
   ExpandButton,
+  GloopLoading,
   GooPill,
   Input,
   List,
@@ -28,6 +29,7 @@ describe('render', () => {
   it.each([
     ['CircleMenu', () => <CircleMenu items={[{ icon, label: 'Share' }, { icon, label: 'Copy' }]} />],
     ['ExpandButton', () => <ExpandButton icon={icon} label="Like" />],
+    ['GloopLoading', () => <GloopLoading title="Loading" description="Almost there" />],
     ['GooPill', () => <GooPill index={0} step={40} />],
     ['Input', () => <Input label="Email" />],
     ['List', () => <List items={[{ id: 'a', label: 'A' }]} />],
@@ -282,6 +284,26 @@ describe('TabBar', () => {
     render(<TabBar tabs={tabs} onChange={onChange} />)
     await userEvent.click(screen.getByRole('button', { name: /Search/ }))
     expect(onChange).toHaveBeenCalledWith(1)
+  })
+
+  it('shows the value inside the tab in the inline layout', () => {
+    render(<TabBar layout="inline" position="static" tabs={[{ icon, label: 'Links', value: 2 }]} />)
+    expect(screen.getByRole('navigation').dataset.layout).toBe('inline')
+    expect(screen.getByRole('button', { name: 'Links 2' })).toBeTruthy()
+  })
+})
+
+describe('GloopLoading', () => {
+  it('is a status region named by its title, or by label without one', () => {
+    const { rerender } = render(<GloopLoading title="Uploading" />)
+    expect(screen.getByRole('status').textContent).toBe('Uploading')
+    rerender(<GloopLoading label="Fetching data" />)
+    expect(screen.getByRole('status', { name: 'Fetching data' })).toBeTruthy()
+  })
+
+  it('sizes the blob from size', () => {
+    render(<GloopLoading size={48} />)
+    expect(screen.getByRole('status').style.getPropertyValue('--gloop-loading-size')).toBe('48px')
   })
 })
 

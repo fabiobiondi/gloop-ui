@@ -1,0 +1,26 @@
+.gloop-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+/* viewBox 100×120: l'altezza segue la larghezza */
+.gloop-loading__blob {
+  width: var(--gloop-loading-size);
+  height: calc(var(--gloop-loading-size) * 1.2);
+  margin-bottom: 4px;
+  overflow: visible;
+}
+
+.gloop-loading__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.gloop-loading__description {
+  margin: 0;
+  opacity: 0.65;
+}

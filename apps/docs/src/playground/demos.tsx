@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import {
   CircleMenu,
   ExpandButton,
+  GloopLoading,
   Input,
   List,
   Search,
@@ -16,6 +17,7 @@ import {
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo, { DialogFormDemo } from './DialogDemo'
 import { ControlledSliderDemo } from './SliderDemo'
+import { GloopLoadingPlayground } from './GloopLoadingDemo'
 import { AutoPlacementDemo, DirectionDemo } from './DirectionDemo'
 import {
   CardMenuPopover,
@@ -34,6 +36,7 @@ import {
   CameraIcon,
   CopyIcon,
   DownloadIcon,
+  FolderIcon,
   HeartIcon,
   HomeIcon,
   ImageIcon,
@@ -1705,7 +1708,8 @@ function invite() {
     id: 'tab-bar',
     name: 'TabBar',
     group: 'menus',
-    description: 'Always-visible bar fixed to the bottom of the screen, with a liquid selection pill.',
+    description:
+      'Always-visible navigation bar with a liquid selection pill: fixed to the bottom of the screen, or inline in a header.',
     demos: [
       {
         title: 'Default',
@@ -1757,6 +1761,57 @@ function invite() {
     { icon: SearchIcon, label: 'Search' },
     { icon: HeartIcon, label: 'Saved' },
     { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+      {
+        title: 'Inline with values',
+        description:
+          'layout="inline" puts icon, label and value on one row; each tab is as wide as its content and the pill stretches to follow it. position="static" keeps the bar in the page flow, e.g. in a header.',
+        stage: { minHeight: 160 },
+        preview: (
+          <TabBar
+            layout="inline"
+            position="static"
+            enterFrom={false}
+            tabs={[
+              { icon: HomeIcon, label: 'Home', value: 3 },
+              { icon: FolderIcon, label: 'Projects', value: 3 },
+              { icon: LinkIcon, label: 'Links', value: 2 },
+            ]}
+          />
+        ),
+        code: `<TabBar
+  layout="inline"
+  position="static"
+  enterFrom={false}
+  tabs={[
+    { icon: HomeIcon, label: 'Home', value: 3 },
+    { icon: FolderIcon, label: 'Projects', value: 3 },
+    { icon: LinkIcon, label: 'Links', value: 2 },
+  ]}
+/>`,
+      },
+      {
+        title: 'Values as badges',
+        description: 'In the default stacked layout the value becomes a small badge next to the icon.',
+        stage: { minHeight: 220, device: true },
+        preview: (
+          <TabBar
+            tabs={[
+              { icon: HomeIcon, label: 'Home' },
+              { icon: MessageIcon, label: 'Inbox', value: 12 },
+              { icon: HeartIcon, label: 'Saved' },
+              { icon: UserIcon, label: 'Profile', value: '!' },
+            ]}
+          />
+        ),
+        code: `<TabBar
+  tabs={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: MessageIcon, label: 'Inbox', value: 12 },
+    { icon: HeartIcon, label: 'Saved' },
+    { icon: UserIcon, label: 'Profile', value: '!' },
   ]}
 />`,
       },
@@ -1822,6 +1877,48 @@ function invite() {
         ),
         code: `<ExpandButton drip="hover" icon={BookmarkIcon} label="Saved" activeColor="#2563eb" />
 <ExpandButton drip="hover" variant="action" label="Delete" icon={TrashIcon} activeColor="#e11d48" />`,
+      },
+    ],
+  },
+  {
+    id: 'gloop-loading',
+    name: 'GloopLoading',
+    group: 'various',
+    description: 'A liquid loader: a drop falls in, bounces, swells into a blob and keeps dripping.',
+    demos: [
+      {
+        title: 'Title and description',
+        stage: { minHeight: 280 },
+        preview: <GloopLoading title="Loading" description="Fetching your data…" />,
+        code: `<GloopLoading title="Loading" description="Fetching your data…" />`,
+      },
+      {
+        title: 'Try it',
+        description: 'Change the size, the color and the speed of the blob.',
+        stage: { minHeight: 420 },
+        preview: <GloopLoadingPlayground />,
+        code: `<GloopLoading
+  size={96}
+  speed={1}
+  color={['#ff7ab6', '#7b5cff']}
+  title="Loading"
+  description="Fetching your data…"
+/>`,
+      },
+      {
+        title: 'Solid colors, sizes and speeds',
+        description: 'Without a title it is announced with label (default "Loading"). intro={false} skips the fall and starts dripping right away.',
+        stage: { minHeight: 200 },
+        preview: (
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 32 }}>
+            <GloopLoading size={40} speed={2} color="#e11d48" intro={false} />
+            <GloopLoading size={64} color={['#38bdf8', '#2563eb']} />
+            <GloopLoading size={88} speed={0.5} color="#16a34a" title="Slow" />
+          </div>
+        ),
+        code: `<GloopLoading size={40} speed={2} color="#e11d48" intro={false} />
+<GloopLoading size={64} color={['#38bdf8', '#2563eb']} />
+<GloopLoading size={88} speed={0.5} color="#16a34a" title="Slow" />`,
       },
     ],
   },
