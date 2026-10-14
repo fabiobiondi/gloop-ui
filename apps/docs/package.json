@@ -13,6 +13,7 @@
     "gloop-ui": "*"
   },
   "devDependencies": {
+    "react-icons": "^5.7.0",
     "shiki": "^4.5.0"
   }
 }

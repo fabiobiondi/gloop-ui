@@ -3,6 +3,15 @@ import changelog from '../../../../packages/gloop-ui/CHANGELOG.md?raw'
 import { CodeBlock } from './CodeBlock'
 import { Markdown } from './Markdown'
 import { Home } from './Home'
+import {
+  DIALOG_CODE,
+  DialogExample,
+  EXPAND_BUTTON_CODE,
+  ExpandButtonExample,
+  REACT_ICONS_INSTALL,
+  TAB_BAR_CODE,
+  TabBarExample,
+} from './ReactIconsDemos'
 
 export type Guide = {
   id: string
@@ -73,7 +82,8 @@ export const guides: Guide[] = [
 
         <h2>Use a component</h2>
         <p>
-          Icons are plain <code>ReactNode</code>s: use any icon set you like (Lucide, Heroicons, your own SVGs).
+          Icons are plain <code>ReactNode</code>s: use any icon set you like (Lucide, Heroicons, your own SVGs). See{' '}
+          <a href="#react-icons">With React Icons</a>.
         </p>
         <CodeBlock code={USAGE} />
 
@@ -113,6 +123,54 @@ export const guides: Guide[] = [
         <p>
           <code>Dialog</code> renders in a portal on <code>&lt;body&gt;</code>, but it reads the variables from where
           you place it, so it follows the local theme too.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'react-icons',
+    name: 'With React Icons',
+    description: 'Use any React Icons set: pass the icon element to the icon prop.',
+    content: (
+      <div className="pg-prose">
+        <h2>Install</h2>
+        <CodeBlock code={REACT_ICONS_INSTALL} lang="bash" />
+
+        <h2>How it works</h2>
+        <p>
+          Every <code>icon</code> prop takes a <code>ReactNode</code>, so pass the element:{' '}
+          <code>{'icon={<FaHeart />}'}</code>, not <code>{'icon={FaHeart}'}</code>. The component sizes the icon and
+          colors it through <code>currentColor</code>, so you don't need <code>size</code> or <code>color</code>.
+          Outline sets (Lucide, Feather) and filled sets (Font Awesome, Material) both work.
+        </p>
+
+        <h2>ExpandButton with Font Awesome</h2>
+        <p>
+          When active, the button fills the icon. That effect shows on outline icons only, so use the <code>Reg</code>{' '}
+          variant here.
+        </p>
+        <div className="pg-stage" style={{ minHeight: 160 }}>
+          <ExpandButtonExample />
+        </div>
+        <CodeBlock code={EXPAND_BUTTON_CODE} />
+
+        <h2>TabBar with Lucide</h2>
+        <div className="pg-stage" style={{ minHeight: 160 }}>
+          <TabBarExample />
+        </div>
+        <CodeBlock code={TAB_BAR_CODE} />
+
+        <h2>Dialog with Material Design</h2>
+        <p>The badge and each action take an icon too.</p>
+        <div className="pg-stage" style={{ minHeight: 160 }}>
+          <DialogExample />
+        </div>
+        <CodeBlock code={DIALOG_CODE} />
+
+        <h2>Limits</h2>
+        <p>
+          A few icons are drawn inside the components and can't be replaced: the toolbar icons of{' '}
+          <code>ShapeEditor</code> and the submenu chevron of <code>CircleMenu</code>. They keep a Lucide-like style.
         </p>
       </div>
     ),
