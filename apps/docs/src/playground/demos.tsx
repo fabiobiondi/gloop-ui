@@ -2060,9 +2060,6 @@ function invite() {
     status: 'experimental',
     notice:
       "This component is an early prototype: it doesn't accept any props yet, so colors, tools and shapes can't be customized. We're working on it, and the API may change.",
-    card: <div className="cgrid-shape">
-        <ShapeEditor />
-      </div>,
     demos: [
       {
         title: 'Click the rectangle',

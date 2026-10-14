@@ -122,21 +122,3 @@
   line-height: 1.5;
   color: var(--pg-muted);
 }
-
-
-/* ShapeEditor è pensato a tutta pagina: nella card la tela si stringe e niente margini */
-.cgrid-shape {
-  width: 100%;
-
-  & .st-canvas {
-    gap: 4px;
-    width: 100%;
-    padding: 0;
-    background-color: transparent;
-  }
-
-  & .st-shape {
-    width: 140px;
-    height: 72px;
-  }
-}

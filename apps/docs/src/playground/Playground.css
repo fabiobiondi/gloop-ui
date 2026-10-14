@@ -779,17 +779,27 @@
 
 .pg-brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   padding: 0 12px;
 }
 
 .pg-brand__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--pg-text);
   text-decoration: none;
+}
+
+/* Il marchio prima del nome: le gocce escono sotto, quindi un filo più grande del testo */
+.pg-brand__mark {
+  flex: none;
+  width: 28px;
+  height: 28px;
 }
 
 .pg-brand__version {
@@ -889,14 +899,6 @@
     background: color-mix(in srgb, #f59e0b 12%, transparent);
   }
 
-  /* Pagina statica incorporata (es. bozze del logo) */
-  & .pg-frame {
-    width: 100%;
-    height: min(80vh, 900px);
-    border: 1px solid var(--pg-border);
-    border-radius: 16px;
-    background: var(--pg-surface);
-  }
 
   /* Il CodeBlock delle demo ha gli angoli bassi arrotondati: qui è isolato */
   & .pg-code pre {
@@ -965,4 +967,11 @@
 .pg-props__required {
   margin-left: 2px;
   color: #e11d48;
+}
+
+/* Pagina statica incorporata a tutta altezza (bozze del logo): l'altezza la imposta il componente */
+.pg-frame-full {
+  display: block;
+  width: 100%;
+  border: 0;
 }

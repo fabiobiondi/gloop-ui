@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { List, Tooltip } from 'gloop-ui'
 import { version } from 'gloop-ui/package.json'
 import { CodeBlock } from './CodeBlock'
+import { GloopMark } from './GloopMark'
 import { entries, type Demo, type Entry } from './demos'
 import { guides, type Guide } from './guides'
 import { propsById, type PropDoc } from './props'
@@ -389,6 +390,7 @@ function Playground() {
       {/* Solo su schermi stretti (CSS): marchio e hamburger */}
       <header className="pg-topbar">
         <a href="#what-is-gloop" className="pg-brand__name">
+          <GloopMark className="pg-brand__mark" />
           gloop-ui
         </a>
         <button
@@ -419,6 +421,7 @@ function Playground() {
       >
         <header className="pg-brand">
           <a href="#what-is-gloop" className="pg-brand__name">
+            <GloopMark className="pg-brand__mark" />
             gloop-ui
           </a>
           <a href="#changelog" className="pg-brand__version" title="Changelog">

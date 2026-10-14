@@ -36,7 +36,10 @@ function ComponentCard({ entry }: { entry: Entry }) {
   )
 }
 
-// Tutti i componenti della libreria, nell'ordine della sidebar
+// ShapeEditor è pensato a tutta pagina: nella griglia non ci sta
+const HIDDEN = new Set(['shape-editor'])
+
+// I componenti della libreria, nell'ordine della sidebar
 export function ComponentGrid() {
   return (
     <section className="cgrid" aria-labelledby="cgrid-title">
@@ -44,9 +47,11 @@ export function ComponentGrid() {
         Components
       </h2>
       <ul className="cgrid-list">
-        {entries.map((entry) => (
-          <ComponentCard key={entry.id} entry={entry} />
-        ))}
+        {entries
+          .filter((entry) => !HIDDEN.has(entry.id))
+          .map((entry) => (
+            <ComponentCard key={entry.id} entry={entry} />
+          ))}
       </ul>
     </section>
   )

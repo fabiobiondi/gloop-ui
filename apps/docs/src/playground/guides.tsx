@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import changelog from '../../../../packages/gloop-ui/CHANGELOG.md?raw'
 import { CodeBlock } from './CodeBlock'
 import { Markdown } from './Markdown'
@@ -55,6 +55,40 @@ const THEME_INLINE = `<div style={{ '--ui-bg': '#312e81', '--ui-accent': '#f472b
 
 // Pagina statica in public/: vive fuori dall'app React, quindi va caricata in un iframe
 const LOGO_DRAFTS_URL = `${import.meta.env.BASE_URL}logo-drafts.html`
+
+// L'iframe prende l'altezza del suo contenuto (stessa origine): niente scroll interno,
+// la pagina dei loghi scorre insieme alla pagina docs
+function LogoDraftsFrame() {
+  const ref = useRef<HTMLIFrameElement>(null)
+  const [height, setHeight] = useState(900)
+  const observer = useRef<ResizeObserver | null>(null)
+
+  useEffect(() => () => observer.current?.disconnect(), [])
+
+  const onLoad = () => {
+    const doc = ref.current?.contentDocument
+    if (!doc) return
+    // Si fonde con la pagina docs: niente sfondo né margini propri
+    const style = doc.createElement('style')
+    style.textContent = 'body, .toolbar { background: transparent } .wrap { padding: 24px 0 0 }'
+    doc.head.append(style)
+    observer.current?.disconnect()
+    observer.current = new ResizeObserver(() => setHeight(doc.documentElement.scrollHeight))
+    observer.current.observe(doc.body)
+  }
+
+  return (
+    <iframe
+      ref={ref}
+      className="pg-frame-full"
+      src={LOGO_DRAFTS_URL}
+      title="gloop-ui logo drafts"
+      scrolling="no"
+      style={{ height }}
+      onLoad={onLoad}
+    />
+  )
+}
 
 export const guides: Guide[] = [
   {
@@ -179,21 +213,18 @@ export const guides: Guide[] = [
     id: 'logo-draft',
     name: 'Logo Draft',
     description: 'Ideas for a gloop-ui logo. Work in progress: none of them is the official logo yet.',
+    // La pagina statica ha già titolo e intro
+    hideHeader: true,
     content: (
-      <div className="pg-prose">
-        <p className="pg-callout">
-          <strong>Work in progress.</strong> These are early drafts we are still choosing from. Shapes, colors and
-          names may change, and some drafts will be dropped. Please don't use them as the gloop-ui logo yet.
-        </p>
-        <p>
-          Eight soft, blob-style concepts. Switch palette and background to compare them, and check how each one
-          reads at favicon size.{' '}
-          <a href={LOGO_DRAFTS_URL} target="_blank" rel="noreferrer">
-            Open in a new tab
-          </a>
-        </p>
-        <iframe className="pg-frame" src={LOGO_DRAFTS_URL} title="gloop-ui logo drafts" loading="lazy" />
-      </div>
+      <>
+        <div className="pg-prose">
+          <p className="pg-callout">
+            <strong>Work in progress.</strong> These are early drafts we are still choosing from. Shapes, colors and
+            names may change, and some drafts will be dropped. Please don't use them as the gloop-ui logo yet.
+          </p>
+        </div>
+        <LogoDraftsFrame />
+      </>
     ),
   },
   {
