@@ -86,7 +86,8 @@ export type CircleMenuProps = {
   arc?: number
   /**
    * Distanza delle icone dal centro, in px. Di default è la minima perché
-   * le icone non si tocchino (mai sotto 68 fino a 3 icone, 76 oltre)
+   * le icone non si tocchino (mai sotto 68 fino a 3 icone, 76 oltre). Se è più
+   * piccola, l'arco si allarga quanto basta perché le icone non si tocchino
    */
   radius?: number
   /** Distanza delle icone del sottomenu dalla loro icona, in px */
@@ -226,12 +227,20 @@ function CircleMenu({
   const center = angle ?? (direction ? DIRECTION_ANGLE[direction] : -90)
   const span = arc ?? (angle === undefined && !direction ? 360 : direction?.includes('-') ? 90 : 180)
   const full = span >= 360
-  const step = full ? 360 / n : n > 1 ? span / (n - 1) : 0
-  const angleOf = (i: number) => (full ? center + i * step : center - span / 2 + i * step)
+  const arcStep = full ? 360 / n : n > 1 ? span / (n - 1) : 0
 
   // Raggio minimo perché due icone vicine non si tocchino (archi stretti → più lontane)
-  const minRadius = n > 1 && step > 0 ? (ITEM_SIZE + ITEM_GAP) / (2 * Math.sin(rad(Math.min(step, 180) / 2))) : 0
+  const minRadius =
+    n > 1 && arcStep > 0 ? (ITEM_SIZE + ITEM_GAP) / (2 * Math.sin(rad(Math.min(arcStep, 180) / 2))) : 0
   const r = radius ?? Math.max(n <= 3 ? 68 : 76, Math.ceil(minRadius))
+
+  /*
+   * Con un radius esplicito più piccolo del minimo, l'arco si allarga (sempre centrato
+   * sulla direzione) quanto basta perché le icone non si tocchino
+   */
+  const fitStep = (2 * Math.asin(Math.min(1, (ITEM_SIZE + ITEM_GAP) / (2 * r))) * 180) / Math.PI
+  const step = full || n < 2 ? arcStep : Math.max(arcStep, fitStep)
+  const angleOf = (i: number) => (full ? center + i * step : center - ((n - 1) * step) / 2 + i * step)
 
   /*
    * Arco del sottomenu con m icone: l'angolo tra due icone è quello minimo perché

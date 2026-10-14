@@ -100,9 +100,7 @@
   place-items: center;
   width: 12px;
   height: 12px;
-  border-radius: 50%;
   color: color-mix(in srgb, var(--ui-fg) 85%, transparent);
-  background: color-mix(in srgb, var(--ui-fg) 14%, transparent);
 
   & svg {
     width: 10px;

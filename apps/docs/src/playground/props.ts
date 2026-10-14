@@ -73,7 +73,7 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'direction', type: 'CircleMenuDirection', description: "Where the arc opens: 'top', 'right', 'bottom-left'… Without it the items fill the whole circle." },
     { name: 'angle', type: 'number', description: 'Free direction in degrees (0 = right, 90 = down). Wins over direction.' },
     { name: 'arc', type: 'number', default: '90 / 180 / 360', description: 'Arc width in degrees (diagonal / side / no direction).' },
-    { name: 'radius', type: 'number', default: 'auto', description: 'Distance of the items from the center, in px. Defaults to the minimum that keeps them apart.' },
+    { name: 'radius', type: 'number', default: 'auto', description: 'Distance of the items from the center, in px. Defaults to the minimum that keeps them apart. If smaller than that, the arc widens so the items never touch.' },
     { name: 'subRadius', type: 'number', default: '60', description: 'Distance of sub-menu items from their parent, in px.' },
     { name: 'reserveSpace', type: 'boolean', default: 'true', description: 'true: the open menu area is reserved in the layout. false: only the "+" takes space and icons open on a layer above surrounding content (clipped by ancestors with overflow: hidden).' },
     { name: 'open / defaultOpen', type: 'boolean', description: 'Controlled / initial open state, e.g. to open the menu from a right-click (context menu).' },
@@ -135,9 +135,9 @@ export const propsById: Record<string, PropDoc[]> = {
   ],
   'tab-menu-submenu': [
     ...tabMenuProps.slice(0, 2),
-    { name: 'tabs', type: '{ icon: ReactNode; label: string; items?: string[] }[]', required: true, description: 'Tabs that drop out of the trigger; items opens a sub-menu.' },
+    { name: 'tabs', type: '{ icon: ReactNode; label: string; items?: (string | { label: string; icon?: ReactNode })[] }[]', required: true, description: 'Tabs that drop out of the trigger; items opens a sub-menu. Each item is a string or { label, icon? } to show an optional icon.' },
     direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar, sub-menus above (below if there is no room); top / bottom: a column, sub-menus to the right of the tab (left if there is no room). auto: on open, the first side with room (left, right, top, bottom).'),
-    attached('A liquid neck keeps the open sub-menu joined to its tab. false: the drop sinks into the sub-menu and it floats on its own.'),
+    attached('A liquid neck keeps the open sub-menu joined to its tab. false: no drop between them, the sub-menu appears on its own without melting into the tab.'),
   ],
   'tab-bar': [
     { name: 'tabs', type: '{ icon: ReactNode; label: string }[]', required: true, description: 'Tabs of the bar.' },

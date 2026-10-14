@@ -146,3 +146,11 @@ export const SparkleIcon = (
     <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
   </svg>
 )
+
+export const DotsVerticalIcon = (
+  <svg {...svgProps}>
+    <circle cx="12" cy="5" r="1" />
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="12" cy="19" r="1" />
+  </svg>
+)

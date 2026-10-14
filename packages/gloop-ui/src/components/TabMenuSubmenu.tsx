@@ -26,10 +26,13 @@ import './theme.css'
 import './TabMenuMotion.css'
 import './TabMenuSubmenu.css'
 
+/** Voce del sottomenu: solo testo, o testo con icona opzionale */
+export type SubmenuItem = string | { label: string; icon?: ReactNode }
+
 export type Tab = {
   icon: ReactNode
   label: string
-  items?: string[]
+  items?: SubmenuItem[]
 }
 
 export type TabMenuSubmenuProps = {
@@ -44,7 +47,7 @@ export type TabMenuSubmenuProps = {
   direction?: TabMenuPlacement
   /**
    * true: la goccia resta tra tab e sottomenu, come un collo che li tiene uniti.
-   * false: la goccia entra nel pannello e sparisce, il sottomenu resta separato
+   * false: niente goccia, il sottomenu compare separato senza fondersi col tab
    */
   attached?: boolean
 }
@@ -67,6 +70,16 @@ const panelHeight = (count: number) => PANEL_PADDING * 2 + count * ITEM_HEIGHT +
 
 const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
 const exitFast: Transition = { duration: 0.12, ease: 'easeOut' }
+
+/*
+ * Uscita della goccia. Se si chiude solo il sottomenu torna nel tab; se si chiude tutta
+ * la barra sparisce subito: la sua posizione è relativa all'angolo della barra, che si
+ * restringe fino al "+", e durante l'uscita resterebbe fuori, oltre il "+".
+ */
+const dropVariants: Variants = {
+  gone: (barOpen: boolean) =>
+    barOpen ? { x: 0, y: 0, scale: 0.4, transition: exitFast } : { opacity: 0, transition: { duration: 0 } },
+}
 
 // Il contenuto del sottomenu scorre nella direzione del tab scelto (in colonna, in verticale)
 type Slide = { dir: number; axis: 'x' | 'y' }
@@ -221,24 +234,26 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
     ? away * (TAB_WIDTH / 2 + PANEL_GAP / 2) // dal centro della colonna al centro dello spazio
     : away * (PANEL_GAP / 2 + DRIP_SIZE / 2) // dal bordo della barra al centro dello spazio
   const overshoot = neck + away * 8
-  // Staccata: prosegue dentro il pannello, assottigliandosi, e ci si fonde
-  const end = attached ? neck : neck + away * (PANEL_GAP / 2 + DRIP_SIZE / 2)
   const drip = vertical
     ? {
         style: { left: TAB_WIDTH / 2 - DRIP_SIZE / 2, top: tabStart + TAB_HEIGHT / 2 - DRIP_SIZE / 2 },
-        to: { x: [0, overshoot, end] },
+        to: { x: [0, overshoot, neck] },
       }
     : {
         // Parte dal bordo della barra rivolto verso il pannello
         style: { left: tabStart + TAB_WIDTH / 2 - DRIP_SIZE / 2, top: flipped ? TAB_HEIGHT - DRIP_SIZE : 0 },
-        to: { y: [0, overshoot, end] },
+        to: { y: [0, overshoot, neck] },
       }
   // Il pannello si gonfia dal punto più vicino al tab
   const panelStyle = vertical
     ? { top: tabStart, width: PANEL_WIDTH, transformOrigin: `${flipped ? PANEL_WIDTH : 0}px ${TAB_HEIGHT / 2}px` }
     : { transformOrigin: `${tabStart + TAB_WIDTH / 2}px ${flipped ? '0%' : '100%'}` }
-  // Il pannello parte schiacciato verso il tab
-  const panelFrom = vertical ? { x: -away * 16, y: 0 } : { x: 0, y: -away * 16 }
+  /*
+   * Unito: il pannello parte schiacciato verso il tab. Staccato: arriva da più lontano,
+   * così non si avvicina mai abbastanza alla barra da fondersi col goo
+   */
+  const panelShift = attached ? -away * 16 : away * 10
+  const panelFrom = vertical ? { x: panelShift, y: 0 } : { x: 0, y: panelShift }
   // Area del filtro goo: simmetrica attorno al "+" (vedi barFilterRegion), con spazio per il pannello
   const longest = Math.max(0, ...tabs.map((t) => t.items?.length ?? 0))
   const region = barFilterRegion(n, PANEL_GAP + Math.max(PANEL_WIDTH, panelHeight(longest)) + 60)
@@ -257,8 +272,8 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
         <GooFilter id={filterId} region={region} />
 
         {/* Goccia che sale dal tab al pannello e resta tra i due come un collo liquido */}
-        <AnimatePresence>
-          {open && submenu !== null && (
+        <AnimatePresence custom={open}>
+          {attached && open && submenu !== null && (
             <motion.span
               key={submenu}
               className="goo-drop"
@@ -267,10 +282,11 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
               initial={{ x: 0, y: 0, scale: 0.6 }}
               animate={{
                 ...drip.to,
-                scale: [0.6, 1, attached ? NECK_SCALE : 0],
+                scale: [0.6, 1, NECK_SCALE],
                 transition: { duration: 0.45, ease: [0.23, 1, 0.32, 1] },
               }}
-              exit={{ x: 0, y: 0, scale: 0.4, transition: exitFast }}
+              variants={dropVariants}
+              exit="gone"
             />
           )}
         </AnimatePresence>
@@ -315,7 +331,9 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
                 >
                   {/* Stesse voci di List, con la pillola liquida che segue il cursore */}
                   <ListCore
-                    items={items.map((item) => ({ id: item, label: item }))}
+                    items={items.map((item) =>
+                      typeof item === 'string' ? { id: item, label: item } : { id: item.label, ...item },
+                    )}
                     hover
                     // Qui la pillola è l'unico indicatore: più marcata che in List
                     hoverOpacity={0.1}

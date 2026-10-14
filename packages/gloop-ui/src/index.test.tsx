@@ -531,4 +531,19 @@ describe('TabMenuSubmenu', () => {
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
     expect(document.activeElement).toBe(trigger)
   })
+  it('shows optional icons in sub-menu items', async () => {
+    const itemIcon = <svg data-testid="item-icon" />
+    render(
+      <TabMenuSubmenu
+        icon={icon}
+        label="Menu"
+        tabs={[{ icon, label: 'Home', items: [{ label: 'Saved', icon: itemIcon }, 'Activity'] }]}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Home' }))
+    expect(screen.getAllByRole('menuitem').map((el) => el.textContent)).toEqual(['Saved', 'Activity'])
+    expect(screen.getByRole('menuitem', { name: 'Saved' }).contains(screen.getByTestId('item-icon'))).toBe(true)
+  })
+
 })

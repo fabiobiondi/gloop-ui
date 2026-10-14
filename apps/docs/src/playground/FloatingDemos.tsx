@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { ExpandButton, FloatingBoundary, Input, Popover, Tooltip, usePopover, type FloatingAlign, type FloatingPlacement } from 'gloop-ui'
-import { CheckIcon, UserIcon, XIcon } from './icons'
+import { CheckIcon, CopyIcon, DotsVerticalIcon, ShareIcon, TrashIcon, UserIcon, XIcon } from './icons'
 import './FloatingDemos.css'
 
 // Trigger semplici: Tooltip e Popover clonano il figlio, che deve accettare un ref
@@ -152,6 +152,68 @@ export function NestedPopover() {
     >
       <DemoButton>Style</DemoButton>
     </Popover>
+  )
+}
+
+/* ---------- Card menu: popover sotto i tre puntini, sopra se in basso non c'è spazio ---------- */
+
+const cardActions = [
+  { label: 'Share', icon: ShareIcon },
+  { label: 'Copy link', icon: CopyIcon },
+  { label: 'Delete', icon: TrashIcon, danger: true },
+]
+
+const cards = [
+  { title: 'Weekly report', meta: 'Edited 2 hours ago' },
+  { title: 'Design review', meta: 'Edited yesterday' },
+  { title: 'Release notes', meta: 'Edited 3 days ago' },
+]
+
+function CardMenu({ title }: { title: string }) {
+  return (
+    <Popover
+      label={`${title} actions`}
+      placement="bottom"
+      align="end"
+      content={({ close }) => (
+        <div className="fd-menu" role="menu">
+          {cardActions.map((a) => (
+            <button
+              key={a.label}
+              type="button"
+              role="menuitem"
+              className="fd-menu__item"
+              data-danger={a.danger || undefined}
+              onClick={close}
+            >
+              {a.icon}
+              {a.label}
+            </button>
+          ))}
+        </div>
+      )}
+    >
+      <button type="button" className="fd-card-menu__trigger" aria-label={`${title} actions`}>
+        {DotsVerticalIcon}
+      </button>
+    </Popover>
+  )
+}
+
+// Il riquadro tratteggiato fa da viewport: la card in fondo non ha spazio sotto e il menu si apre sopra
+export function CardMenuPopover() {
+  return (
+    <FloatingBoundary className="fd-card-menu">
+      {cards.map((c) => (
+        <article key={c.title} className="fd-card-menu__card">
+          <div className="fd-card">
+            <strong>{c.title}</strong>
+            <span>{c.meta}</span>
+          </div>
+          <CardMenu title={c.title} />
+        </article>
+      ))}
+    </FloatingBoundary>
   )
 }
 

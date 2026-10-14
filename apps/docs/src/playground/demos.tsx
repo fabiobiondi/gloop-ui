@@ -18,6 +18,7 @@ import DialogDemo, { DialogFormDemo } from './DialogDemo'
 import { ControlledSliderDemo } from './SliderDemo'
 import { AutoPlacementDemo, DirectionDemo } from './DirectionDemo'
 import {
+  CardMenuPopover,
   ControlledPopover,
   DemoButton,
   EdgeTest,
@@ -528,6 +529,51 @@ export const entries: Entry[] = [
 />`,
       },
       {
+        title: 'Arc · top-right · 5 icons · closer',
+        description:
+          'Set radius to bring the icons closer. If the arc is too narrow for that distance, it widens (still centered on the direction) so they never touch.',
+        preview: (
+          <CircleMenu
+            label="create"
+            direction="top-right"
+            radius={100}
+            items={[
+              { icon: HomeIcon, label: 'Home' },
+              { icon: SearchIcon, label: 'Search' },
+              {
+                icon: CameraIcon,
+                label: 'Camera',
+                items: [
+                  { icon: ImageIcon, label: 'Photo' },
+                  { icon: VideoIcon, label: 'Video' },
+                ],
+              },
+              { icon: HeartIcon, label: 'Favorites' },
+              { icon: UserIcon, label: 'Profile' },
+            ]}
+          />
+        ),
+        code: `<CircleMenu
+  label="create"
+  direction="top-right"
+  radius={100}
+  items={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    {
+      icon: CameraIcon,
+      label: 'Camera',
+      items: [
+        { icon: ImageIcon, label: 'Photo' },
+        { icon: VideoIcon, label: 'Video' },
+      ],
+    },
+    { icon: HeartIcon, label: 'Favorites' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+      {
         title: 'Tooltips',
         description:
           'Set tooltip on any item, sub-menu items included: true shows the label, or pass text/JSX, or { content, placement, delay }. By default it opens on the side facing away from the menu.',
@@ -992,6 +1038,32 @@ function invite() {
         stage: { minHeight: 320 },
       },
       {
+        title: 'Card menu · flips when needed',
+        description:
+          'A ⋮ button on a card opens an action menu below it (placement bottom, align end). The dashed area is a FloatingBoundary: the last card has no room below, so the menu flips above.',
+        preview: <CardMenuPopover />,
+        code: `<FloatingBoundary>
+  <article className="card">
+    <strong>Release notes</strong>
+    <Popover
+      label="Card actions"
+      placement="bottom"
+      align="end"
+      content={({ close }) => (
+        <div role="menu">
+          <button role="menuitem" onClick={close}>{ShareIcon} Share</button>
+          <button role="menuitem" onClick={close}>{CopyIcon} Copy link</button>
+          <button role="menuitem" onClick={close}>{TrashIcon} Delete</button>
+        </div>
+      )}
+    >
+      <button aria-label="Card actions">{DotsVerticalIcon}</button>
+    </Popover>
+  </article>
+</FloatingBoundary>`,
+        stage: { minHeight: 360 },
+      },
+      {
         title: 'Close on rollout',
         description: 'closeOnLeave: it closes when the pointer leaves both trigger and bubble.',
         preview: <HoverCard />,
@@ -1304,8 +1376,65 @@ function invite() {
 />`,
       },
       {
+        title: 'With icons',
+        description: 'Sub-menu items can be plain strings or { label, icon } objects: the icon is optional.',
+        stage: { minHeight: 340, align: 'end' },
+        preview: (
+          <TabMenuSubmenu
+            icon={PlusIcon}
+            label="Open menu"
+            tabs={[
+              { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
+              {
+                icon: SearchIcon,
+                label: 'Search',
+                items: [
+                  { label: 'Saved', icon: BookmarkIcon },
+                  { label: 'Starred', icon: StarIcon },
+                  { label: 'Images', icon: ImageIcon },
+                ],
+              },
+              {
+                icon: UserIcon,
+                label: 'Profile',
+                items: [
+                  { label: 'Messages', icon: MessageIcon },
+                  { label: 'Favorites', icon: HeartIcon },
+                  { label: 'Share profile', icon: ShareIcon },
+                ],
+              },
+            ]}
+          />
+        ),
+        code: `<TabMenuSubmenu
+  icon={PlusIcon}
+  label="Open menu"
+  tabs={[
+    { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
+    {
+      icon: SearchIcon,
+      label: 'Search',
+      items: [
+        { label: 'Saved', icon: BookmarkIcon },
+        { label: 'Starred', icon: StarIcon },
+        { label: 'Images', icon: ImageIcon },
+      ],
+    },
+    {
+      icon: UserIcon,
+      label: 'Profile',
+      items: [
+        { label: 'Messages', icon: MessageIcon },
+        { label: 'Favorites', icon: HeartIcon },
+        { label: 'Share profile', icon: ShareIcon },
+      ],
+    },
+  ]}
+/>`,
+      },
+      {
         title: 'Detached',
-        description: 'By default a liquid neck keeps the sub-menu joined to its tab. With attached={false} the drop sinks into the sub-menu, which floats on its own.',
+        description: 'By default a liquid neck keeps the sub-menu joined to its tab. With attached={false} there is no drop: the sub-menu appears on its own, without melting into the tab.',
         stage: { minHeight: 340, align: 'end' },
         preview: (
           <TabMenuSubmenu

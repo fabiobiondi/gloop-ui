@@ -51,7 +51,11 @@ export { default as TabMenuMotion } from './components/TabMenuMotion'
 export type { TabMenuMotionProps, Tab as TabMenuMotionTab } from './components/TabMenuMotion'
 
 export { default as TabMenuSubmenu } from './components/TabMenuSubmenu'
-export type { TabMenuSubmenuProps, Tab as TabMenuSubmenuTab } from './components/TabMenuSubmenu'
+export type {
+  TabMenuSubmenuProps,
+  Tab as TabMenuSubmenuTab,
+  SubmenuItem as TabMenuSubmenuItem,
+} from './components/TabMenuSubmenu'
 
 export { default as ShapeEditor } from './components/shape-toolbar/ShapeEditor'
 
