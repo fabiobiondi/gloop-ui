@@ -69,9 +69,14 @@
   body[data-stage="dark"] .stage { --stage-bg: #120d17; --stage-fg: #f6f0fb; --stage-muted: #9a8fa8; }
   body[data-stage="light"][data-palette="mono"] .stage { --c1: #241b33; --c2: #241b33; --c3: #241b33; }
   body[data-stage="dark"][data-palette="mono"] .stage { --c1: #f6f0fb; --c2: #f6f0fb; --c3: #f6f0fb; }
+  /* Inchiostro del testo dentro il bottone (#9): bianco, ma in Mono il bottone è già chiaro/scuro come il tema */
+  body[data-palette="mono"] { --btn-ink: var(--bg); }
+  body[data-stage="light"][data-palette="mono"] .stage { --btn-ink: #ffffff; }
+  body[data-stage="dark"][data-palette="mono"] .stage { --btn-ink: #120d17; }
 
   .mark { width: 168px; height: 168px; max-width: 100%; overflow: visible; transition: transform .5s cubic-bezier(.34,1.56,.64,1); }
   .stage:hover .mark { transform: scale(1.06) rotate(-3deg); }
+  .mark.wide { width: 300px; height: auto; aspect-ratio: 360 / 170; }
   .lockup { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 30px; letter-spacing: -.01em; line-height: 1; }
   .lockup svg { width: 42px; height: 42px; overflow: visible; }
   .lockup .ui { color: var(--stage-muted); font-weight: 500; }
@@ -102,7 +107,7 @@
 </head>
 <body>
 
-<!-- Defs condivise: gradienti, filtri goo e i simboli degli 8 marchi (viewBox 200×200) -->
+<!-- Defs condivise: gradienti, filtri goo e i simboli dei 9 marchi (viewBox 200×200, il #9 è largo 360×170) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
     <linearGradient id="g-main" gradientUnits="userSpaceOnUse" x1="20" y1="20" x2="180" y2="190">
@@ -115,6 +120,11 @@
       <stop offset=".5" style="stop-color:var(--c2)"/>
       <stop offset="1" style="stop-color:var(--c3)"/>
     </radialGradient>
+    <linearGradient id="g-wide" gradientUnits="userSpaceOnUse" x1="14" y1="14" x2="346" y2="160">
+      <stop offset="0" style="stop-color:var(--c1)"/>
+      <stop offset=".55" style="stop-color:var(--c2)"/>
+      <stop offset="1" style="stop-color:var(--c3)"/>
+    </linearGradient>
     <filter id="goo" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/>
       <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10"/>
@@ -240,6 +250,20 @@
       <text x="100" y="104" text-anchor="middle" font-family="Fredoka, Nunito, sans-serif" font-weight="700" font-size="100" fill="#fff">g</text>
       <ellipse cx="60" cy="36" rx="14" ry="8" fill="#fff" opacity=".4" transform="rotate(-25 60 36)"/>
     </symbol>
+
+    <!-- 9 Splat Button: la scritta intera dentro un bottone che cola -->
+    <symbol id="m9" viewBox="0 0 360 170">
+      <g filter="url(#goo)" fill="url(#g-wide)">
+        <rect x="14" y="14" width="332" height="104" rx="48"/>
+        <circle cx="74" cy="118" r="12"><animate attributeName="cy" values="116;140;116" dur="3.6s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/></circle>
+        <circle cx="132" cy="120" r="17"><animate attributeName="cy" values="118;152;118" dur="4.4s" begin="-1.2s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/></circle>
+        <circle cx="214" cy="118" r="10"><animate attributeName="cy" values="116;134;116" dur="3s" begin="-.5s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/></circle>
+        <circle cx="272" cy="120" r="15"><animate attributeName="cy" values="118;148;118" dur="3.9s" begin="-2.1s" repeatCount="indefinite" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1"/></circle>
+        <circle cx="318" cy="114" r="8"><animate attributeName="cy" values="112;126;112" dur="2.7s" begin="-.9s" repeatCount="indefinite"/></circle>
+      </g>
+      <text x="180" y="86" text-anchor="middle" font-family="Fredoka, Nunito, sans-serif" font-weight="700" font-size="60" letter-spacing="-1" style="fill:var(--btn-ink, #fff)">gloop<tspan opacity=".75">-ui</tspan></text>
+      <ellipse cx="56" cy="34" rx="18" ry="7" fill="#fff" opacity=".4" transform="rotate(-14 56 34)"/>
+    </symbol>
   </defs>
 </svg>
 
@@ -285,6 +309,7 @@
     { id: 'm6', name: 'Stacked Pills', note: 'Button, toggle and card melting into each other. Reads as a UI library right away, with a sliding toggle knob.' },
     { id: 'm7', name: 'Liquid oo', note: 'The two "o"s in gloop become bubbles joined by goo. The mark lives inside the wordmark.', word: true },
     { id: 'm8', name: 'Squircle Splat', note: 'An app icon with color dripping off the edge. Ready for npm, GitHub and social avatars.' },
+    { id: 'm9', name: 'Splat Button', note: 'The whole wordmark inside a button that melts and drips. A logo that is also a UI component. At small sizes it falls back to the Squircle Splat "g".', wide: true, small: 'm8' },
   ];
 
   const use = (id, cls = '') => `<svg class="${cls}" viewBox="0 0 200 200" aria-hidden="true"><use href="#${id}"/></svg>`;
@@ -294,8 +319,10 @@
   document.getElementById('grid').innerHTML = drafts.map((d, i) => `
     <article class="card">
       <div class="stage">
-        <svg class="mark" viewBox="0 0 200 200" role="img" aria-label="Logo ${d.name}"><use href="#${d.id}"/></svg>
-        ${d.word
+        ${d.wide
+          ? `<svg class="mark wide" viewBox="0 0 360 170" role="img" aria-label="Logo ${d.name}"><use href="#${d.id}"/></svg>`
+          : `<svg class="mark" viewBox="0 0 200 200" role="img" aria-label="Logo ${d.name}"><use href="#${d.id}"/></svg>`}
+        ${d.wide ? '' : d.word
           ? `<div class="lockup inline"><span>gl</span><svg viewBox="20 50 160 100" aria-hidden="true"><use href="#m7-word"/></svg><span>p</span><span class="ui">-ui</span></div>`
           : `<div class="lockup">${use(d.id)}<span>gloop<span class="ui">-ui</span></span></div>`}
       </div>
@@ -306,8 +333,8 @@
         </div>
         <p>${d.note}</p>
         <div class="sizes">
-          ${use(d.id, 's32')}
-          <span class="tab">${use(d.id)}Gloop-UI · Docs</span>
+          ${use(d.small || d.id, 's32')}
+          <span class="tab">${use(d.small || d.id)}Gloop-UI · Docs</span>
         </div>
       </div>
     </article>`).join('');
