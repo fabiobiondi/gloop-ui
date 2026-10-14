@@ -26,20 +26,21 @@ function SplatLogo() {
       </defs>
       <g filter={`url(#${goo})`} fill={`url(#${gradient})`}>
         <rect x="14" y="14" width="332" height="104" rx="48" />
-        <circle cx="74" cy="118" r="12">
-          <animate attributeName="cy" values="116;140;116" dur="3.6s" {...ease} />
+        {/* Ogni goccia parte tutta dentro il bottone (fondo a y=118) e ne esce colando: al caricamento è un bottone pulito, poi inizia a colare */}
+        <circle cx="74" cy="100" r="12">
+          <animate attributeName="cy" values="100;140;100" dur="3.6s" begin=".8s" {...ease} />
         </circle>
-        <circle cx="132" cy="120" r="17">
-          <animate attributeName="cy" values="118;152;118" dur="4.4s" begin="-1.2s" {...ease} />
+        <circle cx="132" cy="96" r="17">
+          <animate attributeName="cy" values="96;152;96" dur="4.4s" begin="1.5s" {...ease} />
         </circle>
-        <circle cx="214" cy="118" r="10">
-          <animate attributeName="cy" values="116;134;116" dur="3s" begin="-.5s" {...ease} />
+        <circle cx="214" cy="104" r="10">
+          <animate attributeName="cy" values="104;134;104" dur="3s" begin="1.1s" {...ease} />
         </circle>
-        <circle cx="272" cy="120" r="15">
-          <animate attributeName="cy" values="118;148;118" dur="3.9s" begin="-2.1s" {...ease} />
+        <circle cx="272" cy="98" r="15">
+          <animate attributeName="cy" values="98;148;98" dur="3.9s" begin="1.9s" {...ease} />
         </circle>
-        <circle cx="318" cy="114" r="8">
-          <animate attributeName="cy" values="112;126;112" dur="2.7s" begin="-.9s" repeatCount="indefinite" />
+        <circle cx="318" cy="106" r="8">
+          <animate attributeName="cy" values="106;126;106" dur="2.7s" begin="1.3s" repeatCount="indefinite" />
         </circle>
       </g>
       <text
