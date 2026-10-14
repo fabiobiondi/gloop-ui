@@ -1468,7 +1468,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
             tabs={[
               { icon: HomeIcon, label: 'Home' },
               { icon: SearchIcon, label: 'Search' },
-              { icon: HeartIcon, label: 'Favorites' },
+              { icon: HeartIcon, label: 'Saved' },
               { icon: UserIcon, label: 'Profile' },
             ]}
           />
@@ -1477,7 +1477,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   tabs={[
     { icon: HomeIcon, label: 'Home' },
     { icon: SearchIcon, label: 'Search' },
-    { icon: HeartIcon, label: 'Favorites' },
+    { icon: HeartIcon, label: 'Saved' },
     { icon: UserIcon, label: 'Profile' },
   ]}
   onChange={(index) => console.log(index)}
@@ -1495,7 +1495,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
                 tabs={[
                   { icon: HomeIcon, label: 'Home' },
                   { icon: SearchIcon, label: 'Search' },
-                  { icon: HeartIcon, label: 'Favorites' },
+                  { icon: HeartIcon, label: 'Saved' },
                   { icon: UserIcon, label: 'Profile' },
                 ]}
               />
@@ -1507,7 +1507,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   tabs={[
     { icon: HomeIcon, label: 'Home' },
     { icon: SearchIcon, label: 'Search' },
-    { icon: HeartIcon, label: 'Favorites' },
+    { icon: HeartIcon, label: 'Saved' },
     { icon: UserIcon, label: 'Profile' },
   ]}
 />`,
