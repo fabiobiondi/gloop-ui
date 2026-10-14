@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { ExpandButton } from 'gloop-ui'
+import { ComponentGrid } from './ComponentGrid'
 import { HeartIcon } from './icons'
 import './Home.css'
 
@@ -107,6 +108,8 @@ export function Home() {
           </li>
         ))}
       </ul>
+
+      <ComponentGrid />
     </div>
   )
 }

@@ -82,6 +82,8 @@ export type Entry = {
   status?: 'experimental'
   /** Avviso mostrato sotto la descrizione */
   notice?: string
+  /** Anteprima compatta per la griglia della home (default: la prima demo) */
+  card?: ReactNode
   demos: Demo[]
 }
 
@@ -91,6 +93,7 @@ export const entries: Entry[] = [
     name: 'Search',
     group: 'forms',
     description: 'A magnifier that stretches into a field to the right; the lens morphs into a close icon.',
+    card: <Search width={180} />,
     demos: [
       {
         title: 'Default',
@@ -156,6 +159,7 @@ export const entries: Entry[] = [
     group: 'forms',
     description:
       'A text field whose label drips out on top as a liquid tab when focused; the placeholder shows up underneath.',
+    card: <Input label="Email" type="email" placeholder="name@mail.com" />,
     demos: [
       {
         title: 'Default',
@@ -202,6 +206,7 @@ export const entries: Entry[] = [
     status: 'experimental',
     description:
       'A range slider whose thumb is a liquid drop: it stretches into a trail while dragged and its value drips out on top.',
+    card: <Slider label="Volume" defaultValue={40} />,
     demos: [
       {
         title: 'Default',
@@ -1535,6 +1540,18 @@ function invite() {
     name: 'List',
     group: 'various',
     description: 'Vertical list with a liquid pill on the selected item and a lighter one that follows hover and focus.',
+    card: (
+      <List
+        label="Mailbox"
+        defaultValue="inbox"
+        itemHeight={34}
+        items={[
+          { id: 'inbox', label: 'Inbox', icon: MailIcon, meta: 12 },
+          { id: 'starred', label: 'Starred', icon: StarIcon, meta: 3 },
+          { id: 'trash', label: 'Trash', icon: TrashIcon },
+        ]}
+      />
+    ),
     demos: [
       {
         title: 'Selectable',
@@ -1712,6 +1729,17 @@ function invite() {
     group: 'menus',
     description:
       'Always-visible navigation bar with a liquid selection pill: fixed to the bottom of the screen, or inline in a header.',
+    card: (
+      <TabBar
+        layout="inline"
+        position="static"
+        enterFrom={false}
+        tabs={[
+          { icon: HomeIcon, label: 'Home' },
+          { icon: HeartIcon, label: 'Saved', value: 3 },
+        ]}
+      />
+    ),
     demos: [
       {
         title: 'Default',
@@ -1887,6 +1915,7 @@ function invite() {
     name: 'GloopLoading',
     group: 'various',
     description: 'A liquid loader: a drop falls in, bounces, swells into a blob and keeps dripping.',
+    card: <GloopLoading size={56} title="Loading" />,
     demos: [
       {
         title: 'Title and description',
@@ -1931,6 +1960,7 @@ function invite() {
     status: 'experimental',
     description:
       'A bar that fills up like liquid: a blob head springs ahead on every update and the fill catches up. Without a value it runs forever.',
+    card: <ProgressBar label="Upload" value={60} />,
     demos: [
       {
         title: 'Default',
@@ -2030,6 +2060,9 @@ function invite() {
     status: 'experimental',
     notice:
       "This component is an early prototype: it doesn't accept any props yet, so colors, tools and shapes can't be customized. We're working on it, and the API may change.",
+    card: <div className="cgrid-shape">
+        <ShapeEditor />
+      </div>,
     demos: [
       {
         title: 'Click the rectangle',

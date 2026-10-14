@@ -1,0 +1,142 @@
+/* Griglia dei componenti nella homepage */
+.cgrid-title {
+  margin: 0 0 16px;
+  font-family: Fredoka, ui-rounded, system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.cgrid-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 900px) {
+  .cgrid-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .cgrid-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cgrid-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--pg-border);
+  border-radius: 20px;
+  background: var(--pg-surface);
+  transition: border-color 200ms ease;
+
+  /* Menu e popover escono dalla card: quella sotto il puntatore sta sopra le vicine */
+  &:hover,
+  &:focus-within {
+    z-index: 1;
+    border-color: color-mix(in srgb, #7b5cff 50%, var(--pg-border));
+  }
+}
+
+/* contain: layout tiene dentro la card gli elementi position: fixed */
+.cgrid-stage {
+  display: grid;
+  place-items: center;
+  height: 180px;
+  padding: 16px;
+  border-radius: 19px 19px 0 0;
+  contain: layout;
+  background-color: var(--pg-stage);
+  background-image: radial-gradient(var(--pg-dots) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.cgrid-stage {
+  position: relative;
+}
+
+.cgrid-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+/* Etichetta in basso a destra: sparisce appena la card si attiva */
+.cgrid-hint {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--pg-muted);
+  background: color-mix(in srgb, var(--pg-surface) 80%, transparent);
+  pointer-events: none;
+}
+
+.cgrid-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--pg-border);
+  border-radius: 0 0 19px 19px;
+  color: inherit;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid #7b5cff;
+    outline-offset: -2px;
+  }
+}
+
+.cgrid-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+
+  .cgrid-info:hover & {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.cgrid-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--pg-muted);
+  background: color-mix(in srgb, var(--pg-text) 6%, transparent);
+}
+
+.cgrid-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pg-muted);
+}
+
+
+/* ShapeEditor è pensato a tutta pagina: nella card la tela si stringe e niente margini */
+.cgrid-shape {
+  width: 100%;
+
+  & .st-canvas {
+    gap: 4px;
+    width: 100%;
+    padding: 0;
+    background-color: transparent;
+  }
+
+  & .st-shape {
+    width: 140px;
+    height: 72px;
+  }
+}
