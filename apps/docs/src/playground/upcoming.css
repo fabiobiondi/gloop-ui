@@ -1,0 +1,49 @@
+/* Pagine "Coming soon" */
+.soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  border: 1px dashed var(--pg-border);
+  border-radius: 24px;
+  text-align: center;
+  background: var(--pg-surface);
+}
+
+.soon__blob {
+  width: 96px;
+  height: 116px;
+  margin-bottom: 4px;
+  overflow: visible;
+}
+
+.soon__title {
+  margin: 0;
+  font-family: Fredoka, ui-rounded, system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.soon__text {
+  margin: 0;
+  color: var(--pg-muted);
+}
+
+.soon__ideas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+
+  & li {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--pg-muted);
+    background: color-mix(in srgb, var(--pg-text) 6%, transparent);
+  }
+}

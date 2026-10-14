@@ -102,6 +102,16 @@
   color: var(--pg-muted);
 }
 
+/* Cuore rosa come il logo; da attivo il bottone diventa rosa e il cuore bianco */
+.home-try .expand-button__icon {
+  color: #ff7ab6;
+  transition: color 200ms ease;
+}
+
+.home-try .expand-button[data-open] .expand-button__icon {
+  color: #fff;
+}
+
 .home-features {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));

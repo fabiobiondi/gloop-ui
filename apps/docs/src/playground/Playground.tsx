@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { List } from 'gloop-ui'
+import { List, Tooltip } from 'gloop-ui'
 import { version } from 'gloop-ui/package.json'
 import { CodeBlock } from './CodeBlock'
 import { entries, type Demo, type Entry } from './demos'
 import { guides, type Guide } from './guides'
 import { propsById, type PropDoc } from './props'
+import { upcoming } from './upcoming'
 import './Playground.css'
 
 const REPO_URL = 'https://github.com/fabiobiondi/gloop-ui'
 const NPM_URL = 'https://www.npmjs.com/package/gloop-ui'
 
 type Page = Guide | Entry
-const pages: Page[] = [...guides, ...entries]
+const pages: Page[] = [...guides, ...entries, ...upcoming]
 
 // La pagina scelta sta nell'hash (#circle-menu): sopravvive al reload e si può linkare
 function useHashPage() {
@@ -70,53 +71,89 @@ function useTheme() {
 
 const same = (a: Theme, b: Theme) => THEME_FIELDS.every(({ key }) => a[key] === b[key])
 
+// Chiuso di default: si vede solo "Change theme", al click si apre e resta fisso in fondo
 function ThemePanel({ theme, onChange }: { theme: Theme; onChange: (theme: Theme) => void }) {
-  return (
-    <section className="pg-theme" aria-labelledby="pg-theme-title">
-      <p id="pg-theme-title" className="pg-sidebar__title">
-        Theme
-      </p>
+  const [open, setOpen] = useState(false)
 
-      <div className="pg-theme__presets">
-        {PRESETS.map((preset) => (
-          <button
-            key={preset.name}
-            type="button"
-            className="pg-theme__preset"
-            aria-label={preset.name}
-            aria-pressed={same(theme, preset.theme)}
-            title={preset.name}
-            style={{ background: preset.theme.bg, color: preset.theme.fg }}
-            onClick={() => onChange(preset.theme)}
-          >
-            <span style={{ background: preset.theme.accent }} />
-          </button>
-        ))}
+  return (
+    <section className="pg-theme" data-open={open || undefined} aria-labelledby="pg-theme-title">
+      <div className="pg-theme__head">
+        <button
+          id="pg-theme-title"
+          type="button"
+          className="pg-theme__toggle"
+          aria-expanded={open}
+          aria-controls="pg-theme-body"
+          onClick={() => setOpen((o) => !o)}
+        >
+          {/* Tavolozza con i colori del logo */}
+          <svg className="pg-theme__palette" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
+            <circle cx="13.5" cy="6.5" r="1.7" fill="#ff7ab6" />
+            <circle cx="17.5" cy="10.5" r="1.7" fill="#7b5cff" />
+            <circle cx="8.5" cy="7.5" r="1.7" fill="#facc15" />
+            <circle cx="6.5" cy="12.5" r="1.7" fill="#34d399" />
+          </svg>
+          <svg className="pg-theme__chevron" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 15 6-6 6 6" />
+          </svg>
+          Change theme
+        </button>
+        {open && (
+          <Tooltip content="RESET THEME" placement="top">
+            <button
+              type="button"
+              className="pg-theme__reset"
+              aria-label="Reset theme"
+              // aria-disabled, non disabled: un bottone disabled non riceve l'hover e il tooltip non si aprirebbe
+              aria-disabled={same(theme, DEFAULT_THEME)}
+              onClick={() => !same(theme, DEFAULT_THEME) && onChange(DEFAULT_THEME)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+            </button>
+          </Tooltip>
+        )}
       </div>
 
-      {THEME_FIELDS.map(({ key, label, variable }) => (
-        <label key={key} className="pg-theme__field">
-          <input
-            type="color"
-            value={theme[key]}
-            onChange={(e) => onChange({ ...theme, [key]: e.target.value })}
-          />
-          <span className="pg-theme__label">
-            {label}
-            <code>{variable}</code>
-          </span>
-          <span className="pg-theme__hex">{theme[key]}</span>
-        </label>
-      ))}
+      {/* Righe della griglia da 0fr a 1fr: l'altezza si anima senza misurarla. inert: chiuso non si raggiunge col Tab */}
+      <div id="pg-theme-body" className="pg-theme__body" inert={!open}>
+        <div className="pg-theme__inner">
+          <div className="pg-theme__presets">
+            {PRESETS.map((preset) => (
+              <button
+                key={preset.name}
+                type="button"
+                className="pg-theme__preset"
+                aria-label={preset.name}
+                aria-pressed={same(theme, preset.theme)}
+                title={preset.name}
+                style={{ background: preset.theme.bg, color: preset.theme.fg }}
+                onClick={() => onChange(preset.theme)}
+              >
+                <span style={{ background: preset.theme.accent }} />
+              </button>
+            ))}
+          </div>
 
-      <button
-        type="button"
-        className="pg-theme__reset"
-        disabled={same(theme, DEFAULT_THEME)}
-        onClick={() => onChange(DEFAULT_THEME)}
-      >
-        Reset
-      </button>
+          {THEME_FIELDS.map(({ key, label, variable }) => (
+            <label key={key} className="pg-theme__field">
+              <input
+                type="color"
+                value={theme[key]}
+                onChange={(e) => onChange({ ...theme, [key]: e.target.value })}
+              />
+              <span className="pg-theme__label">
+                {label}
+                <code>{variable}</code>
+              </span>
+              <span className="pg-theme__hex">{theme[key]}</span>
+            </label>
+          ))}
+        </div>
+      </div>
     </section>
   )
 }
@@ -404,6 +441,9 @@ function Playground() {
         {COMPONENT_GROUPS.map((g) => (
           <NavGroup key={g.title} title={g.title} items={g.items} current={page} sub />
         ))}
+        <div className="pg-sidebar__gap" />
+        <hr className="pg-sidebar__divider" />
+        <NavGroup title="Coming soon" items={upcoming} current={page} />
 
         <ThemePanel theme={theme} onChange={setTheme} />
       </aside>
