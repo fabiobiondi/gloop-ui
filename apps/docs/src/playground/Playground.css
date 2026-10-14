@@ -322,6 +322,9 @@
     margin: 0;
     padding: 16px 20px;
     overflow-x: auto;
+    /* Il blocco codice è sempre scuro: thumb chiaro anche in tema light */
+    --scroll-thumb: rgb(244 244 245 / 0.22);
+    --scroll-thumb-hover: rgb(244 244 245 / 0.4);
     border-radius: 0 0 15px 15px;
     font: 13px/1.6 ui-monospace, 'SF Mono', Menlo, monospace;
     color: #e4e4e7;

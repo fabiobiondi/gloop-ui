@@ -58,31 +58,9 @@
   display: grid;
   gap: 12px;
   width: 240px;
-
-  & label {
-    display: grid;
-    gap: 4px;
-    font-size: 12px;
-    color: color-mix(in srgb, var(--ui-fg) 70%, transparent);
-  }
-
-  & input,
-  & select {
-    height: 36px;
-    padding: 0 10px;
-    border: 0;
-    border-radius: 10px;
-    font: inherit;
-    font-size: 14px;
-    color: var(--ui-fg);
-    background: color-mix(in srgb, var(--ui-fg) 8%, var(--ui-bg));
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-fg) 14%, transparent);
-    outline: none;
-
-    &:focus-visible {
-      box-shadow: inset 0 0 0 2px var(--ui-accent);
-    }
-  }
+  /* spazio per la linguetta della label di Input che sale sopra il campo */
+  padding-top: 20px;
+  row-gap: 12px;
 }
 
 .fd-form__actions {

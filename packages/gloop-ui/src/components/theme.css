@@ -11,4 +11,9 @@
   --ui-fg: #fff;
   /* Focus, selezione e stati attivi */
   --ui-accent: #4f7cff;
+  /*
+   * --ui-surface: fondo di Popover e Dialog (default --ui-bg schiarito verso --ui-fg del 6%,
+   * così input e bottoni al loro interno si staccano). Non è definita qui di proposito:
+   * il default viene calcolato su ogni componente, quindi segue anche un --ui-bg locale.
+   */
 }

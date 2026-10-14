@@ -75,6 +75,12 @@ function Dialog({
   const titleId = useId()
   const bodyId = useId()
   const filterId = useId()
+  // onClose arriva spesso inline (nuova a ogni render): l'effetto sotto la legge da qui,
+  // altrimenti ripartirebbe a ogni tasto premuto in un input e il focus salterebbe via
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
 
   // Solo i valori passati: per gli altri valgono i default del CSS
   const backdropVars = {
@@ -100,7 +106,7 @@ function Dialog({
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         e.stopPropagation()
-        onClose()
+        onCloseRef.current()
         return
       }
       // Il Tab gira solo tra gli elementi del dialog
@@ -129,7 +135,7 @@ function Dialog({
       document.documentElement.style.overflow = overflow
       previous?.focus()
     }
-  }, [open, onClose])
+  }, [open])
 
   return (
     <>

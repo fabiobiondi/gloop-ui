@@ -37,6 +37,13 @@
   body[data-palette="grape"] { --c1: #a46bff; --c2: #5b7bff; --c3: #39c2ff; }
   body[data-palette="mono"]  { --c1: var(--fg); --c2: var(--fg); --c3: var(--fg); }
 
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--fg) 22%, transparent) transparent; }
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+    ::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--fg) 22%, transparent) padding-box; }
+  }
+
   body {
     margin: 0;
     background: var(--bg);

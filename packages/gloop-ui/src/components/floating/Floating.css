@@ -11,13 +11,15 @@
   width: max-content;
   max-width: calc(100vw - 16px);
   color: var(--ui-fg);
+  /* Fondo di bolla e freccia */
+  --floating-bg: var(--ui-bg);
 }
 
 /* Niente box-shadow esterna: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
 .floating__bubble {
   position: relative;
   max-width: inherit;
-  background: var(--ui-bg);
+  background: var(--floating-bg);
   /* Bordo interno sottile: stacca la bolla dal fondo anche in tema scuro */
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-fg) 10%, transparent);
   outline: none;
@@ -28,7 +30,7 @@
   width: var(--floating-arrow);
   height: var(--floating-arrow);
   border-radius: 2px;
-  background: var(--ui-bg);
+  background: var(--floating-bg);
   pointer-events: auto;
 }
 
@@ -68,6 +70,11 @@
 
 /* ---------- Popover ---------- */
 
+/* Fondo --ui-surface: Input e bottoni dentro il popover (che usano --ui-bg) restano distinguibili */
+.floating--popover {
+  --floating-bg: var(--ui-surface, color-mix(in srgb, var(--ui-bg), var(--ui-fg) 6%));
+}
+
 .floating--popover .floating__bubble {
   border-radius: 20px;
   font-size: 14px;
@@ -79,4 +86,24 @@
   max-height: min(70vh, 560px);
   padding: 16px;
   overflow: auto;
+  /* Scrollbar sottile nei colori della bolla, binario trasparente */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ui-fg) 28%, transparent) transparent;
+}
+
+/* Browser senza scrollbar-color (Safari meno recenti) */
+@supports not (scrollbar-color: auto) {
+  .floating--popover .floating__content::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .floating--popover .floating__content::-webkit-scrollbar-track,
+  .floating--popover .floating__content::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  .floating--popover .floating__content::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ui-fg) 28%, transparent) padding-box;
+  }
 }

@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from 'gloop-ui'
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
-import DialogDemo from './DialogDemo'
+import DialogDemo, { DialogFormDemo } from './DialogDemo'
 import { ControlledSliderDemo } from './SliderDemo'
 import { AutoPlacementDemo, DirectionDemo } from './DirectionDemo'
 import {
@@ -749,6 +749,36 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
 </Dialog>`,
       },
       {
+        title: 'Form',
+        description:
+          'Inputs as children, actions outside the form. An onClick that returns false keeps the dialog open: Invite waits for an email.',
+        preview: <DialogFormDemo />,
+        code: `const [open, setOpen] = useState(false)
+const [email, setEmail] = useState('')
+
+// false keeps the dialog open
+function invite() {
+  if (!email.trim()) return false
+  sendInvite(email)
+}
+
+<Dialog
+  open={open}
+  onClose={() => setOpen(false)}
+  title="Invite a teammate"
+  icon={UserIcon}
+  actions={[
+    { label: 'Cancel', icon: XIcon },
+    { label: 'Invite', icon: CheckIcon, color: 'var(--ui-accent)', onClick: invite },
+  ]}
+>
+  <form onSubmit={(e) => { e.preventDefault(); if (invite() !== false) setOpen(false) }}>
+    <Input label="Name" placeholder="Your teammate's name" />
+    <Input label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+  </form>
+</Dialog>`,
+      },
+      {
         title: 'Icon-only actions',
         description: 'iconOnly buttons: the label stays as accessible name.',
         preview: (
@@ -943,20 +973,21 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
         preview: <ProfilePopover />,
         code: `function SaveButton() {
   const { close } = usePopover()
-  return <button onClick={() => { save(); close() }}>Save</button>
+  return <ExpandButton variant="action" label="Save" icon={CheckIcon} activeColor="var(--ui-accent)" onClick={() => { save(); close() }} />
 }
 
 <Popover
   label="Edit profile"
   content={({ close }) => (
     <form>
-      <label>Name <input /></label>
-      <button type="button" onClick={close}>Cancel</button>
+      <Input label="Name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input label="Email" type="email" placeholder="ada@example.com" />
+      <ExpandButton variant="action" label="Cancel" icon={XIcon} onClick={close} />
       <SaveButton />
     </form>
   )}
 >
-  <button>Ada Lovelace</button>
+  <button>{name || 'Edit profile'}</button>
 </Popover>`,
         stage: { minHeight: 320 },
       },

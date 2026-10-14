@@ -1,0 +1,22 @@
+/* Demo del Dialog con form */
+.dd-stack {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.dd-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--pg-muted);
+}
+
+/* Il corpo del Dialog è centrato e attenuato: il form torna allineato a sinistra e a colore pieno */
+.dd-form {
+  display: grid;
+  row-gap: 12px;
+  /* spazio per la linguetta della label di Input che sale sopra il campo */
+  padding-top: 12px;
+  text-align: left;
+  color: var(--ui-fg);
+}

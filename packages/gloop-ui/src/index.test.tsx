@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -249,6 +250,29 @@ describe('Dialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(onClick).toHaveBeenCalledOnce()
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('keeps focus in an input while typing, with an inline onClose', async () => {
+    function Form() {
+      const [open, setOpen] = useState(false)
+      const [value, setValue] = useState('')
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open</button>
+          <Dialog open={open} onClose={() => setOpen(false)} title="Invite">
+            <Input label="Email" value={value} onChange={(e) => setValue(e.target.value)} />
+          </Dialog>
+        </>
+      )
+    }
+    render(<Form />)
+    // Il focus parte dal trigger: è lì che tornava a ogni tasto
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }))
+    const input = screen.getByRole('textbox', { name: 'Email' })
+    await userEvent.click(input)
+    await userEvent.keyboard('ada@example.com')
+    expect(input).toHaveProperty('value', 'ada@example.com')
+    expect(document.activeElement).toBe(input)
   })
 })
 

@@ -25,6 +25,9 @@ const THEME_GLOBAL = `:root {
   --ui-bg: #18181b;     /* surface of bars, buttons and blobs */
   --ui-fg: #ffffff;     /* text and icons on the surface */
   --ui-accent: #4f7cff; /* focus, selection and active states */
+  /* Optional: Popover and Dialog background.
+     Default: --ui-bg mixed 6% toward --ui-fg */
+  --ui-surface: #222225;
 }`
 
 const THEME_LOCAL = `/* Only the components inside .promo */
@@ -87,6 +90,10 @@ export const guides: Guide[] = [
         <h2>The variables</h2>
         <p>Shades (muted text, borders, hover) are derived from these three with <code>color-mix</code>.</p>
         <CodeBlock code={THEME_GLOBAL} lang="css" />
+        <p>
+          <code>--ui-surface</code> is optional. It is the background of <code>Popover</code> and <code>Dialog</code>,
+          a shade lighter than <code>--ui-bg</code> by default, so the inputs and buttons inside them stand out.
+        </p>
 
         <h2>Scoped themes</h2>
         <p>The variables are inherited, so you can redefine them on any ancestor to theme just one area.</p>

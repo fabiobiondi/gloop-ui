@@ -9,6 +9,35 @@
   color-scheme: light dark;
   /* Spazio della scrollbar sempre riservato: quando Dialog blocca lo scroll (overflow: hidden) la pagina non si sposta */
   scrollbar-gutter: stable;
+  /* Scrollbar sottili in tutto il sito: solo il thumb arrotondato, binario trasparente */
+  --scroll-thumb: light-dark(rgb(24 24 27 / 0.22), rgb(244 244 245 / 0.22));
+  --scroll-thumb-hover: light-dark(rgb(24 24 27 / 0.4), rgb(244 244 245 / 0.4));
+}
+
+/* scrollbar-width non si eredita: va su ogni elemento */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+
+/* Browser senza scrollbar-color (Safari meno recenti): stessa resa con gli pseudo-elementi */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: var(--scroll-thumb) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scroll-thumb-hover);
+  }
 }
 
 body {

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { FloatingBoundary, Popover, Tooltip, usePopover, type FloatingAlign, type FloatingPlacement } from 'gloop-ui'
+import { ExpandButton, FloatingBoundary, Input, Popover, Tooltip, usePopover, type FloatingAlign, type FloatingPlacement } from 'gloop-ui'
+import { CheckIcon, UserIcon, XIcon } from './icons'
 import './FloatingDemos.css'
 
 // Trigger semplici: Tooltip e Popover clonano il figlio, che deve accettare un ref
@@ -31,22 +32,21 @@ export function TooltipPlacements() {
 function SaveButton({ onSave }: { onSave: () => void }) {
   const { close } = usePopover()
   return (
-    <button
-      type="submit"
-      className="fd-btn fd-btn--primary"
-      onClick={(e) => {
-        e.preventDefault()
+    <ExpandButton
+      variant="action"
+      label="Save"
+      icon={CheckIcon}
+      activeColor="var(--ui-accent)"
+      onClick={() => {
         onSave()
         close()
       }}
-    >
-      Save
-    </button>
+    />
   )
 }
 
 export function ProfilePopover() {
-  const [name, setName] = useState('Ada Lovelace')
+  const [name, setName] = useState('')
   const [draft, setDraft] = useState(name)
 
   return (
@@ -54,29 +54,27 @@ export function ProfilePopover() {
       label="Edit profile"
       onOpenChange={(open) => open && setDraft(name)}
       content={({ close }) => (
-        <form className="fd-form">
-          <label>
-            Name
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} />
-          </label>
-          <label>
-            Role
-            <select defaultValue="admin">
-              <option value="admin">Admin</option>
-              <option value="editor">Editor</option>
-              <option value="viewer">Viewer</option>
-            </select>
-          </label>
+        <form
+          className="fd-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            setName(draft)
+            close()
+          }}
+        >
+          <Input label="Name" placeholder="Your name" value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <Input label="Email" type="email" placeholder="ada@example.com" />
           <div className="fd-form__actions">
-            <button type="button" className="fd-btn" onClick={close}>
-              Cancel
-            </button>
+            <ExpandButton variant="action" label="Cancel" icon={XIcon} onClick={close} />
             <SaveButton onSave={() => setName(draft)} />
           </div>
         </form>
       )}
     >
-      <DemoButton>{name}</DemoButton>
+      <DemoButton>
+        {UserIcon}
+        {name || 'Edit profile'}
+      </DemoButton>
     </Popover>
   )
 }

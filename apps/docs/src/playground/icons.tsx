@@ -121,6 +121,12 @@ export const TrashIcon = (
   </svg>
 )
 
+export const XIcon = (
+  <svg {...svgProps}>
+    <path d="M18 6 6 18M6 6l12 12" />
+  </svg>
+)
+
 export const CheckIcon = (
   <svg {...svgProps}>
     <path d="M20 6 9 17l-5-5" />

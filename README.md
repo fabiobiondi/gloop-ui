@@ -48,13 +48,14 @@ import { ExpandButton, TabBar } from 'gloop-ui'
 
 ## Theming
 
-All components read three CSS variables. Set them globally or on any ancestor:
+All components read three CSS variables, plus an optional fourth. Set them globally or on any ancestor:
 
 ```css
 :root {
   --ui-bg: #18181b;     /* surface of bars, buttons and blobs */
   --ui-fg: #ffffff;     /* text and icons */
   --ui-accent: #4f7cff; /* focus, selection, active states */
+  --ui-surface: #222225; /* optional: Popover and Dialog background (default: --ui-bg mixed 6% toward --ui-fg) */
 }
 
 .my-area { --ui-bg: #fff; --ui-fg: #18181b; --ui-accent: #e11d48; }
