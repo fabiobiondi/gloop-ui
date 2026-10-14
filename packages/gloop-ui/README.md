@@ -42,6 +42,7 @@ import { ExpandButton, TabBar } from 'gloop-ui'
 | `Dialog` | Liquid modal with icon badge and dripping actions |
 | `Tooltip` | Hover/focus tooltip that drips out of its arrow, with delay, flip and shift |
 | `Popover` | Liquid popover for forms and components: outside click, Escape, `close()` / `usePopover()`, rollout |
+| `FloatingBoundary` | Area that keeps tooltips, popovers and tab menus within its edges |
 | `ShapeEditor` | Excalidraw-style shape toolbar with nested popovers |
 | `GooPill` · `GooFilter` | Building blocks of the liquid effect |
 
