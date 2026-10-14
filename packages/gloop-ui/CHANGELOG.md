@@ -1,5 +1,17 @@
 # gloop-ui
 
+## 0.3.0
+
+### Minor Changes
+
+- 3c01c37: New `GloopLoading`: a liquid loader where a drop falls in, bounces, swells into a blob and keeps dripping, with an optional `title` and `description`. `size`, `color` (solid or `[from, to]` gradient) and `speed` are configurable; `intro={false}` skips the fall. Static with `prefers-reduced-motion`.
+- 2a2871d: `List` accepts groups with a title (`{ type: 'group', id, label, items }`) and dividers (`{ type: 'divider' }`) among its items. The liquid pill moves across groups and dividers. New exported types: `ListEntry`, `ListGroup`, `ListDivider`.
+- a383020: New `ProgressBar`: a liquid progress bar whose blob head springs ahead on every update while the fill catches up, fused by the goo filter. Without `value` it is indeterminate, with blobs that run, merge and split. Optional `drip`, `showValue` (`'inside'` or `'bubble'`), `formatValue`, `color` (solid or `[from, to]` gradient), `thickness` and `speed`. Calm with `prefers-reduced-motion`.
+- 3c01c37: `TabBar`: `layout="inline"` puts icon, label and value on one row, with tabs as wide as their content; `value` on each tab shows a counter or badge (next to the label inline, on the icon when stacked); `position="static"` keeps the bar in the page flow instead of fixed to the bottom. `GooPill` now animates its `length` with the same springs, so the pill stretches between items of different widths.
+- d9bd842: Add the optional `--ui-surface` token for the Popover and Dialog background. By default it is `--ui-bg` mixed 6% toward `--ui-fg`, so inputs and buttons inside them stand out. Popover scrollbars are now thin.
+  
+  Fix Dialog: an input inside it no longer loses focus after each keystroke when `onClose` is an inline function.
+
 ## 0.2.0
 
 New form controls and floating bubbles, a much more flexible `CircleMenu`, and tab menus that open on any side.
