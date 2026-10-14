@@ -84,3 +84,33 @@
   font-variant-numeric: tabular-nums;
   color: var(--list-fg-muted, color-mix(in srgb, var(--ui-fg) 60%, transparent));
 }
+
+/* ---------- Gruppi e divisori (altezze fisse, vedi ListCore) ---------- */
+
+.list__group {
+  display: grid;
+  gap: var(--list-gap);
+}
+
+.list__group-label {
+  display: flex;
+  align-items: flex-end;
+  height: var(--list-group-label-height);
+  padding: 0 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--list-fg-muted, color-mix(in srgb, var(--ui-fg) 55%, transparent));
+}
+
+.list__divider {
+  height: var(--list-divider-height);
+  margin: 0 12px;
+  /* Linea di 1px al centro della riga */
+  background: linear-gradient(
+      color-mix(in srgb, var(--ui-fg) 14%, transparent),
+      color-mix(in srgb, var(--ui-fg) 14%, transparent)
+    )
+    center / 100% 1px no-repeat;
+}

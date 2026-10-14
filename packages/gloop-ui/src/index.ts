@@ -29,7 +29,7 @@ export { default as Input } from './components/Input'
 export type { InputProps } from './components/Input'
 
 export { default as List } from './components/List'
-export type { ListProps, ListItem } from './components/List'
+export type { ListProps, ListItem, ListEntry, ListGroup, ListDivider } from './components/List'
 
 export { default as Slider } from './components/Slider'
 export type { SliderProps, SliderMark } from './components/Slider'

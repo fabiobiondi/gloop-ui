@@ -1482,6 +1482,94 @@ function invite() {
   ]}
 />`,
       },
+      {
+        title: 'Groups',
+        description: 'Items gathered under a title. The pill glides from one group to the other.',
+        preview: (
+          <div style={{ width: 240 }}>
+            <List
+              label="Mailbox"
+              defaultValue="inbox"
+              items={[
+                {
+                  type: 'group',
+                  id: 'mail',
+                  label: 'Mail',
+                  items: [
+                    { id: 'inbox', label: 'Inbox', icon: MailIcon, meta: 12 },
+                    { id: 'starred', label: 'Starred', icon: StarIcon, meta: 3 },
+                    { id: 'saved', label: 'Saved', icon: BookmarkIcon },
+                  ],
+                },
+                {
+                  type: 'group',
+                  id: 'media',
+                  label: 'Media',
+                  items: [
+                    { id: 'photos', label: 'Photos', icon: ImageIcon },
+                    { id: 'videos', label: 'Videos', icon: VideoIcon },
+                  ],
+                },
+              ]}
+            />
+          </div>
+        ),
+        code: `<List
+  label="Mailbox"
+  defaultValue="inbox"
+  items={[
+    {
+      type: 'group',
+      id: 'mail',
+      label: 'Mail',
+      items: [
+        { id: 'inbox', label: 'Inbox', icon: MailIcon, meta: 12 },
+        { id: 'starred', label: 'Starred', icon: StarIcon, meta: 3 },
+        { id: 'saved', label: 'Saved', icon: BookmarkIcon },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'media',
+      label: 'Media',
+      items: [
+        { id: 'photos', label: 'Photos', icon: ImageIcon },
+        { id: 'videos', label: 'Videos', icon: VideoIcon },
+      ],
+    },
+  ]}
+/>`,
+      },
+      {
+        title: 'Divider',
+        description: 'A thin line between items, here to set the destructive action apart.',
+        preview: (
+          <div style={{ width: 240 }}>
+            <List
+              label="Actions"
+              highlight="hover"
+              items={[
+                { id: 'share', label: 'Share', icon: ShareIcon },
+                { id: 'copy', label: 'Copy link', icon: LinkIcon },
+                { id: 'download', label: 'Download', icon: DownloadIcon },
+                { type: 'divider' },
+                { id: 'delete', label: 'Delete', icon: TrashIcon },
+              ]}
+            />
+          </div>
+        ),
+        code: `<List
+  label="Actions"
+  highlight="hover"
+  items={[
+    { id: 'share', label: 'Share', icon: ShareIcon },
+    { id: 'copy', label: 'Copy link', icon: LinkIcon },
+    { id: 'download', label: 'Download', icon: DownloadIcon },
+    { type: 'divider' },
+    { id: 'delete', label: 'Delete', icon: TrashIcon },
+  ]}
+/>`,
+      },
     ],
   },
   {

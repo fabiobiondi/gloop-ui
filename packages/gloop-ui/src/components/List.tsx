@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { MotionConfig, type Transition } from 'motion/react'
-import ListCore, { type ListItem } from './list/ListCore'
+import ListCore, { flattenEntries, type ListDivider, type ListEntry, type ListGroup, type ListItem } from './list/ListCore'
 
-export type { ListItem }
+export type { ListDivider, ListEntry, ListGroup, ListItem }
 
 export type ListProps = {
-  items: ListItem[]
+  /** Voci, gruppi con un titolo ({ type: 'group' }) e divisori ({ type: 'divider' }) */
+  items: ListEntry[]
   /** Id della voce selezionata (controllato) */
   value?: string | null
   /** Id selezionato all'inizio (non controllato) */
@@ -37,10 +38,11 @@ function List({
 }: ListProps) {
   const [internal, setInternal] = useState(defaultValue)
   const selected = value !== undefined ? value : internal
-  const selectedIndex = selected === null ? -1 : items.findIndex((item) => item.id === selected)
+  const flat = flattenEntries(items)
+  const selectedIndex = selected === null ? -1 : flat.findIndex((item) => item.id === selected)
 
   const showSelected = highlight === 'both' || highlight === 'selected'
-  const Root = items.some((item) => item.href !== undefined) ? 'nav' : 'div'
+  const Root = flat.some((item) => item.href !== undefined) ? 'nav' : 'div'
 
   return (
     <MotionConfig transition={morph} reducedMotion="user">

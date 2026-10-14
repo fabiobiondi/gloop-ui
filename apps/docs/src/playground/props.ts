@@ -115,7 +115,7 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'label', type: 'string', description: 'Accessible name of the popover (role="dialog").' },
   ],
   list: [
-    { name: 'items', type: '{ id: string; label: string; icon?: ReactNode; meta?: ReactNode; href?: string; disabled?: boolean }[]', required: true, description: 'Items of the list. With href an item is a link and the list is a <nav>.' },
+    { name: 'items', type: '(ListItem | ListGroup | ListDivider)[]', required: true, description: 'Items of the list. ListItem: { id, label, icon?, meta?, href?, disabled? }; with href an item is a link and the list is a <nav>. ListGroup: { type: \'group\', id, label, items: ListItem[] } gathers items under a title. ListDivider: { type: \'divider\', id? } draws a line.' },
     { name: 'value', type: 'string | null', description: 'Id of the selected item (controlled).' },
     { name: 'defaultValue', type: 'string | null', default: 'null', description: 'Initially selected id (uncontrolled).' },
     { name: 'onChange', type: '(id: string, item: ListItem) => void', description: 'Called when an item is clicked.' },

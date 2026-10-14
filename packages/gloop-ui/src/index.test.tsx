@@ -496,6 +496,27 @@ describe('List', () => {
     expect(link.getAttribute('href')).toBe('#b')
     expect(link.getAttribute('aria-current')).toBe('page')
   })
+
+  it('renders groups and dividers and selects across them', async () => {
+    const onChange = vi.fn()
+    render(
+      <List
+        defaultValue="inbox"
+        onChange={onChange}
+        items={[
+          { type: 'group', id: 'mail', label: 'Mail', items: [{ id: 'inbox', label: 'Inbox' }] },
+          { type: 'divider' },
+          { type: 'group', id: 'more', label: 'More', items: [{ id: 'settings', label: 'Settings' }] },
+        ]}
+      />,
+    )
+    expect(screen.getByRole('group', { name: 'Mail' })).toBeTruthy()
+    expect(screen.getByRole('group', { name: 'More' })).toBeTruthy()
+    expect(screen.getByRole('separator')).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(onChange).toHaveBeenCalledWith('settings', { id: 'settings', label: 'Settings' })
+    expect(screen.getByRole('button', { name: 'Settings' }).getAttribute('aria-current')).toBe('true')
+  })
 })
 
 describe('TabMenuSubmenu', () => {
