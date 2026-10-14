@@ -22,6 +22,9 @@ export type { GloopLoadingProps } from './components/GloopLoading'
 export { default as GooPill } from './components/GooPill'
 export type { GooPillProps } from './components/GooPill'
 
+export { default as ProgressBar } from './components/ProgressBar'
+export type { ProgressBarProps } from './components/ProgressBar'
+
 export { GooFilter } from './components/goo'
 export type { GooFilterProps } from './components/goo'
 

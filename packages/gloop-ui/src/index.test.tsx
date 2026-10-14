@@ -10,6 +10,7 @@ import {
   GooPill,
   Input,
   List,
+  ProgressBar,
   Search,
   ShapeEditor,
   Slider,
@@ -33,6 +34,7 @@ describe('render', () => {
     ['GooPill', () => <GooPill index={0} step={40} />],
     ['Input', () => <Input label="Email" />],
     ['List', () => <List items={[{ id: 'a', label: 'A' }]} />],
+    ['ProgressBar', () => <ProgressBar label="Upload" value={40} drip showValue="bubble" />],
     ['Search', () => <Search />],
     ['ShapeEditor', () => <ShapeEditor />],
     ['Slider', () => <Slider label="Volume" marks />],
@@ -304,6 +306,69 @@ describe('GloopLoading', () => {
   it('sizes the blob from size', () => {
     render(<GloopLoading size={48} />)
     expect(screen.getByRole('status').style.getPropertyValue('--gloop-loading-size')).toBe('48px')
+  })
+})
+
+describe('ProgressBar', () => {
+  it('exposes the value as a progressbar', () => {
+    render(<ProgressBar label="Upload" value={40} />)
+    const bar = screen.getByRole('progressbar', { name: 'Upload' })
+    expect(bar.getAttribute('aria-valuenow')).toBe('40')
+    expect(bar.getAttribute('aria-valuetext')).toBe('40%')
+    expect(bar.getAttribute('aria-valuemin')).toBe('0')
+    expect(bar.getAttribute('aria-valuemax')).toBe('100')
+  })
+
+  it('clamps the value and follows min and max', () => {
+    const { rerender } = render(<ProgressBar label="Upload" value={150} />)
+    const bar = screen.getByRole('progressbar')
+    expect(bar.getAttribute('aria-valuenow')).toBe('100')
+    rerender(<ProgressBar label="Upload" value={-5} />)
+    expect(bar.getAttribute('aria-valuenow')).toBe('0')
+    rerender(<ProgressBar label="Upload" value={5} min={0} max={10} />)
+    expect(bar.getAttribute('aria-valuetext')).toBe('50%')
+    rerender(<ProgressBar label="Upload" value={Number.NaN} />)
+    expect(bar.getAttribute('aria-valuenow')).toBe('0')
+  })
+
+  it('is indeterminate without a value', () => {
+    render(<ProgressBar label="Loading" showValue="bubble" />)
+    const bar = screen.getByRole('progressbar', { name: 'Loading' })
+    expect(bar.hasAttribute('aria-valuenow')).toBe(false)
+    expect(bar.hasAttribute('aria-valuetext')).toBe(false)
+    expect(bar.dataset.indeterminate).toBe('true')
+    expect(bar.textContent).toBe('')
+  })
+
+  it('uses aria-labelledby and formatValue', () => {
+    render(
+      <>
+        <span id="pb-label">Files</span>
+        <ProgressBar aria-labelledby="pb-label" value={3} max={12} formatValue={(v, p) => `${v} of 12 (${p}%)`} />
+      </>,
+    )
+    const bar = screen.getByRole('progressbar', { name: 'Files' })
+    expect(bar.getAttribute('aria-valuetext')).toBe('3 of 12 (25%)')
+  })
+
+  it('shows the value only when asked', () => {
+    const { rerender } = render(<ProgressBar label="Upload" value={60} />)
+    const bar = screen.getByRole('progressbar')
+    expect(bar.textContent).toBe('')
+    rerender(<ProgressBar label="Upload" value={60} showValue="bubble" />)
+    expect(bar.textContent).toContain('60%')
+    rerender(<ProgressBar label="Upload" value={60} showValue="inside" thickness={8} />)
+    expect(bar.textContent).toBe('60%')
+    // Con il valore dentro la barra lo spessore non scende sotto i 18px
+    expect(bar.style.getPropertyValue('--progress-h')).toBe('18px')
+  })
+
+  it('renders hidden drops with drip', () => {
+    const { container, rerender } = render(<ProgressBar label="Upload" value={60} />)
+    expect(container.querySelectorAll('.progress__drop')).toHaveLength(0)
+    rerender(<ProgressBar label="Upload" value={60} drip />)
+    expect(container.querySelectorAll('.progress__drop').length).toBeGreaterThan(0)
+    expect(container.querySelector('.progress__drop')?.closest('[aria-hidden="true"]')).not.toBeNull()
   })
 })
 

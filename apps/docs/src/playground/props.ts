@@ -157,5 +157,17 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'intro', type: 'boolean', default: 'true', description: 'The drop falls in, bounces and swells before dripping. false: the blob is there from the start. Static with prefers-reduced-motion.' },
     { name: 'className / style', type: 'string / CSSProperties', description: 'Applied to the root element.' },
   ],
+  'progress-bar': [
+    { name: 'value', type: 'number | null', description: 'Current value, clamped to min…max. Without it (undefined or null) the bar is indeterminate: blobs run along it forever.' },
+    { name: 'min / max', type: 'number', default: '0 / 100', description: 'Range of value.' },
+    { name: 'label', type: 'string', description: 'Accessible name of the progressbar (or use aria-labelledby).' },
+    { name: 'showValue', type: "'none' | 'inside' | 'bubble'", default: "'none'", description: 'inside: the value at the end of the fill (thickness becomes at least 18px). bubble: the value in a drop that rides on the head. Ignored when indeterminate.' },
+    { name: 'formatValue', type: '(value: number, percent: number) => string', default: '`${Math.round(percent)}%`', description: 'Text of the value, also used as aria-valuetext.' },
+    { name: 'color', type: 'string | [string, string]', default: '--ui-accent', description: 'Solid color, or a [from, to] gradient spread along the whole bar.' },
+    { name: 'thickness', type: 'number', default: '10', description: 'Height of the bar in px; the blob head is 1.7× thicker.' },
+    { name: 'drip', type: 'boolean', default: 'false', description: 'Drops ooze out of the fill, or out of the running blobs when indeterminate. Reserves space below the bar. Hidden with prefers-reduced-motion.' },
+    { name: 'speed', type: 'number', default: '1', description: 'Speed multiplier of the indeterminate blobs and of the drops.' },
+    { name: 'className / style', type: 'string / CSSProperties', description: 'Applied to the root. Text on the fill uses --progress-on-fill.' },
+  ],
   'shape-editor': [],
 }

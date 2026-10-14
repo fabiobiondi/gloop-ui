@@ -39,6 +39,7 @@ import { ExpandButton, TabBar } from 'gloop-ui'
 | `CircleMenu` | A "+" that throws icons around itself, with optional sub-menus |
 | `TabMenu` · `TabMenuMotion` · `TabMenuSubmenu` | Liquid tab menus that drop out of a trigger |
 | `TabBar` | Navigation bar with a liquid selection pill: fixed at the bottom or inline, with optional counters |
+| `ProgressBar` | Liquid progress bar: a blob head springs ahead and the fill catches up; indeterminate mode, optional drip |
 | `Dialog` | Liquid modal with icon badge and dripping actions |
 | `Tooltip` | Hover/focus tooltip that drips out of its arrow, with delay, flip and shift |
 | `Popover` | Liquid popover for forms and components: outside click, Escape, `close()` / `usePopover()`, rollout |

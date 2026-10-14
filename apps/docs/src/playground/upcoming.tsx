@@ -24,10 +24,6 @@ const soon = (id: string, name: string, description: string, ideas: string[]): G
 })
 
 export const upcoming: Guide[] = [
-  soon('progress-bar', 'ProgressBar', 'A bar that fills up like liquid.', [
-    'Determinate and indeterminate',
-    'Drops that run ahead of the fill',
-  ]),
   soon('bar-chart', 'Bar Chart', 'Bars that rise and wobble like jelly when the data changes.', [
     'Animated updates',
     'Tooltips on every bar',

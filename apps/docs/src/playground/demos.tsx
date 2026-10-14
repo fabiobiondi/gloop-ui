@@ -5,6 +5,7 @@ import {
   GloopLoading,
   Input,
   List,
+  ProgressBar,
   Search,
   ShapeEditor,
   Slider,
@@ -18,6 +19,7 @@ import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo, { DialogFormDemo } from './DialogDemo'
 import { ControlledSliderDemo } from './SliderDemo'
 import { GloopLoadingPlayground } from './GloopLoadingDemo'
+import { ProgressBarAutoDemo, ProgressBarPlayground } from './ProgressBarDemo'
 import { AutoPlacementDemo, DirectionDemo } from './DirectionDemo'
 import {
   CardMenuPopover,
@@ -1919,6 +1921,104 @@ function invite() {
         code: `<GloopLoading size={40} speed={2} color="#e11d48" intro={false} />
 <GloopLoading size={64} color={['#38bdf8', '#2563eb']} />
 <GloopLoading size={88} speed={0.5} color="#16a34a" title="Slow" />`,
+      },
+    ],
+  },
+  {
+    id: 'progress-bar',
+    name: 'ProgressBar',
+    group: 'various',
+    status: 'experimental',
+    description:
+      'A bar that fills up like liquid: a blob head springs ahead on every update and the fill catches up. Without a value it runs forever.',
+    demos: [
+      {
+        title: 'Default',
+        preview: (
+          <div style={{ width: 'min(100%, 360px)' }}>
+            <ProgressBar label="Upload" value={60} />
+          </div>
+        ),
+        code: `<ProgressBar label="Upload" value={60} />`,
+      },
+      {
+        title: 'Animated',
+        description:
+          'Every time the value changes the head jumps ahead with a bounce, stretching a liquid neck that the fill then swallows. At 100% it gulps once.',
+        stage: { minHeight: 200 },
+        preview: <ProgressBarAutoDemo />,
+        code: `const [value, setValue] = useState(0)
+
+<ProgressBar label="Upload" value={value} showValue="bubble" color={['#ff7ab6', '#7b5cff']} />`,
+      },
+      {
+        title: 'Try it',
+        description: 'Drag the value to feel the spring, then try thickness, colors, drip and the indeterminate mode.',
+        stage: { minHeight: 420 },
+        preview: <ProgressBarPlayground />,
+        code: `<ProgressBar
+  label="Progress"
+  value={45}
+  thickness={10}
+  drip
+  showValue="bubble"
+/>`,
+      },
+      {
+        title: 'Indeterminate',
+        description:
+          'Without value (undefined or null) blobs run along the track, merge when they touch and pull apart. aria-valuenow is left out, as the ARIA spec asks.',
+        preview: (
+          <div style={{ display: 'grid', gap: 24, width: 'min(100%, 360px)' }}>
+            <ProgressBar label="Loading" />
+            <ProgressBar label="Loading" color={['#38bdf8', '#2563eb']} thickness={6} speed={0.6} />
+          </div>
+        ),
+        code: `<ProgressBar label="Loading" />
+<ProgressBar label="Loading" color={['#38bdf8', '#2563eb']} thickness={6} speed={0.6} />`,
+      },
+      {
+        title: 'Drip',
+        description: 'drip makes drops ooze out of the fill (or out of the running blobs). The space below is reserved, so the layout never jumps.',
+        stage: { minHeight: 220 },
+        preview: (
+          <div style={{ display: 'grid', gap: 16, width: 'min(100%, 360px)' }}>
+            <ProgressBar label="Upload" value={70} drip color={['#ff7ab6', '#7b5cff']} />
+            <ProgressBar label="Loading" drip color="#16a34a" />
+          </div>
+        ),
+        code: `<ProgressBar label="Upload" value={70} drip color={['#ff7ab6', '#7b5cff']} />
+<ProgressBar label="Loading" drip color="#16a34a" />`,
+      },
+      {
+        title: 'Value inside and sizes',
+        description: 'showValue="inside" writes the value at the end of the fill (thickness is raised to at least 18px). formatValue changes the text.',
+        preview: (
+          <div style={{ display: 'grid', gap: 16, width: 'min(100%, 360px)' }}>
+            <ProgressBar label="Storage" value={72} showValue="inside" color="#e11d48" />
+            <ProgressBar
+              label="Files"
+              value={9}
+              max={12}
+              thickness={22}
+              showValue="inside"
+              formatValue={(v) => `${v} / 12 files`}
+              color={['#a3e635', '#16a34a']}
+            />
+            <ProgressBar label="Steps" value={2} max={5} thickness={4} />
+          </div>
+        ),
+        code: `<ProgressBar label="Storage" value={72} showValue="inside" color="#e11d48" />
+<ProgressBar
+  label="Files"
+  value={9}
+  max={12}
+  thickness={22}
+  showValue="inside"
+  formatValue={(v) => \`\${v} / 12 files\`}
+  color={['#a3e635', '#16a34a']}
+/>
+<ProgressBar label="Steps" value={2} max={5} thickness={4} />`,
       },
     ],
   },
