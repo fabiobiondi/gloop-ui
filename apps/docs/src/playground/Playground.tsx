@@ -293,9 +293,38 @@ function NavGroup({
   )
 }
 
+// Schermi stretti: la sidebar diventa un menu a cassetto aperto dall'hamburger
+function useMobileMenu(pageId: string) {
+  const [open, setOpen] = useState(false)
+
+  // Scelta una pagina il menu si chiude (anche dal browser: indietro/avanti)
+  useEffect(() => setOpen(false), [pageId])
+
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    // Tornati su schermo largo il cassetto non esiste più: niente stato appeso
+    const wide = window.matchMedia('(min-width: 761px)')
+    const onWide = () => wide.matches && setOpen(false)
+    // La pagina sotto non scorre
+    const overflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKeyDown)
+    wide.addEventListener('change', onWide)
+    return () => {
+      document.documentElement.style.overflow = overflow
+      document.removeEventListener('keydown', onKeyDown)
+      wide.removeEventListener('change', onWide)
+    }
+  }, [open])
+
+  return [open, setOpen] as const
+}
+
 function Playground() {
   const page = useHashPage()
   const [theme, setTheme] = useTheme()
+  const [menuOpen, setMenuOpen] = useMobileMenu(page.id)
 
   // Le variabili ereditate da tutti i componenti (vedi gloop-ui, theme.css)
   const themeVars = Object.fromEntries(
@@ -320,7 +349,37 @@ function Playground() {
 
   return (
     <div className="pg" style={themeVars}>
-      <aside className="pg-sidebar">
+      {/* Solo su schermi stretti (CSS): marchio e hamburger */}
+      <header className="pg-topbar">
+        <a href="#getting-started" className="pg-brand__name">
+          gloop-ui
+        </a>
+        <button
+          type="button"
+          className="pg-topbar__menu"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          aria-controls="pg-sidebar"
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" data-open={menuOpen || undefined}>
+            <path d="M4 7h16" />
+            <path d="M4 12h16" />
+            <path d="M4 17h16" />
+          </svg>
+        </button>
+      </header>
+      <div className="pg-scrim" data-open={menuOpen || undefined} aria-hidden="true" onClick={() => setMenuOpen(false)} />
+
+      <aside
+        id="pg-sidebar"
+        className="pg-sidebar"
+        data-open={menuOpen || undefined}
+        // Un link interno chiude il menu anche se porta alla pagina già aperta (l'hash non cambia)
+        onClick={(e) => {
+          if ((e.target as Element).closest('a[href^="#"]')) setMenuOpen(false)
+        }}
+      >
         <header className="pg-brand">
           <a href="#getting-started" className="pg-brand__name">
             gloop-ui

@@ -368,20 +368,135 @@
 
 /* ---------- Schermi stretti: una colonna, elenco in alto ---------- */
 
+/* Barra in alto e velo: esistono solo su schermi stretti */
+.pg-topbar,
+.pg-scrim {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .pg {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .pg-sidebar {
-    position: static;
-    height: auto;
-    border-right: 0;
+  .pg-topbar {
+    position: sticky;
+    z-index: 40;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 8px 0 16px;
+    padding-top: env(safe-area-inset-top);
     border-bottom: 1px solid var(--pg-border);
+    background: color-mix(in srgb, var(--pg-bg) 85%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .pg-topbar__menu {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    color: var(--pg-text);
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    &:focus-visible {
+      outline: 2px solid #4f7cff;
+      outline-offset: -2px;
+    }
+
+    & svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    /* Le tre linee diventano una X */
+    & path {
+      transform-origin: 12px 12px;
+      transition:
+        transform 240ms cubic-bezier(0.23, 1, 0.32, 1),
+        opacity 160ms ease;
+    }
+
+    & svg[data-open] path:nth-child(1) {
+      transform: translateY(5px) rotate(45deg);
+    }
+    & svg[data-open] path:nth-child(2) {
+      opacity: 0;
+    }
+    & svg[data-open] path:nth-child(3) {
+      transform: translateY(-5px) rotate(-45deg);
+    }
+  }
+
+  /* Velo dietro il cassetto: un tocco fuori lo chiude */
+  .pg-scrim {
+    position: fixed;
+    z-index: 50;
+    inset: 0;
+    display: block;
+    background: rgb(0 0 0 / 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+
+    &[data-open] {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  /* La sidebar diventa un cassetto che entra da sinistra */
+  .pg-sidebar {
+    position: fixed;
+    z-index: 60;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(300px, 85vw);
+    height: auto;
+    padding-top: calc(24px + env(safe-area-inset-top));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    background: var(--pg-bg);
+    box-shadow: 0 0 40px rgb(0 0 0 / 0.25);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 280ms cubic-bezier(0.32, 0.72, 0, 1),
+      visibility 0s linear 280ms;
+
+    &[data-open] {
+      transform: none;
+      visibility: visible;
+      transition:
+        transform 280ms cubic-bezier(0.32, 0.72, 0, 1),
+        visibility 0s;
+    }
   }
 
   .pg-main {
     padding: 24px 16px 64px;
+  }
+}
+
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+  .pg-sidebar,
+  .pg-sidebar[data-open],
+  .pg-scrim,
+  .pg-topbar__menu path {
+    transition: none;
   }
 }
 
