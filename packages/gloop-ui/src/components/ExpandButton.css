@@ -1,6 +1,19 @@
 .expand-button-wrap {
   position: relative;
   display: inline-flex;
+  /* Colore attuale della superficie, condiviso da bottone, gocce e ponti del goo */
+  --expand-fill: var(--expand-surface);
+}
+
+/* Rollover: la superficie si schiarisce leggermente, gocce comprese */
+@media (hover: hover) {
+  .expand-button-wrap:hover {
+    --expand-fill: color-mix(in srgb, var(--expand-surface), var(--ui-fg) 7%);
+  }
+
+  .expand-button-wrap[data-filled]:hover {
+    --expand-fill: color-mix(in srgb, var(--expand-surface), #fff 9%);
+  }
 }
 
 .expand-button {
@@ -14,13 +27,9 @@
   font-size: 15px;
   font-weight: 500;
   color: var(--ui-fg);
-  background-color: var(--ui-bg);
+  background-color: var(--expand-fill);
   cursor: pointer;
   transition: background-color 400ms cubic-bezier(0.23, 1, 0.32, 1);
-
-  &[data-open] {
-    background-color: var(--expand-active);
-  }
 
   &:focus-visible {
     outline: 2px solid var(--ui-accent);
@@ -101,19 +110,22 @@
   height: var(--drop-size);
   margin-left: calc(var(--drop-size) / -2);
   border-radius: 999px;
-  background: var(--expand-drip);
+  background-color: var(--expand-fill);
   pointer-events: none;
-  transition: background-color 200ms ease;
+  visibility: hidden;
+  transition: background-color 400ms cubic-bezier(0.23, 1, 0.32, 1);
 
-  /* Ferma resta al primo fotogramma, nascosta sotto il bottone */
+  /* Ferma è nascosta: in un bottone tondo i bordi della goccia sporgerebbero dalla curva */
   &[data-running] {
+    visibility: visible;
     animation: expand-button-drip 2.6s cubic-bezier(0.55, 0, 0.75, 0.4) infinite both;
   }
 }
 
 @keyframes expand-button-drip {
   0% {
-    transform: translateY(0) scale(1, 1);
+    /* Parte un po' più su, tutta dentro il bottone anche quando è un cerchio */
+    transform: translateY(-40%) scale(1, 1);
   }
   35% {
     /* Si gonfia e si allunga ancora attaccata al bottone */
@@ -129,15 +141,9 @@
   position: relative;
 }
 
-/* Rollover: la superficie si schiarisce leggermente */
-@media (hover: hover) {
-  .expand-button:hover {
-    background-color: color-mix(in srgb, var(--ui-bg), var(--ui-fg) 7%);
-  }
-
-  .expand-button[data-open]:hover {
-    background-color: color-mix(in srgb, var(--expand-active), #fff 9%);
-  }
+/* Il colore dei ponti del goo segue quello del bottone, con la stessa transizione */
+.expand-button__goo feFlood {
+  transition: flood-color 400ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {

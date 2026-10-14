@@ -142,14 +142,16 @@ function ExpandButton({
   // Azione: label sempre visibile, colorata se c'è activeColor. Toggle: solo da attivo.
   const showLabel = !iconOnly && (isAction || open)
   const filled = isAction ? !!color : open
-  // Le gocce hanno il colore del bottone: activeColor da pieno, --ui-bg altrimenti
-  const dripColor = filled && color ? color : 'var(--ui-bg)'
+  // Colore della superficie: activeColor da pieno, --ui-bg altrimenti. Lo usano bottone e gocce
+  const surface = filled && color ? color : 'var(--ui-bg)'
 
   return (
     // reducedMotion="user": con prefers-reduced-motion niente movimento, solo dissolvenze
     <MotionConfig reducedMotion="user">
       <span
         className="expand-button-wrap"
+        data-filled={filled || undefined}
+        style={{ '--expand-surface': surface } as CSSProperties}
         // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
         onPointerEnter={(e) => e.pointerType !== 'touch' && setHovered(true)}
         onPointerLeave={() => setHovered(false)}
@@ -159,11 +161,11 @@ function ExpandButton({
           className="expand-button__goo"
           style={
             drip
-              ? ({ filter: `url(#${CSS.escape(filterId)})`, '--expand-drip': dripColor } as CSSProperties)
+              ? { filter: `url(#${CSS.escape(filterId)})` }
               : undefined
           }
         >
-          {drip && <GooFilter id={filterId} blur={5} shadow={false} color={dripColor} />}
+          {drip && <GooFilter id={filterId} blur={5} shadow={false} color="var(--expand-fill)" />}
           {drip && <Drips hover={drip === 'hover'} active={drip !== 'hover' || hovered} />}
           <motion.button
             layout
@@ -179,8 +181,8 @@ function ExpandButton({
               onClick?.()
             }}
             // border-radius nello style: Motion lo corregge durante la morph.
-            // Il colore di sfondo passa da --ui-bg ad activeColor con una transition CSS.
-            style={{ borderRadius: 999, '--expand-active': color } as CSSProperties}
+            // Il colore di sfondo (--expand-fill, vedi CSS) cambia con una transition CSS.
+            style={{ borderRadius: 999 }}
             transition={{ layout: morph }}
             whileHover={{ scale: 1.02, transition: { type: 'spring', duration: 0.6, bounce: 0.15 } }}
             whileTap={{ scale: 0.95 }}
