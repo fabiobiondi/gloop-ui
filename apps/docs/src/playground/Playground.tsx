@@ -351,7 +351,7 @@ function Playground() {
     <div className="pg" style={themeVars}>
       {/* Solo su schermi stretti (CSS): marchio e hamburger */}
       <header className="pg-topbar">
-        <a href="#getting-started" className="pg-brand__name">
+        <a href="#what-is-gloop" className="pg-brand__name">
           gloop-ui
         </a>
         <button
@@ -381,7 +381,7 @@ function Playground() {
         }}
       >
         <header className="pg-brand">
-          <a href="#getting-started" className="pg-brand__name">
+          <a href="#what-is-gloop" className="pg-brand__name">
             gloop-ui
           </a>
           <a href="#changelog" className="pg-brand__version" title="Changelog">
@@ -411,18 +411,20 @@ function Playground() {
       <main className="pg-main">
         {/* key: cambiando pagina le demo ripartono da zero (menu chiusi) */}
         <div key={page.id} className="pg-page" data-toc={toc.length > 0 || undefined}>
-          <header className="pg-page__header">
-            <h1>
-              {page.name}
-              {'status' in page && page.status === 'experimental' && <span className="pg-badge">Experimental</span>}
-            </h1>
-            <p>{page.description}</p>
-            {'notice' in page && page.notice && (
-              <p className="pg-notice" role="note">
-                {page.notice}
-              </p>
-            )}
-          </header>
+          {!('hideHeader' in page && page.hideHeader) && (
+            <header className="pg-page__header">
+              <h1>
+                {page.name}
+                {'status' in page && page.status === 'experimental' && <span className="pg-badge">Experimental</span>}
+              </h1>
+              <p>{page.description}</p>
+              {'notice' in page && page.notice && (
+                <p className="pg-notice" role="note">
+                  {page.notice}
+                </p>
+              )}
+            </header>
+          )}
           {toc.length > 0 && <Toc items={toc} />}
           <div className="pg-page__body">
             {'demos' in page

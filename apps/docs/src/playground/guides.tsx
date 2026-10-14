@@ -2,12 +2,15 @@ import type { ReactNode } from 'react'
 import changelog from '../../../../packages/gloop-ui/CHANGELOG.md?raw'
 import { CodeBlock } from './CodeBlock'
 import { Markdown } from './Markdown'
+import { Home } from './Home'
 
 export type Guide = {
   id: string
   name: string
   description: string
   content: ReactNode
+  /** La pagina disegna da sé titolo e intro (homepage) */
+  hideHeader?: boolean
 }
 
 const INSTALL = `npm install gloop-ui motion`
@@ -45,6 +48,13 @@ const THEME_INLINE = `<div style={{ '--ui-bg': '#312e81', '--ui-accent': '#f472b
 const LOGO_DRAFTS_URL = `${import.meta.env.BASE_URL}logo-drafts.html`
 
 export const guides: Guide[] = [
+  {
+    id: 'what-is-gloop',
+    name: 'What is Gloop?',
+    description: 'React components that move like liquid.',
+    hideHeader: true,
+    content: <Home />,
+  },
   {
     id: 'getting-started',
     name: 'Getting started',
