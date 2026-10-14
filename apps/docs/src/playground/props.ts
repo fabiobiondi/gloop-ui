@@ -12,9 +12,16 @@ const tabMenuProps: PropDoc[] = [
   { name: 'tabs', type: '{ icon: ReactNode; label: string }[]', required: true, description: 'Tabs that drop out of the trigger.' },
 ]
 
+const attached = (description: string): PropDoc => ({
+  name: 'attached',
+  type: 'boolean',
+  default: 'true',
+  description,
+})
+
 const direction = (fallback: string, description: string): PropDoc => ({
   name: 'direction',
-  type: "'top' | 'bottom' | 'left' | 'right'",
+  type: "'top' | 'bottom' | 'left' | 'right' | 'auto'",
   default: `'${fallback}'`,
   description,
 })
@@ -27,6 +34,7 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'iconOnly', type: 'boolean', default: 'false', description: 'The button does not expand; the label is only announced to screen readers.' },
     { name: 'variant', type: "'toggle' | 'action'", default: "'toggle'", description: 'toggle: activates, colors and shows the label on click. action: label always visible, click runs onClick.' },
     { name: 'activeColor', type: 'string', default: "'#e11d48' / --ui-bg", description: 'toggle: color when active. action: background color.' },
+    { name: 'drip', type: "boolean | 'hover'", default: 'false', description: "Drops drip from the bottom edge of the button, melted into it with the goo filter. true: always. 'hover': only while the pointer is over it. Hidden with prefers-reduced-motion." },
     { name: 'onClick', type: '() => void', description: 'Called on click.' },
     { name: 'autoFocus', type: 'boolean', description: 'Focus the button on mount.' },
   ],
@@ -118,20 +126,24 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'radius', type: 'number', default: '14', description: 'Corner radius of the pill, in px.' },
     { name: 'className', type: 'string', description: 'Extra class on the root element.' },
   ],
-  'tab-menu': [...tabMenuProps, direction('top', 'Side of the "+" where the bar appears. The bar is always a row: above, below or beside the "+".')],
+  'tab-menu': [...tabMenuProps, direction('top', 'Side of the "+" where the bar appears. The bar is always a row: above, below or beside the "+". auto: on open, the first side with room (top, bottom, right, left) inside the nearest FloatingBoundary or the viewport.'),
+    attached('While open, a liquid neck keeps the bar joined to the "+". false: the drop breaks away and the bar floats on its own.'),
+  ],
   'tab-menu-motion': [
     ...tabMenuProps,
-    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar; top / bottom: a column, first tab next to the "+".'),
+    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar; top / bottom: a column, first tab next to the "+". auto: on open, the first side with room (left, right, top, bottom).'),
   ],
   'tab-menu-submenu': [
     ...tabMenuProps.slice(0, 2),
     { name: 'tabs', type: '{ icon: ReactNode; label: string; items?: string[] }[]', required: true, description: 'Tabs that drop out of the trigger; items opens a sub-menu.' },
-    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar, sub-menus above; top / bottom: a column, sub-menus to the right of the tab.'),
+    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar, sub-menus above (below if there is no room); top / bottom: a column, sub-menus to the right of the tab (left if there is no room). auto: on open, the first side with room (left, right, top, bottom).'),
+    attached('A liquid neck keeps the open sub-menu joined to its tab. false: the drop sinks into the sub-menu and it floats on its own.'),
   ],
   'tab-bar': [
     { name: 'tabs', type: '{ icon: ReactNode; label: string }[]', required: true, description: 'Tabs of the bar.' },
     { name: 'label', type: 'string', default: "'Main'", description: 'Accessible name of the navigation.' },
     { name: 'onChange', type: '(index: number) => void', description: 'Called with the index of the selected tab.' },
+    { name: 'enterFrom', type: "'bottom' | 'top' | 'left' | 'right' | false", default: "'bottom'", description: 'Side the bar slides in from on mount. false: no entrance animation.' },
   ],
   'shape-editor': [],
 }

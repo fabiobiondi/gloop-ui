@@ -21,7 +21,7 @@ const same = (a: FloatingPosition | null, b: FloatingPosition) =>
   a.height === b.height
 
 // Parte del boundary dentro il viewport: se è scrollato fuori, la bolla resta comunque visibile
-function visiblePart(rect: DOMRect, viewport: { width: number; height: number }) {
+export function visiblePart(rect: DOMRect, viewport: { width: number; height: number }) {
   const top = Math.max(rect.top, 0)
   const left = Math.max(rect.left, 0)
   return {

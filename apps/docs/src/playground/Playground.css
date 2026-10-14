@@ -37,6 +37,23 @@
   color: var(--pg-muted);
 }
 
+/* Sottogruppi dei componenti (Forms, Overlays…) */
+.pg-sidebar__subtitle {
+  margin: 12px 0 6px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  /* Il viola dei loghi (logo-drafts.html, palette Bubblegum) */
+  color: #7b5cff;
+}
+
+.pg-sidebar__divider {
+  flex: none;
+  margin: 0 12px 20px;
+  border: 0;
+  border-top: 1px solid var(--pg-border);
+}
+
 /* La lista è un <List> di gloop-ui: qui solo i colori della doc, indipendenti dal tema scelto */
 .pg-nav {
   --list-pill: var(--pg-text);
@@ -88,17 +105,6 @@
   text-transform: uppercase;
   color: light-dark(#b45309, #fbbf24);
   background: color-mix(in srgb, #f59e0b 15%, transparent);
-}
-
-.pg-badge--sm {
-  padding: 2px 6px;
-  font-size: 10px;
-}
-
-/* In sidebar: nel meta della List, prima del contatore */
-.pg-nav .pg-badge {
-  margin-right: 8px;
-  vertical-align: 1px;
 }
 
 .pg-page__header .pg-notice {

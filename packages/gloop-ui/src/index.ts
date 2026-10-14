@@ -40,11 +40,12 @@ export { usePopover } from './components/floating/popover-context'
 export type { PopoverApi } from './components/floating/popover-context'
 
 export { default as TabBar } from './components/TabBar'
-export type { TabBarProps, Tab as TabBarTab } from './components/TabBar'
+export type { TabBarProps, TabBarEnter, Tab as TabBarTab } from './components/TabBar'
 
 export { default as TabMenu } from './components/TabMenu'
 export type { TabMenuProps, Tab as TabMenuTab } from './components/TabMenu'
 export type { TabMenuDirection } from './components/tab-drop'
+export type { TabMenuPlacement } from './components/tab-placement'
 
 export { default as TabMenuMotion } from './components/TabMenuMotion'
 export type { TabMenuMotionProps, Tab as TabMenuMotionTab } from './components/TabMenuMotion'

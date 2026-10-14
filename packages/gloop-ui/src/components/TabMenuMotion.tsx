@@ -1,8 +1,19 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, MotionConfig, motion, type Transition } from 'motion/react'
 import GooPill from './GooPill'
 import { GooFilter } from './goo'
-import { TAB_HEIGHT, TAB_WIDTH, isVertical, pressed, tabDrop, visualIndex, type TabMenuDirection } from './tab-drop'
+import { BoundaryContext } from './floating/boundary-context'
+import { resolveDirection, type TabMenuPlacement } from './tab-placement'
+import {
+  TAB_HEIGHT,
+  TAB_WIDTH,
+  barFilterRegion,
+  isVertical,
+  pressed,
+  tabDrop,
+  visualIndex,
+  type TabMenuDirection,
+} from './tab-drop'
 import './theme.css'
 import './TabMenuMotion.css'
 
@@ -17,21 +28,30 @@ export type TabMenuMotionProps = {
   tabs: Tab[]
   /**
    * Lato del "+" da cui esce la barra. left/right: barra orizzontale da quel lato;
-   * top/bottom: colonna sopra/sotto, con il primo tab vicino al "+"
+   * top/bottom: colonna sopra/sotto, con il primo tab vicino al "+".
+   * 'auto': all'apertura il primo lato in cui entra (left, right, top, bottom)
    */
-  direction?: TabMenuDirection
+  direction?: TabMenuPlacement
 }
 
 // Molla principale: il "+" si allarga e diventa la barra
 const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
 
-function TabMenuMotion({ icon, label, tabs, direction = 'left' }: TabMenuMotionProps) {
-  const vertical = isVertical(direction)
+function TabMenuMotion({ icon, label, tabs, direction: placement = 'left' }: TabMenuMotionProps) {
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  // direction="auto": il lato si sceglie all'apertura, misurando lo spazio attorno al "+"
+  const [autoSide, setAutoSide] = useState<TabMenuDirection>('left')
+  const direction = placement === 'auto' ? autoSide : placement
+  const boundaryRef = useContext(BoundaryContext)
+  const chooseSide = () => {
+    if (placement === 'auto')
+      setAutoSide(resolveDirection('auto', triggerRef.current, boundaryRef?.current, tabs.length, 'morph'))
+  }
+  const vertical = isVertical(direction)
   const barId = useId()
   const filterId = useId()
 
@@ -65,7 +85,7 @@ function TabMenuMotion({ icon, label, tabs, direction = 'left' }: TabMenuMotionP
         className="tab-menu-motion-wrap"
         style={{ filter: `url(#${CSS.escape(filterId)})` }}
       >
-        <GooFilter id={filterId} />
+        <GooFilter id={filterId} region={barFilterRegion(tabs.length)} />
         <motion.div
           layout
           className="tab-menu-motion"
@@ -74,15 +94,14 @@ function TabMenuMotion({ icon, label, tabs, direction = 'left' }: TabMenuMotionP
           style={{ borderRadius: 26 }}
         >
           <div id={barId} role="tablist" className="tab-menu-motion__tabs">
-            <AnimatePresence initial={false}>
-              {open && active !== null && (
-                <GooPill
-                  index={visualIndex(active, tabs.length, direction)}
-                  step={vertical ? TAB_HEIGHT : TAB_WIDTH}
-                  axis={vertical ? 'y' : 'x'}
-                />
-              )}
-            </AnimatePresence>
+            {/* Niente uscita animata: chiudendo, la barra scalata la stirerebbe (vedi tabDrop) */}
+            {open && active !== null && (
+              <GooPill
+                index={visualIndex(active, tabs.length, direction)}
+                step={vertical ? TAB_HEIGHT : TAB_WIDTH}
+                axis={vertical ? 'y' : 'x'}
+              />
+            )}
             <AnimatePresence mode="popLayout" initial={false}>
               {open &&
                 tabs.map((tab, i) => (
@@ -125,7 +144,10 @@ function TabMenuMotion({ icon, label, tabs, direction = 'left' }: TabMenuMotionP
             aria-expanded={open}
             aria-controls={barId}
             onClick={() => {
-              if (!open) setActive(null)
+              if (!open) {
+                setActive(null)
+                chooseSide()
+              }
               setOpen(!open)
             }}
             whileTap={{ scale: 0.92 }}

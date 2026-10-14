@@ -15,16 +15,27 @@ export type TabBarProps = {
   /** Nome della navigazione per i lettori di schermo */
   label?: string
   onChange?: (index: number) => void
+  /** Lato da cui la barra entra al caricamento; false la mostra senza animazione */
+  enterFrom?: TabBarEnter | false
+}
+
+export type TabBarEnter = 'bottom' | 'top' | 'left' | 'right'
+
+const enterOffset: Record<TabBarEnter, { x?: number; y?: number }> = {
+  bottom: { y: 100 },
+  top: { y: -100 },
+  left: { x: -100 },
+  right: { x: 100 },
 }
 
 const spring: Transition = { type: 'spring', duration: 0.5, bounce: 0.3 }
 
 /*
  * Barra di navigazione sempre visibile, fissa in basso.
- * Entra dal basso al caricamento; la selezione è una pillola liquida
- * e l'icona del tab scelto fa un piccolo salto.
+ * Entra al caricamento dal lato scelto (enterFrom); la selezione è una pillola liquida
+ * nel colore accent e l'icona del tab scelto fa un piccolo salto.
  */
-function TabBar({ tabs, label = 'Main', onChange }: TabBarProps) {
+function TabBar({ tabs, label = 'Main', onChange, enterFrom = 'bottom' }: TabBarProps) {
   const [active, setActive] = useState(0)
 
   return (
@@ -32,11 +43,10 @@ function TabBar({ tabs, label = 'Main', onChange }: TabBarProps) {
       <motion.nav
         aria-label={label}
         className="tab-bar"
-        style={{ x: '-50%' }}
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1, transition: { ...spring, delay: 0.2 } }}
+        initial={enterFrom ? { ...enterOffset[enterFrom], opacity: 0 } : false}
+        animate={{ x: 0, y: 0, opacity: 1, transition: { ...spring, delay: 0.2 } }}
       >
-        <GooPill index={active} step={68} />
+        <GooPill index={active} step={68} opacity={0.3} />
         {tabs.map((tab, i) => (
           <motion.button
             key={tab.label}

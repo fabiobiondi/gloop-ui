@@ -179,11 +179,29 @@ function PropsTable({ props }: { props: PropDoc[] }) {
   )
 }
 
+// Sottogruppi dei componenti
+const COMPONENT_GROUPS = [
+  { title: 'Menus & Buttons', items: entries.filter((e) => e.group === 'menus') },
+  { title: 'Overlays', items: entries.filter((e) => e.group === 'overlays') },
+  { title: 'Forms', items: entries.filter((e) => e.group === 'forms') },
+  { title: 'Various', items: entries.filter((e) => e.group === 'various') },
+].filter((g) => g.items.length > 0)
+
 // Voci della sidebar: ogni gruppo è una List, con la pillola fissa solo se la pagina è lì
-function NavGroup({ title, items, current }: { title: string; items: Page[]; current: Page }) {
+function NavGroup({
+  title,
+  items,
+  current,
+  sub = false,
+}: {
+  title: string
+  items: Page[]
+  current: Page
+  sub?: boolean
+}) {
   return (
     <>
-      <p className="pg-sidebar__title">{title}</p>
+      <p className={sub ? 'pg-sidebar__subtitle' : 'pg-sidebar__title'}>{title}</p>
       <List
         label={title}
         className="pg-nav"
@@ -194,13 +212,7 @@ function NavGroup({ title, items, current }: { title: string; items: Page[]; cur
           id: p.id,
           label: p.name,
           href: `#${p.id}`,
-          meta:
-            'demos' in p ? (
-              <>
-                {p.status === 'experimental' && <span className="pg-badge pg-badge--sm">Exp</span>}
-                {p.demos.length}
-              </>
-            ) : undefined,
+          meta: 'demos' in p ? p.demos.length : undefined,
         }))}
       />
     </>
@@ -240,7 +252,11 @@ function Playground() {
 
         <NavGroup title="Guide" items={guides} current={page} />
         <div className="pg-sidebar__gap" />
-        <NavGroup title="Components" items={entries} current={page} />
+        <hr className="pg-sidebar__divider" />
+        <p className="pg-sidebar__title">Components</p>
+        {COMPONENT_GROUPS.map((g) => (
+          <NavGroup key={g.title} title={g.title} items={g.items} current={page} sub />
+        ))}
 
         <ThemePanel theme={theme} onChange={setTheme} />
       </aside>

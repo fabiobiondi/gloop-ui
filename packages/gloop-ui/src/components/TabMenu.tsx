@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import {
   AnimatePresence,
   MotionConfig,
@@ -9,6 +9,8 @@ import {
 } from 'motion/react'
 import GooPill from './GooPill'
 import { GooFilter } from './goo'
+import { BoundaryContext } from './floating/boundary-context'
+import { resolveDirection, type TabMenuPlacement } from './tab-placement'
 import type { TabMenuDirection } from './tab-drop'
 import './theme.css'
 import './TabMenuMotion.css'
@@ -23,8 +25,17 @@ export type TabMenuProps = {
   icon: ReactNode
   label: string
   tabs: Tab[]
-  /** Lato del "+" su cui compare la barra (sempre orizzontale): sopra, sotto o di fianco */
-  direction?: TabMenuDirection
+  /**
+   * Lato del "+" su cui compare la barra (sempre orizzontale): sopra, sotto o di fianco.
+   * 'auto': all'apertura il primo lato in cui entra (top, bottom, right, left), dentro
+   * il FloatingBoundary più vicino o il viewport
+   */
+  direction?: TabMenuPlacement
+  /**
+   * true: da aperta la goccia resta tra "+" e barra, come un collo che li tiene uniti.
+   * false: la goccia si stacca e la barra resta separata dal "+"
+   */
+  attached?: boolean
 }
 
 const spring: Transition = { type: 'spring', duration: 0.5, bounce: 0.3 }
@@ -82,15 +93,19 @@ function barVariants(d: TabMenuDirection): Variants {
   }
 }
 
-// Il "collo" tra trigger e barra: va verso di lei, poi si assottiglia e si stacca
-function dripVariants(d: TabMenuDirection): Variants {
+/*
+ * Il "collo" tra trigger e barra: va verso di lei, poi si assottiglia e si stacca.
+ * attached: si ferma a metà dei 16px di distacco, abbastanza larga da toccare entrambi
+ * (24 = centro della goccia a 8px dal "+"; scala 0.7 = 22px, sborda ~3px per lato)
+ */
+function dripVariants(d: TabMenuDirection, attached: boolean): Variants {
   const { axis, sign } = AWAY[d]
-  const path = [0, sign * 28, sign * 44]
+  const path = attached ? [0, sign * 28, sign * 24] : [0, sign * 28, sign * 44]
   return {
     closed: { x: 0, y: 0, scale: 0.6, transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] } },
     open: {
       ...(axis === 'y' ? { y: path } : { x: path }),
-      scale: [0.6, 1, 0.2],
+      scale: attached ? [0.6, 1, 0.7] : [0.6, 1, 0.2],
       transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
     },
   }
@@ -118,12 +133,20 @@ const tabVariants: Variants = {
   visible: { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', transition: spring },
 }
 
-function TabMenu({ icon, label, tabs, direction = 'top' }: TabMenuProps) {
+function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = true }: TabMenuProps) {
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  // direction="auto": il lato si sceglie all'apertura, misurando lo spazio attorno al "+"
+  const [autoSide, setAutoSide] = useState<TabMenuDirection>('top')
+  const direction = placement === 'auto' ? autoSide : placement
+  const boundaryRef = useContext(BoundaryContext)
+  const chooseSide = () => {
+    if (placement === 'auto')
+      setAutoSide(resolveDirection('auto', triggerRef.current, boundaryRef?.current, tabs.length, 'detached'))
+  }
   const barId = useId()
   const filterId = useId()
 
@@ -171,7 +194,7 @@ function TabMenu({ icon, label, tabs, direction = 'top' }: TabMenuProps) {
           className="goo-drop"
           aria-hidden="true"
           style={{ ...DRIP_START[direction], width: DRIP_SIZE, height: DRIP_SIZE }}
-          variants={dripVariants(direction)}
+          variants={dripVariants(direction, attached)}
           initial={false}
           animate={open ? 'open' : 'closed'}
         />
@@ -225,7 +248,10 @@ function TabMenu({ icon, label, tabs, direction = 'top' }: TabMenuProps) {
           aria-controls={open ? barId : undefined}
           whileTap={{ scale: 0.92 }}
           onClick={() => {
-            if (!open) setActive(null)
+            if (!open) {
+              setActive(null)
+              chooseSide()
+            }
             setOpen(!open)
           }}
         >

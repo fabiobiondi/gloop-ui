@@ -13,25 +13,29 @@ const tabs = [
 const directions: TabMenuDirection[] = ['top', 'bottom', 'left', 'right']
 
 describe('tabDrop', () => {
-  it('left: tabs come from the "+" after the bar and go back to it at the start', () => {
-    // Tab 0: centro a 34px; "+" aperto a 3*68+26 = 230, chiuso a 26
-    const d = tabDrop(0, 3, 'left')
-    expect(d.initial).toMatchObject({ x: 196 })
-    expect(d.exit).toMatchObject({ x: -8 })
+  it('left: tabs come from the closed "+", half a trigger from the start of the bar', () => {
+    // All'apertura Motion parte dal riquadro chiuso (il solo "+"): tab 0 al centro a 34px, "+" a 26
+    expect(tabDrop(0, 3, 'left').initial).toMatchObject({ x: -8 })
+    expect(tabDrop(2, 3, 'left').initial).toMatchObject({ x: 26 - 170 })
+  })
+
+  it('on close tabs vanish at once, without moving (the shrinking bar would stretch them)', () => {
+    for (const dir of ['left', 'right', 'top', 'bottom'] as const) {
+      expect(tabDrop(1, 3, dir).exit).toEqual({ opacity: 0, transition: { duration: 0 } })
+    }
   })
 
   it('right: the "+" is always half a trigger before the tabs', () => {
     const d = tabDrop(1, 3, 'right')
     // Centro del tab 1: 102px; "+" a -26
     expect(d.initial).toMatchObject({ x: -128 })
-    expect(d.exit).toMatchObject({ x: -128 })
   })
 
   it('top: column with the first tab next to the "+" (visual order reversed)', () => {
     expect(visualIndex(0, 3, 'top')).toBe(2)
     const d = tabDrop(0, 3, 'top')
-    // Visivamente ultimo: centro a 2*52+26 = 130; "+" aperto a 3*52+26 = 182
-    expect(d.initial).toMatchObject({ y: 52 })
+    // Visivamente ultimo: centro a 2*52+26 = 130; "+" chiuso a 26
+    expect(d.initial).toMatchObject({ y: -104 })
     expect(d.initial).not.toHaveProperty('x')
   })
 

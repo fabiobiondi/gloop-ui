@@ -42,3 +42,17 @@
   place-items: center;
   min-height: 360px;
 }
+
+/* Auto placement: area che fa da limite (FloatingBoundary), menu in un angolo */
+.dd__area {
+  position: relative;
+  width: min(100%, 560px);
+  height: 380px;
+  border: 1px dashed color-mix(in srgb, var(--ui-fg) 25%, transparent);
+  border-radius: 16px;
+}
+
+.dd__corner {
+  position: absolute;
+  display: flex;
+}

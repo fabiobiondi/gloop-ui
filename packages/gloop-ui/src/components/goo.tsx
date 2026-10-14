@@ -10,6 +10,8 @@ export type GooFilterProps = {
   region?: { x: number; y: number; width: number; height: number }
   /** Ombra sotto le forme già fuse */
   shadow?: boolean
+  /** Colore della forma fusa (default --ui-bg) */
+  color?: string
 }
 
 /*
@@ -19,7 +21,7 @@ export type GooFilterProps = {
  * Ombre e contorni esterni non vanno messi sugli elementi filtrati: verrebbero fusi
  * con la forma (alone attorno ai bordi).
  */
-export function GooFilter({ id, blur = 8, region, shadow = true }: GooFilterProps) {
+export function GooFilter({ id, blur = 8, region, shadow = true, color = 'var(--ui-bg)' }: GooFilterProps) {
   const area = region
     ? { filterUnits: 'userSpaceOnUse' as const, ...region }
     : { x: '-50%', y: '-100%', width: '200%', height: '300%' }
@@ -34,7 +36,7 @@ export function GooFilter({ id, blur = 8, region, shadow = true }: GooFilterProp
           La forma si riempie con un colore pieno: i colori sfocati (icone, testo, focus)
           darebbero aloni chiari e, con blur ampi, scalini a bassa risoluzione
         */}
-        <feFlood style={{ floodColor: 'var(--ui-bg)' }} result="color" />
+        <feFlood style={{ floodColor: color }} result="color" />
         <feComposite in="color" in2="goo" operator="in" result="solid" />
         <feComposite in="SourceGraphic" in2="solid" operator="over" />
         {/* L'ombra va aggiunta qui, dopo la fusione: un box-shadow verrebbe "fuso" con la forma */}

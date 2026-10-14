@@ -15,8 +15,8 @@ import {
 } from 'gloop-ui'
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo from './DialogDemo'
-import { DirectionDemo } from './DirectionDemo'
 import { ControlledSliderDemo } from './SliderDemo'
+import { AutoPlacementDemo, DirectionDemo } from './DirectionDemo'
 import {
   ControlledPopover,
   DemoButton,
@@ -70,6 +70,8 @@ export type Entry = {
   id: string
   name: string
   description: string
+  /** Sottogruppo della sidebar */
+  group: 'forms' | 'overlays' | 'menus' | 'various'
   /** Componente non ancora stabile: badge in sidebar e nell'intestazione */
   status?: 'experimental'
   /** Avviso mostrato sotto la descrizione */
@@ -79,44 +81,9 @@ export type Entry = {
 
 export const entries: Entry[] = [
   {
-    id: 'expand-button',
-    name: 'ExpandButton',
-    description: "Icon button that expands into a label when pressed, with a pop and a burst.",
-    demos: [
-      {
-        title: 'With label',
-        preview: (
-          <div style={{ display: 'flex', gap: 12 }}>
-            <ExpandButton icon={HeartIcon} label="Added" activeColor="#e11d48" />
-            <ExpandButton icon={BookmarkIcon} label="Saved" activeColor="#2563eb" />
-          </div>
-        ),
-        code: `<ExpandButton icon={HeartIcon} label="Added" activeColor="#e11d48" />
-<ExpandButton icon={BookmarkIcon} label="Saved" activeColor="#2563eb" />`,
-      },
-      {
-        title: 'Icon only',
-        description: 'The label is only announced to screen readers.',
-        preview: <ExpandButton icon={StarIcon} label="Starred" iconOnly activeColor="#f59e0b" />,
-        code: `<ExpandButton icon={StarIcon} label="Starred" iconOnly activeColor="#f59e0b" />`,
-      },
-      {
-        title: 'Action variant',
-        description: 'Label always visible, onClick runs an action. Used by Dialog.',
-        preview: (
-          <div style={{ display: 'flex', gap: 12 }}>
-            <ExpandButton variant="action" label="Cancel" />
-            <ExpandButton variant="action" label="Delete" icon={TrashIcon} activeColor="#e11d48" />
-          </div>
-        ),
-        code: `<ExpandButton variant="action" label="Cancel" onClick={cancel} />
-<ExpandButton variant="action" label="Delete" icon={TrashIcon} activeColor="#e11d48" onClick={remove} />`,
-      },
-    ],
-  },
-  {
     id: 'search',
     name: 'Search',
+    group: 'forms',
     description: 'A magnifier that stretches into a field to the right; the lens morphs into a close icon.',
     demos: [
       {
@@ -180,6 +147,7 @@ export const entries: Entry[] = [
   {
     id: 'input',
     name: 'Input',
+    group: 'forms',
     description:
       'A text field whose label drips out on top as a liquid tab when focused; the placeholder shows up underneath.',
     demos: [
@@ -224,6 +192,7 @@ export const entries: Entry[] = [
   {
     id: 'slider',
     name: 'Slider',
+    group: 'forms',
     status: 'experimental',
     description:
       'A range slider whose thumb is a liquid drop: it stretches into a trail while dragged and its value drips out on top.',
@@ -321,6 +290,7 @@ export const entries: Entry[] = [
   {
     id: 'circle-menu',
     name: 'CircleMenu',
+    group: 'menus',
     description:
       'A "+" that throws icons around itself with a liquid blob effect. Full circle or arc, with optional sub-menus.',
     demos: [
@@ -744,6 +714,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   {
     id: 'dialog',
     name: 'Dialog',
+    group: 'overlays',
     description:
       'Modal that swells open like a liquid drop: the action buttons (ExpandButton) drip out of its bottom edge.',
     demos: [
@@ -884,6 +855,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   {
     id: 'tooltip',
     name: 'Tooltip',
+    group: 'overlays',
     description:
       'Hover or focus the trigger: after a delay a drop leaks out of the arrow and swells into a bubble. Text or JSX.',
     demos: [
@@ -961,6 +933,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   {
     id: 'popover',
     name: 'Popover',
+    group: 'overlays',
     description:
       'Click the trigger: a liquid bubble drips out of the arrow and can hold forms and other components. Closes on outside click, Escape, from code or on rollout.',
     demos: [
@@ -1053,6 +1026,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   {
     id: 'tab-menu',
     name: 'TabMenu',
+    group: 'menus',
     description: 'A "+" that blooms a dark tab bar above itself.',
     demos: [
       {
@@ -1072,6 +1046,33 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
         code: `<TabMenu
   icon={PlusIcon}
   label="Open menu"
+  tabs={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+      {
+        title: 'Detached',
+        description: 'By default a liquid neck keeps the open bar joined to the "+". attached={false} lets the drop break away.',
+        stage: { minHeight: 240, align: 'end' },
+        preview: (
+          <TabMenu
+            icon={PlusIcon}
+            label="Open menu"
+            attached={false}
+            tabs={[
+              { icon: HomeIcon, label: 'Home' },
+              { icon: SearchIcon, label: 'Search' },
+              { icon: UserIcon, label: 'Profile' },
+            ]}
+          />
+        ),
+        code: `<TabMenu
+  icon={PlusIcon}
+  label="Open menu"
+  attached={false}
   tabs={[
     { icon: HomeIcon, label: 'Home' },
     { icon: SearchIcon, label: 'Search' },
@@ -1111,11 +1112,44 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   ]}
 />`,
       },
+      {
+        title: 'Auto placement',
+        description:
+          'direction="auto": on open the bar takes the first side with room (top, bottom, right, left) inside the nearest FloatingBoundary, or the viewport. Move the menu to another corner and open it.',
+        stage: { minHeight: 480 },
+        preview: (
+          <AutoPlacementDemo>
+            <TabMenu
+              icon={PlusIcon}
+              label="Open menu"
+              direction="auto"
+              tabs={[
+                { icon: HomeIcon, label: 'Home' },
+                { icon: SearchIcon, label: 'Search' },
+                { icon: UserIcon, label: 'Profile' },
+              ]}
+            />
+          </AutoPlacementDemo>
+        ),
+        code: `<FloatingBoundary className="area">
+  <TabMenu
+    icon={PlusIcon}
+    label="Open menu"
+    direction="auto"
+    tabs={[
+      { icon: HomeIcon, label: 'Home' },
+      { icon: SearchIcon, label: 'Search' },
+      { icon: UserIcon, label: 'Profile' },
+    ]}
+  />
+</FloatingBoundary>`,
+      },
     ],
   },
   {
     id: 'tab-menu-motion',
     name: 'TabMenuMotion',
+    group: 'menus',
     description: 'The "+" itself morphs into the tab bar.',
     demos: [
       {
@@ -1173,15 +1207,49 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   ]}
 />`,
       },
+      {
+        title: 'Auto placement',
+        description:
+          'direction="auto": on open the bar grows towards the first side with room (left, right, then the columns) inside the nearest FloatingBoundary, or the viewport.',
+        stage: { minHeight: 480 },
+        preview: (
+          <AutoPlacementDemo>
+            <TabMenuMotion
+              icon={PlusIcon}
+              label="Open menu"
+              direction="auto"
+              tabs={[
+                { icon: HomeIcon, label: 'Home' },
+                { icon: SearchIcon, label: 'Search' },
+                { icon: UserIcon, label: 'Profile' },
+              ]}
+            />
+          </AutoPlacementDemo>
+        ),
+        code: `<FloatingBoundary className="area">
+  <TabMenuMotion
+    icon={PlusIcon}
+    label="Open menu"
+    direction="auto"
+    tabs={[
+      { icon: HomeIcon, label: 'Home' },
+      { icon: SearchIcon, label: 'Search' },
+      { icon: UserIcon, label: 'Profile' },
+    ]}
+  />
+</FloatingBoundary>`,
+      },
     ],
   },
   {
     id: 'tab-menu-submenu',
     name: 'TabMenuSubmenu',
+    group: 'menus',
     description: 'Morphing tab bar where each tab can open a panel of items above it.',
     demos: [
       {
         title: 'With sub-menus',
+        description: 'Open the tab bar, then pick an icon to see its sub-menu.',
         stage: { minHeight: 340, align: 'end' },
         preview: (
           <TabMenuSubmenu
@@ -1197,6 +1265,33 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
         code: `<TabMenuSubmenu
   icon={PlusIcon}
   label="Open menu"
+  tabs={[
+    { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
+    { icon: SearchIcon, label: 'Search', items: ['Recent', 'Saved', 'Advanced filters'] },
+    { icon: UserIcon, label: 'Profile', items: ['Settings', 'Notifications', 'Log out'] },
+  ]}
+/>`,
+      },
+      {
+        title: 'Detached',
+        description: 'By default a liquid neck keeps the sub-menu joined to its tab. With attached={false} the drop sinks into the sub-menu, which floats on its own.',
+        stage: { minHeight: 340, align: 'end' },
+        preview: (
+          <TabMenuSubmenu
+            icon={PlusIcon}
+            label="Open menu"
+            attached={false}
+            tabs={[
+              { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
+              { icon: SearchIcon, label: 'Search', items: ['Recent', 'Saved', 'Advanced filters'] },
+              { icon: UserIcon, label: 'Profile', items: ['Settings', 'Notifications', 'Log out'] },
+            ]}
+          />
+        ),
+        code: `<TabMenuSubmenu
+  icon={PlusIcon}
+  label="Open menu"
+  attached={false}
   tabs={[
     { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
     { icon: SearchIcon, label: 'Search', items: ['Recent', 'Saved', 'Advanced filters'] },
@@ -1236,11 +1331,44 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   ]}
 />`,
       },
+      {
+        title: 'Auto placement',
+        description:
+          'direction="auto" picks the side of the bar on open. Sub-menus flip by themselves, with or without auto: below the bar when there is no room above (top corners), to the left of a column when there is no room on the right. They follow scroll and resize while open.',
+        stage: { minHeight: 480 },
+        preview: (
+          <AutoPlacementDemo>
+            <TabMenuSubmenu
+              icon={PlusIcon}
+              label="Open menu"
+              direction="auto"
+              tabs={[
+                { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
+                { icon: SearchIcon, label: 'Search', items: ['Recent', 'Saved', 'Advanced filters'] },
+                { icon: UserIcon, label: 'Profile', items: ['Settings', 'Notifications', 'Log out'] },
+              ]}
+            />
+          </AutoPlacementDemo>
+        ),
+        code: `<FloatingBoundary className="area">
+  <TabMenuSubmenu
+    icon={PlusIcon}
+    label="Open menu"
+    direction="auto"
+    tabs={[
+      { icon: HomeIcon, label: 'Home', items: ['Dashboard', 'Activity'] },
+      { icon: SearchIcon, label: 'Search', items: ['Recent', 'Saved', 'Advanced filters'] },
+      { icon: UserIcon, label: 'Profile', items: ['Settings', 'Notifications', 'Log out'] },
+    ]}
+  />
+</FloatingBoundary>`,
+      },
     ],
   },
   {
     id: 'list',
     name: 'List',
+    group: 'various',
     description: 'Vertical list with a liquid pill on the selected item and a lighter one that follows hover and focus.',
     demos: [
       {
@@ -1328,6 +1456,7 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   {
     id: 'tab-bar',
     name: 'TabBar',
+    group: 'menus',
     description: 'Always-visible bar fixed to the bottom of the screen, with a liquid selection pill.',
     demos: [
       {
@@ -1354,11 +1483,104 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
   onChange={(index) => console.log(index)}
 />`,
       },
+      {
+        title: 'Enter from',
+        description: 'Side the bar slides in from on mount, or none to show it without animation. Default: bottom.',
+        stage: { minHeight: 300, device: true },
+        preview: (
+          <DirectionDemo initial="bottom" options={['bottom', 'top', 'left', 'right', 'none']} label="enterFrom">
+            {(side) => (
+              <TabBar
+                enterFrom={side === 'none' ? false : side}
+                tabs={[
+                  { icon: HomeIcon, label: 'Home' },
+                  { icon: SearchIcon, label: 'Search' },
+                  { icon: HeartIcon, label: 'Favorites' },
+                  { icon: UserIcon, label: 'Profile' },
+                ]}
+              />
+            )}
+          </DirectionDemo>
+        ),
+        code: `<TabBar
+  enterFrom="bottom" // 'bottom' | 'top' | 'left' | 'right' | false
+  tabs={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    { icon: HeartIcon, label: 'Favorites' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+    ],
+  },
+  {
+    id: 'expand-button',
+    name: 'ExpandButton',
+    group: 'menus',
+    description: "Icon button that expands into a label when pressed, with a pop and a burst.",
+    demos: [
+      {
+        title: 'With label',
+        preview: (
+          <div style={{ display: 'flex', gap: 12 }}>
+            <ExpandButton icon={HeartIcon} label="Added" activeColor="#e11d48" />
+            <ExpandButton icon={BookmarkIcon} label="Saved" activeColor="#2563eb" />
+          </div>
+        ),
+        code: `<ExpandButton icon={HeartIcon} label="Added" activeColor="#e11d48" />
+<ExpandButton icon={BookmarkIcon} label="Saved" activeColor="#2563eb" />`,
+      },
+      {
+        title: 'Icon only',
+        description: 'The label is only announced to screen readers.',
+        preview: <ExpandButton icon={StarIcon} label="Starred" iconOnly activeColor="#f59e0b" />,
+        code: `<ExpandButton icon={StarIcon} label="Starred" iconOnly activeColor="#f59e0b" />`,
+      },
+      {
+        title: 'Action variant',
+        description: 'Label always visible, onClick runs an action. Used by Dialog.',
+        preview: (
+          <div style={{ display: 'flex', gap: 12 }}>
+            <ExpandButton variant="action" label="Cancel" />
+            <ExpandButton variant="action" label="Delete" icon={TrashIcon} activeColor="#e11d48" />
+          </div>
+        ),
+        code: `<ExpandButton variant="action" label="Cancel" onClick={cancel} />
+<ExpandButton variant="action" label="Delete" icon={TrashIcon} activeColor="#e11d48" onClick={remove} />`,
+      },
+      {
+        title: 'Drip',
+        description: 'Drops keep dripping from the bottom edge and melt into the button, like a liquid logo.',
+        stage: { minHeight: 160 },
+        preview: (
+          <div style={{ display: 'flex', gap: 12 }}>
+            <ExpandButton drip icon={HeartIcon} label="Added" activeColor="#e11d48" />
+            <ExpandButton drip variant="action" label="Subscribe" activeColor="#2563eb" />
+          </div>
+        ),
+        code: `<ExpandButton drip icon={HeartIcon} label="Added" activeColor="#e11d48" />
+<ExpandButton drip variant="action" label="Subscribe" activeColor="#2563eb" />`,
+      },
+      {
+        title: 'Drip on hover',
+        description: 'A liquid blob drips only while the pointer is over the button; on leave each drop finishes its fall.',
+        stage: { minHeight: 160 },
+        preview: (
+          <div style={{ display: 'flex', gap: 12 }}>
+            <ExpandButton drip="hover" icon={BookmarkIcon} label="Saved" activeColor="#2563eb" />
+            <ExpandButton drip="hover" variant="action" label="Delete" icon={TrashIcon} activeColor="#e11d48" />
+          </div>
+        ),
+        code: `<ExpandButton drip="hover" icon={BookmarkIcon} label="Saved" activeColor="#2563eb" />
+<ExpandButton drip="hover" variant="action" label="Delete" icon={TrashIcon} activeColor="#e11d48" />`,
+      },
     ],
   },
   {
     id: 'shape-editor',
     name: 'ShapeEditor',
+    group: 'various',
     description: 'Excalidraw-style toolbar with nested popovers, revealed when the shape is selected.',
     status: 'experimental',
     notice:
