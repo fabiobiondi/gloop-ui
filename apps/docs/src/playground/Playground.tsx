@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { List } from 'gloop-ui'
 import { version } from 'gloop-ui/package.json'
 import { CodeBlock } from './CodeBlock'
@@ -121,11 +121,85 @@ function ThemePanel({ theme, onChange }: { theme: Theme; onChange: (theme: Theme
   )
 }
 
-function DemoCard({ demo }: { demo: Demo }) {
+// Id delle sezioni per la ToC: l'hash resta alla pagina, quindi niente #ancore
+const slug = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+const sectionId = (pageId: string, title: string) => `${pageId}--${slug(title)}`
+
+type TocItem = { id: string; label: string }
+
+// Sezione attiva: l'ultima il cui inizio ha superato la soglia in alto
+const ACTIVE_OFFSET = 120
+
+function useActiveSection(items: TocItem[]) {
+  const [active, setActive] = useState(items[0]?.id)
+
+  useEffect(() => {
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
+      let current = items[0]?.id
+      for (const item of items) {
+        const el = document.getElementById(item.id)
+        if (el && el.getBoundingClientRect().top <= ACTIVE_OFFSET) current = item.id
+      }
+      setActive(atBottom ? items[items.length - 1]?.id : current)
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [items])
+
+  return active
+}
+
+function Toc({ items }: { items: TocItem[] }) {
+  const active = useActiveSection(items)
+
+  const go = (id: string) => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.getElementById(id)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }
+
+  return (
+    <nav className="pg-toc" aria-labelledby="pg-toc-title">
+      <p id="pg-toc-title" className="pg-toc__title">
+        On this page
+      </p>
+      <ul>
+        {items.map((item) => (
+          <li key={item.id}>
+            <button
+              type="button"
+              aria-current={item.id === active ? 'location' : undefined}
+              onClick={() => go(item.id)}
+            >
+              {item.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+function DemoCard({ demo, id }: { demo: Demo; id: string }) {
   const { minHeight = 200, align = 'center', device, bleed } = demo.stage ?? {}
 
   return (
-    <section className="pg-demo">
+    <section id={id} className="pg-demo">
       <header className="pg-demo__header">
         <h3>{demo.title}</h3>
         {demo.description && <p>{demo.description}</p>}
@@ -144,9 +218,9 @@ function DemoCard({ demo }: { demo: Demo }) {
   )
 }
 
-function PropsTable({ props }: { props: PropDoc[] }) {
+function PropsTable({ props, id }: { props: PropDoc[]; id: string }) {
   return (
-    <section className="pg-props" aria-labelledby="pg-props-title">
+    <section id={id} className="pg-props" aria-labelledby="pg-props-title">
       <h2 id="pg-props-title">Props</h2>
       <div className="pg-props__scroll">
         <table>
@@ -229,6 +303,20 @@ function Playground() {
   ) as CSSProperties
 
   const props = 'demos' in page ? propsById[page.id] : undefined
+  const hasProps = !!props && props.length > 0
+  const propsId = sectionId(page.id, 'props')
+
+  // Solo le pagine dei componenti hanno la ToC: una voce per demo, più le props
+  const toc = useMemo<TocItem[]>(
+    () =>
+      'demos' in page
+        ? [
+            ...page.demos.map((d) => ({ id: sectionId(page.id, d.title), label: d.title })),
+            ...(hasProps ? [{ id: propsId, label: 'Props' }] : []),
+          ]
+        : [],
+    [page, hasProps, propsId],
+  )
 
   return (
     <div className="pg" style={themeVars}>
@@ -263,7 +351,7 @@ function Playground() {
 
       <main className="pg-main">
         {/* key: cambiando pagina le demo ripartono da zero (menu chiusi) */}
-        <div key={page.id} className="pg-page">
+        <div key={page.id} className="pg-page" data-toc={toc.length > 0 || undefined}>
           <header className="pg-page__header">
             <h1>
               {page.name}
@@ -276,8 +364,15 @@ function Playground() {
               </p>
             )}
           </header>
-          {'demos' in page ? page.demos.map((demo) => <DemoCard key={demo.title} demo={demo} />) : page.content}
-          {props && props.length > 0 && <PropsTable props={props} />}
+          {toc.length > 0 && <Toc items={toc} />}
+          <div className="pg-page__body">
+            {'demos' in page
+              ? page.demos.map((demo) => (
+                  <DemoCard key={demo.title} demo={demo} id={sectionId(page.id, demo.title)} />
+                ))
+              : page.content}
+            {hasProps && <PropsTable props={props} id={propsId} />}
+          </div>
         </div>
       </main>
     </div>

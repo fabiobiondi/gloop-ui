@@ -76,6 +76,133 @@
   margin: 0 auto;
 }
 
+.pg-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* La ToC usa le sezioni come bersaglio dello scroll: un po' d'aria sopra */
+.pg-demo,
+.pg-props {
+  scroll-margin-top: 24px;
+}
+
+/* ---------- Indice della pagina (ToC) ---------- */
+
+/* Schermi stretti: dopo il titolo, nel flusso */
+.pg-toc {
+  padding: 12px 8px;
+  border: 1px solid var(--pg-border);
+  border-radius: 16px;
+  background: var(--pg-surface);
+
+  & ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & button {
+    display: block;
+    width: 100%;
+    padding: 5px 10px;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: left;
+    color: var(--pg-muted);
+    background: none;
+    cursor: pointer;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease;
+
+    &[aria-current] {
+      color: var(--pg-text);
+      font-weight: 600;
+      background: color-mix(in srgb, var(--pg-text) 6%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #4f7cff;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.pg-toc__title {
+  margin: 0 0 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pg-muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pg-toc button:hover {
+    color: var(--pg-text);
+  }
+}
+
+/* Schermi larghi: colonna a destra, sticky mentre scorrono le demo */
+@media (min-width: 1280px) {
+  .pg-page[data-toc] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 200px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'header toc'
+      'body toc';
+    column-gap: 40px;
+    row-gap: 32px;
+    max-width: 1140px;
+
+    & > .pg-page__header {
+      grid-area: header;
+    }
+
+    & > .pg-page__body {
+      grid-area: body;
+    }
+
+    & > .pg-toc {
+      grid-area: toc;
+      position: sticky;
+      top: 40px;
+      align-self: start;
+      max-height: calc(100svh - 80px);
+      overflow-y: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: none;
+
+      & ul {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding-left: 1px;
+        border-left: 1px solid var(--pg-border);
+      }
+
+      & button {
+        border-radius: 0 8px 8px 0;
+      }
+
+      & button[aria-current] {
+        box-shadow: inset 2px 0 0 #7b5cff;
+      }
+    }
+  }
+}
+
 .pg-page__header {
   & h1 {
     margin: 0;
