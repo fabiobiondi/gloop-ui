@@ -16,6 +16,7 @@ import { Trigger } from './floating/trigger'
 import { forwardTriggerProps } from './floating/trigger-props'
 import { useFloating } from './floating/useFloating'
 import { useThemeVars } from './floating/useThemeVars'
+import { useGloopMotion, type MotionProps } from './motion'
 
 export type PopoverProps = {
   /** Contenuto, oppure una funzione che riceve { close } (es. per un pulsante "Salva") */
@@ -37,7 +38,7 @@ export type PopoverProps = {
   leaveDelay?: number
   /** Nome accessibile del popover */
   label?: string
-}
+} & MotionProps
 
 // La render-prop riceve l'api dal context, come usePopover
 function Content({ content }: { content: PopoverProps['content'] }) {
@@ -67,9 +68,16 @@ function Popover(props: PopoverProps) {
     closeOnLeave = false,
     leaveDelay = 250,
     label,
+    speed,
+    motion,
+    animated,
+    reducedMotion,
     // Ref ed eventi di un trigger esterno (es. un Tooltip attorno al Popover)
     ...outer
   } = props as PopoverProps & Record<string, unknown>
+  // Esplicite: il resto (outer) va al trigger
+  const motionProps = { speed, motion, animated, reducedMotion }
+  const m = useGloopMotion(motionProps)
   const [uncontrolled, setUncontrolled] = useState(defaultOpen)
   const open = openProp ?? uncontrolled
   const panelId = useId()
@@ -181,6 +189,8 @@ function Popover(props: PopoverProps) {
         position={position}
         floatingRef={floatingRef}
         themeVars={themeVars}
+        m={m}
+        motionProps={motionProps}
         bubbleProps={{ id: panelId, role: 'dialog', 'aria-label': label, tabIndex: -1 }}
         layerProps={{ onPointerDownCapture: markInside, onKeyDown, ...hoverProps }}
       >

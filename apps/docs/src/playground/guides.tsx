@@ -12,6 +12,13 @@ import {
   TAB_BAR_CODE,
   TabBarExample,
 } from './ReactIconsDemos'
+import {
+  MOTION_OFF_CODE,
+  MOTION_OVERRIDE_CODE,
+  MOTION_PROVIDER_CODE,
+  MotionOverrideExample,
+  MotionPlayground,
+} from './MotionDemos'
 
 export type Guide = {
   id: string
@@ -130,7 +137,8 @@ export const guides: Guide[] = [
         <h2>Accessibility and motion</h2>
         <p>
           Every component works with the keyboard and screen readers. When the user asks for reduced motion
-          (<code>prefers-reduced-motion</code>), the liquid effects and springs are toned down.
+          (<code>prefers-reduced-motion</code>), the liquid effects and springs are toned down. Speed, character and
+          reduced motion can be configured for the whole app: see <a href="#motion">Motion</a>.
         </p>
       </div>
     ),
@@ -157,6 +165,91 @@ export const guides: Guide[] = [
         <p>
           <code>Dialog</code> renders in a portal on <code>&lt;body&gt;</code>, but it reads the variables from where
           you place it, so it follows the local theme too.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'motion',
+    name: 'Motion',
+    description: 'Speed up, slow down or turn off the animations of every component, globally or one at a time.',
+    content: (
+      <div className="pg-prose">
+        <h2>Try it</h2>
+        <p>Every component below sits inside the same provider. Change the options and play with them.</p>
+        <div className="pg-stage" style={{ minHeight: 420 }}>
+          <MotionPlayground />
+        </div>
+
+        <h2>Global settings</h2>
+        <p>
+          Wrap your app (or any area of it) in <code>GloopMotionProvider</code>. Every gloop-ui component inside it
+          follows its settings, portals included (<code>Dialog</code>, <code>Popover</code>, <code>Tooltip</code>).
+        </p>
+        <CodeBlock code={MOTION_PROVIDER_CODE} />
+        <div className="pg-props">
+        <div className="pg-props__scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Option</th>
+              <th>Default</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>speed</code></td>
+              <td><code>1</code></td>
+              <td>Speed multiplier: <code>2</code> is twice as fast, <code>0.5</code> half as fast. Springs, tweens and CSS transitions all scale, and springs keep their bounce.</td>
+            </tr>
+            <tr>
+              <td><code>motion</code></td>
+              <td><code>'gloop'</code></td>
+              <td>Character of the transitions (see below).</td>
+            </tr>
+            <tr>
+              <td><code>animated</code></td>
+              <td><code>true</code></td>
+              <td><code>false</code> turns every animation off: state changes are instant.</td>
+            </tr>
+            <tr>
+              <td><code>reducedMotion</code></td>
+              <td><code>'user'</code></td>
+              <td><code>'user'</code> follows the OS setting, <code>'always'</code> always uses the reduced variant, <code>'never'</code> ignores the OS.</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        </div>
+
+        <h2>Presets</h2>
+        <ul>
+          <li><code>gloop</code>: the original springs, bouncy and liquid.</li>
+          <li><code>smooth</code>: the same timing with no bounce, for calmer interfaces.</li>
+          <li><code>snappy</code>: about 25% faster with half the bounce.</li>
+        </ul>
+
+        <h2>Override a single component</h2>
+        <p>
+          Every component accepts the same four props. A prop wins over the nearest provider, and nested providers
+          merge with the outer ones, so you only set what changes.
+        </p>
+        <div className="pg-stage" style={{ minHeight: 140 }}>
+          <MotionOverrideExample />
+        </div>
+        <CodeBlock code={MOTION_OVERRIDE_CODE} />
+
+        <h2>Turning motion off and reduced motion</h2>
+        <p>
+          With reduced motion the components keep working but drop the liquid effects: no goo, no drops, no
+          stretching, softer transitions. With <code>animated={'{false}'}</code> nothing moves at all, which is handy
+          for end-to-end tests and visual snapshots.
+        </p>
+        <CodeBlock code={MOTION_OFF_CODE} />
+        <p>
+          Prefer <code>'user'</code> in production: <code>'never'</code> overrides a choice the user made for
+          accessibility reasons.
         </p>
       </div>
     ),

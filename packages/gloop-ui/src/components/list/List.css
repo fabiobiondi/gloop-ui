@@ -33,7 +33,7 @@
   color: var(--list-fg-muted, color-mix(in srgb, var(--ui-fg) 80%, transparent));
   background: none;
   cursor: pointer;
-  transition: color 150ms ease;
+  transition: color calc(150ms / var(--ui-motion-speed, 1)) ease;
 
   &[aria-current]:not([aria-current='false']) {
     font-weight: 500;

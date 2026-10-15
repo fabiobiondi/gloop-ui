@@ -59,8 +59,8 @@
   background: var(--ui-bg);
   cursor: pointer;
   transition:
-    background-color 150ms ease,
-    color 150ms ease;
+    background-color calc(150ms / var(--ui-motion-speed, 1)) ease,
+    color calc(150ms / var(--ui-motion-speed, 1)) ease;
 
   &:focus-visible {
     outline: 2px solid var(--ui-accent);
@@ -105,7 +105,7 @@
 
 .st-caret {
   color: color-mix(in srgb, var(--ui-fg) 60%, transparent);
-  transition: rotate 200ms ease-out;
+  transition: rotate calc(200ms / var(--ui-motion-speed, 1)) ease-out;
 
   [aria-expanded='true'] & {
     rotate: 180deg;
@@ -128,7 +128,7 @@
   width: 44px;
   border-radius: 999px;
   background: currentColor;
-  transition: height 200ms ease-out;
+  transition: height calc(200ms / var(--ui-motion-speed, 1)) ease-out;
 }
 
 /* ---------- Campioni ---------- */
@@ -351,8 +351,8 @@
   background: none;
   cursor: pointer;
   transition:
-    background-color 150ms ease,
-    color 150ms ease;
+    background-color calc(150ms / var(--ui-motion-speed, 1)) ease,
+    color calc(150ms / var(--ui-motion-speed, 1)) ease;
 
   &[aria-pressed='true'] {
     color: var(--ui-fg);
@@ -415,14 +415,14 @@
   height: 180px;
   border-style: solid;
   transition:
-    background-color 200ms ease-out,
-    border-color 200ms ease-out,
-    border-width 200ms ease-out;
+    background-color calc(200ms / var(--ui-motion-speed, 1)) ease-out,
+    border-color calc(200ms / var(--ui-motion-speed, 1)) ease-out,
+    border-width calc(200ms / var(--ui-motion-speed, 1)) ease-out;
 }
 
 .st-shape__text {
   font-weight: 600;
-  transition: font-size 200ms ease-out;
+  transition: font-size calc(200ms / var(--ui-motion-speed, 1)) ease-out;
 }
 
 /* ---------- Apertura della barra ---------- */

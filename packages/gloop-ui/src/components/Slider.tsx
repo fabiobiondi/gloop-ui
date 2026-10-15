@@ -11,16 +11,15 @@ import {
   type Ref,
 } from 'react'
 import {
-  MotionConfig,
   animate,
   motion,
   useMotionValue,
-  useReducedMotion,
   useSpring,
   useTransform,
   useVelocity,
 } from 'motion/react'
 import { fromPointer, keyValue, snap, stepMarks, toPercent } from './slider-math'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './Slider.css'
 
@@ -54,7 +53,7 @@ export type SliderProps = {
   style?: CSSProperties
   /** Ref all'elemento focusabile (role="slider") */
   ref?: Ref<HTMLDivElement>
-}
+} & MotionProps
 
 // Misure in px: devono restare allineate con Slider.css
 const THUMB = 22
@@ -96,9 +95,11 @@ function Slider({
   className,
   style,
   ref,
+  ...motionProps
 }: SliderProps) {
   const filterId = useId()
-  const reduceMotion = useReducedMotion()
+  const m = useGloopMotion(motionProps)
+  const reduceMotion = m.reduced
   const railRef = useRef<HTMLDivElement | null>(null)
   const thumbRef = useRef<HTMLDivElement | null>(null)
 
@@ -120,8 +121,8 @@ function Slider({
   // Posizione in % lungo il binario: la testa è rapida, la coda in ritardo crea la scia
   const percent = toPercent(current, min, max)
   const target = useMotionValue(percent)
-  const headX = useSpring(target, head)
-  const tailX = useSpring(target, tail)
+  const headX = useSpring(target, m.t(head))
+  const tailX = useSpring(target, m.t(tail))
   const lead = reduceMotion ? target : headX
   const trail = reduceMotion ? target : tailX
 
@@ -150,10 +151,10 @@ function Slider({
   const textOpacity = useTransform(size, [0.6, 1], [0, 1])
 
   useEffect(() => {
-    const transition = reduceMotion ? { duration: 0 } : active ? flow : suck
+    const transition = reduceMotion ? { duration: 0 } : m.t(active ? flow : suck)
     const controls = [animate(y, active ? 0 : sunk, transition), animate(size, active ? 1 : 0.4, transition)]
     return () => controls.forEach((c) => c.stop())
-  }, [active, sunk, reduceMotion, y, size])
+  }, [active, sunk, reduceMotion, m, y, size])
 
   const markList = useMemo(() => {
     if (!marks) return []
@@ -227,10 +228,11 @@ function Slider({
   const classes = className ? `slider ${className}` : 'slider'
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionScope m={m} props={motionProps}>
       <div
+        {...m.rootProps}
         className={classes}
-        style={style}
+        style={{ ...m.rootProps.style, ...style }}
         data-disabled={disabled || undefined}
         data-dragging={dragging || undefined}
         data-active={active || undefined}
@@ -342,7 +344,7 @@ function Slider({
 
         {name && <input type="hidden" name={name} value={current} disabled={disabled} />}
       </div>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

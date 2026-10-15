@@ -15,6 +15,7 @@ import { Trigger } from './floating/trigger'
 import { forwardTriggerProps } from './floating/trigger-props'
 import { useFloating } from './floating/useFloating'
 import { useThemeVars } from './floating/useThemeVars'
+import { useGloopMotion, type MotionProps } from './motion'
 
 export type TooltipProps = {
   /** Testo o JSX */
@@ -30,7 +31,7 @@ export type TooltipProps = {
   disabled?: boolean
   /** Larghezza massima, in px */
   maxWidth?: number
-}
+} & MotionProps
 
 // Il focus apre subito solo se arriva dalla tastiera: il clic del mouse non deve riaprirlo
 function isFocusVisible(el: Element) {
@@ -56,9 +57,16 @@ function Tooltip(props: TooltipProps) {
     closeDelay = 100,
     disabled = false,
     maxWidth = 240,
+    speed,
+    motion,
+    animated,
+    reducedMotion,
     // Ref ed eventi di un trigger esterno (es. un Popover attorno al Tooltip)
     ...outer
   } = props as TooltipProps & Record<string, unknown>
+  // Esplicite: il resto (outer) va al trigger
+  const motionProps = { speed, motion, animated, reducedMotion }
+  const m = useGloopMotion(motionProps)
   const [open, setOpen] = useState(false)
   const shown = open && !disabled
   const timer = useRef<number | undefined>(undefined)
@@ -112,6 +120,8 @@ function Tooltip(props: TooltipProps) {
         position={position}
         floatingRef={floatingRef}
         themeVars={themeVars}
+        m={m}
+        motionProps={motionProps}
         style={{ '--floating-max-width': `${maxWidth}px` } as CSSProperties}
         bubbleProps={{ id, role: 'tooltip' }}
         layerProps={{

@@ -55,7 +55,7 @@
   color: color-mix(in srgb, var(--ui-fg) 55%, transparent);
   background: none;
   cursor: pointer;
-  transition: color 200ms ease;
+  transition: color calc(200ms / var(--ui-motion-speed, 1)) ease;
 
   &[aria-selected='true'] {
     color: var(--ui-fg);

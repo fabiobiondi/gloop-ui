@@ -17,3 +17,14 @@
    * il default viene calcolato su ogni componente, quindi segue anche un --ui-bg locale.
    */
 }
+
+/*
+ * Animazioni spente (animated={false} sul componente o sul GloopMotionProvider):
+ * niente transition né animation CSS. data-motion e --ui-motion-speed (che divide le
+ * durate CSS) li mette useGloopMotion sulla root di ogni componente.
+ */
+[data-motion='off'],
+[data-motion='off'] *:not(.input__control) {
+  transition: none !important;
+  animation: none !important;
+}

@@ -27,14 +27,14 @@ const direction = (fallback: string, description: string): PropDoc => ({
 })
 
 // Props documentate per ogni componente, indicizzate con l'id della voce (vedi demos.tsx)
-export const propsById: Record<string, PropDoc[]> = {
+const componentProps: Record<string, PropDoc[]> = {
   'expand-button': [
     { name: 'label', type: 'string', required: true, description: 'Accessible name; also the visible text unless iconOnly.' },
     { name: 'icon', type: 'ReactNode', description: 'Icon shown in the button.' },
     { name: 'iconOnly', type: 'boolean', default: 'false', description: 'The button does not expand; the label is only announced to screen readers.' },
     { name: 'variant', type: "'toggle' | 'action'", default: "'toggle'", description: 'toggle: activates, colors and shows the label on click. action: label always visible, click runs onClick.' },
     { name: 'activeColor', type: 'string', default: "'#e11d48' / --ui-bg", description: 'toggle: color when active. action: background color.' },
-    { name: 'drip', type: "boolean | 'hover'", default: 'false', description: "Drops drip from the bottom edge of the button, melted into it with the goo filter. true: always. 'hover': only while the pointer is over it. Hidden with prefers-reduced-motion." },
+    { name: 'drip', type: "boolean | 'hover'", default: 'false', description: "Drops drip from the bottom edge of the button, melted into it with the goo filter. true: always. 'hover': only while the pointer is over it. Hidden with reduced motion." },
     { name: 'onClick', type: '() => void', description: 'Called on click.' },
     { name: 'autoFocus', type: 'boolean', description: 'Focus the button on mount.' },
   ],
@@ -153,7 +153,7 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'label', type: 'string', default: "'Loading'", description: 'Accessible name when there is no title.' },
     { name: 'size', type: 'number', default: '96', description: 'Width of the blob, in px; the height follows (×1.2).' },
     { name: 'color', type: 'string | [string, string]', default: "['#ff7ab6', '#7b5cff']", description: 'Solid color, or a [from, to] diagonal gradient.' },
-    { name: 'speed', type: 'number', default: '1', description: 'Speed multiplier of the fall and the drip: 2 is twice as fast, 0.5 half as fast.' },
+    { name: 'speed', type: 'number', default: '1', description: 'Speed multiplier of every animation, fall and drip included: 2 is twice as fast, 0.5 half as fast. Overrides GloopMotionProvider.' },
     { name: 'intro', type: 'boolean', default: 'true', description: 'The drop falls in, bounces and swells before dripping. false: the blob is there from the start. Static with prefers-reduced-motion.' },
     { name: 'className / style', type: 'string / CSSProperties', description: 'Applied to the root element.' },
   ],
@@ -165,9 +165,25 @@ export const propsById: Record<string, PropDoc[]> = {
     { name: 'formatValue', type: '(value: number, percent: number) => string', default: '`${Math.round(percent)}%`', description: 'Text of the value, also used as aria-valuetext.' },
     { name: 'color', type: 'string | [string, string]', default: '--ui-accent', description: 'Solid color, or a [from, to] gradient spread along the whole bar.' },
     { name: 'thickness', type: 'number', default: '10', description: 'Height of the bar in px; the blob head is 1.7× thicker.' },
-    { name: 'drip', type: 'boolean', default: 'false', description: 'Drops ooze out of the fill, or out of the running blobs when indeterminate. Reserves space below the bar. Hidden with prefers-reduced-motion.' },
-    { name: 'speed', type: 'number', default: '1', description: 'Speed multiplier of the indeterminate blobs and of the drops.' },
+    { name: 'drip', type: 'boolean', default: 'false', description: 'Drops ooze out of the fill, or out of the running blobs when indeterminate. Reserves space below the bar. Hidden with reduced motion.' },
+    { name: 'speed', type: 'number', default: '1', description: 'Speed multiplier of every animation, indeterminate blobs and drops included. Overrides GloopMotionProvider.' },
     { name: 'className / style', type: 'string / CSSProperties', description: 'Applied to the root. Text on the fill uses --progress-on-fill.' },
   ],
   'shape-editor': [],
 }
+
+// Props di animazione comuni a tutti i componenti (vedi la guida Motion)
+const motionProps: PropDoc[] = [
+  { name: 'speed', type: 'number', default: '1', description: 'Speed multiplier of the animations: 2 is twice as fast, 0.5 half as fast. Overrides GloopMotionProvider.' },
+  { name: 'motion', type: "'gloop' | 'smooth' | 'snappy'", default: "'gloop'", description: 'Character of the transitions: bouncy (gloop), no bounce (smooth), faster with less bounce (snappy).' },
+  { name: 'animated', type: 'boolean', default: 'true', description: 'false turns every animation off: state changes are instant.' },
+  { name: 'reducedMotion', type: "'user' | 'always' | 'never'", default: "'user'", description: 'user: follows the OS setting. always: always the reduced variant. never: ignores the OS.' },
+]
+
+// In coda le props di animazione, salvo quelle che un componente documenta già a modo suo
+export const propsById: Record<string, PropDoc[]> = Object.fromEntries(
+  Object.entries(componentProps).map(([id, props]) => [
+    id,
+    props.length === 0 ? props : [...props, ...motionProps.filter((m) => !props.some((p) => p.name === m.name))],
+  ]),
+)

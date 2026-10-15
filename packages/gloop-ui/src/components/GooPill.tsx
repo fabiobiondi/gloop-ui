@@ -2,11 +2,11 @@ import { useEffect, useId } from 'react'
 import {
   motion,
   useMotionValue,
-  useReducedMotion,
   useSpring,
   useTransform,
   useVelocity,
 } from 'motion/react'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './GooPill.css'
 
@@ -26,7 +26,7 @@ export type GooPillProps = {
   opacity?: number
   /** Ritardo della comparsa, in secondi */
   delay?: number
-}
+} & MotionProps
 
 const headSpring = { stiffness: 520, damping: 34 }
 const tailSpring = { stiffness: 170, damping: 20 }
@@ -46,18 +46,20 @@ function GooPill({
   radius = 22,
   opacity = 0.16,
   delay = 0,
+  ...motionProps
 }: GooPillProps) {
   const filterId = useId()
-  const reduceMotion = useReducedMotion()
+  const m = useGloopMotion(motionProps)
+  const reduceMotion = m.reduced
 
   const target = useMotionValue(index * step)
-  const head = useSpring(target, headSpring)
-  const tail = useSpring(target, tailSpring)
+  const head = useSpring(target, m.t(headSpring))
+  const tail = useSpring(target, m.t(tailSpring))
 
   // Elementi di larghezza diversa (TabBar inline): anche la lunghezza segue testa e coda
   const size = useMotionValue(length - inset * 2)
-  const headSize = useSpring(size, headSpring)
-  const tailSize = useSpring(size, tailSpring)
+  const headSize = useSpring(size, m.t(headSpring))
+  const tailSize = useSpring(size, m.t(tailSpring))
 
   // Più va veloce, più la testa si allunga lungo l'asse e si assottiglia (squash & stretch)
   const velocity = useVelocity(head)
@@ -85,13 +87,15 @@ function GooPill({
       : { scaleY: stretch, scaleX: squash }
 
   return (
+    <MotionScope m={m} props={motionProps}>
     <motion.div
+      {...m.rootProps}
       className="goo-pill"
       aria-hidden="true"
-      style={{ filter: reduceMotion ? undefined : `url(#${CSS.escape(filterId)})` }}
+      style={{ ...m.rootProps.style, filter: reduceMotion ? undefined : `url(#${CSS.escape(filterId)})` }}
       initial={{ opacity: 0 }}
-      animate={{ opacity, transition: { delay, duration: 0.2 } }}
-      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+      animate={{ opacity, transition: m.t({ delay, duration: 0.2 }) }}
+      exit={{ opacity: 0, transition: m.t({ duration: 0.15 }) }}
     >
       <svg className="goo-pill__defs" aria-hidden="true">
         <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
@@ -113,6 +117,7 @@ function GooPill({
         }}
       />
     </motion.div>
+    </MotionScope>
   )
 }
 

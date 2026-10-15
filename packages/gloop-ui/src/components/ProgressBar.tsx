@@ -1,9 +1,14 @@
 import { useEffect, useId, useRef, type CSSProperties } from 'react'
-import { MotionConfig, animate, motion, useMotionValue, useReducedMotion, useSpring, useTransform, useVelocity } from 'motion/react'
+import { animate, motion, useMotionValue, useSpring, useTransform, useVelocity } from 'motion/react'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import { toPercent } from './slider-math'
 import './theme.css'
 import './ProgressBar.css'
 
+/**
+ * speed (da MotionProps) moltiplica tutte le animazioni del componente: molle della testa,
+ * blob indeterminati, gocce e pulsazione. 2 = il doppio più veloce (default 1)
+ */
 export type ProgressBarProps = {
   /** Valore corrente; senza (undefined o null) la barra è indeterminata e scorre all'infinito */
   value?: number | null
@@ -25,11 +30,9 @@ export type ProgressBarProps = {
   thickness?: number
   /** Gocce che colano dal riempimento (o dai blob, se indeterminata) */
   drip?: boolean
-  /** Moltiplicatore di velocità di blob indeterminati e gocce: 2 = il doppio più veloce (default 1) */
-  speed?: number
   className?: string
   style?: CSSProperties
-}
+} & MotionProps
 
 // Testa rapida con un po' di rimbalzo, coda gommosa in ritardo: in mezzo il goo crea il collo
 const head = { stiffness: 140, damping: 14 }
@@ -84,12 +87,13 @@ function ProgressBar({
   color,
   thickness = 10,
   drip = false,
-  speed = 1,
   className,
   style,
+  ...motionProps
 }: ProgressBarProps) {
   const filterId = useId()
-  const reduceMotion = useReducedMotion()
+  const m = useGloopMotion(motionProps)
+  const reduceMotion = m.reduced
   const indeterminate = value == null
   const current = indeterminate ? min : Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : min
   const percent = toPercent(current, min, max)
@@ -100,8 +104,8 @@ function ProgressBar({
   const complete = !indeterminate && percent >= 100
 
   const target = useMotionValue(percent)
-  const headX = useSpring(target, head)
-  const tailX = useSpring(target, tail)
+  const headX = useSpring(target, m.t(head))
+  const tailX = useSpring(target, m.t(tail))
   const lead = reduceMotion ? target : headX
   const trail = reduceMotion ? target : tailX
 
@@ -131,12 +135,12 @@ function ProgressBar({
   const wasComplete = useRef(complete)
   useEffect(() => {
     if (complete && !wasComplete.current && !reduceMotion) {
-      const c = animate(gulp, [1, 1.25, 0.95, 1], { duration: 0.6, ease: 'easeInOut', delay: 0.25 })
+      const c = animate(gulp, [1, 1.25, 0.95, 1], m.t({ duration: 0.6, ease: 'easeInOut', delay: 0.25 }))
       wasComplete.current = complete
       return () => c.stop()
     }
     wasComplete.current = complete
-  }, [complete, reduceMotion, gulp])
+  }, [complete, reduceMotion, m, gulp])
 
   // Gradiente: il riempimento lo stende su tutta la corsia, testa e gocce prendono il colore del loro punto
   const [from, to] = color == null ? ['var(--ui-accent)', 'var(--ui-accent)'] : typeof color === 'string' ? [color, color] : color
@@ -145,8 +149,9 @@ function ProgressBar({
   const classes = className ? `progress ${className}` : 'progress'
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionScope m={m} props={motionProps}>
       <div
+        {...m.rootProps}
         className={classes}
         role="progressbar"
         aria-label={labelledBy ? undefined : label}
@@ -161,8 +166,9 @@ function ProgressBar({
         data-complete={complete || undefined}
         style={
           {
+            ...m.rootProps.style,
             '--progress-h': `${h}px`,
-            '--progress-speed': speed > 0 ? speed : 1,
+            '--progress-speed': m.speed,
             '--progress-from': from,
             '--progress-to': to,
             '--progress-head-fill': at(percent),
@@ -241,7 +247,7 @@ function ProgressBar({
           )}
         </div>
       </div>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

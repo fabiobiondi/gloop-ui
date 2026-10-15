@@ -9,8 +9,9 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
-import { MotionConfig, motion, useReducedMotion, type Variants } from 'motion/react'
+import { motion, type Variants } from 'motion/react'
 import Popover from './Popover'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import Tooltip from './Tooltip'
 import type { FloatingPlacement } from './floating/position'
 import './theme.css'
@@ -105,7 +106,7 @@ export type CircleMenuProps = {
   defaultOpen?: boolean
   /** Chiamata quando il menu si apre o si chiude (dal "+", Esc, clic fuori, scelta fatta) */
   onOpenChange?: (open: boolean) => void
-}
+} & MotionProps
 
 const CENTER_SIZE = 56
 const ITEM_SIZE = 48
@@ -195,7 +196,9 @@ function CircleMenu({
   open: openProp,
   defaultOpen = false,
   onOpenChange,
+  ...motionProps
 }: CircleMenuProps) {
+  const m = useGloopMotion(motionProps)
   const [uncontrolled, setUncontrolled] = useState(defaultOpen)
   const open = openProp ?? uncontrolled
   // I listener su document leggono sempre l'ultima onOpenChange
@@ -216,7 +219,7 @@ function CircleMenu({
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const filterId = useId()
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = m.reduced
 
   const n = Math.min(items.length, 6)
 
@@ -439,8 +442,9 @@ function CircleMenu({
   const blobStyle = (s: number) => ({ width: s, height: s, marginLeft: -s / 2, marginTop: -s / 2 })
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionScope m={m} props={motionProps}>
       <div
+        {...m.rootProps}
         ref={rootRef}
         className="circle-menu"
         onPointerDownCapture={() => {
@@ -450,6 +454,7 @@ function CircleMenu({
         data-open={open || undefined}
         style={
           {
+            ...m.rootProps.style,
             width: reserveSpace ? maxX - minX : CENTER_SIZE,
             height: reserveSpace ? maxY - minY : CENTER_SIZE,
             '--origin-x': `${-minX}px`,
@@ -505,7 +510,7 @@ function CircleMenu({
                       style={blobStyle(CHILD_SIZE)}
                       initial={false}
                       animate={{ ...c.target, scale: c.shown ? TAIL_SCALE : 0.3 }}
-                      transition={tailTransition(c.transition)}
+                      transition={m.t(tailTransition(c.transition))}
                     />
                   ),
                   <motion.span
@@ -514,7 +519,7 @@ function CircleMenu({
                     style={blobStyle(CHILD_SIZE)}
                     initial={false}
                     animate={c.target}
-                    transition={c.transition}
+                    transition={m.t(c.transition)}
                   />,
                 ]
               }),
@@ -529,7 +534,7 @@ function CircleMenu({
                     style={blobStyle(ITEM_SIZE)}
                     initial={false}
                     animate={{ ...s.target, scale: open ? TAIL_SCALE : 0.4 }}
-                    transition={tailTransition(s.transition)}
+                    transition={m.t(tailTransition(s.transition))}
                   />
                 ),
                 <motion.span
@@ -538,14 +543,14 @@ function CircleMenu({
                   style={blobStyle(ITEM_SIZE)}
                   initial={false}
                   animate={s.target}
-                  transition={s.transition}
+                  transition={m.t(s.transition)}
                 />,
               ]
             })}
             <motion.span
               className="circle-menu__blob"
               style={blobStyle(CENTER_SIZE)}
-              variants={centerVariants}
+              variants={m.v(centerVariants)}
               initial={false}
               animate={open ? 'open' : 'closed'}
             />
@@ -560,7 +565,7 @@ function CircleMenu({
               style={blobStyle(CENTER_SIZE)}
               aria-label={open ? `Close ${label}` : `Open ${label}`}
               aria-expanded={open}
-              variants={centerVariants}
+              variants={m.v(centerVariants)}
               initial={false}
               animate={open ? 'open' : 'closed'}
               whileTap={{ scale: 0.9 }}
@@ -576,7 +581,7 @@ function CircleMenu({
                 aria-hidden="true"
                 initial={false}
                 animate={{ rotate: open ? 135 : 0 }}
-                transition={open ? openSpring : closeSpring}
+                transition={m.t(open ? openSpring : closeSpring)}
               >
                 <path d="M12 5v14M5 12h14" />
               </motion.svg>
@@ -605,7 +610,7 @@ function CircleMenu({
                   data-hidden={!open || undefined}
                   initial={false}
                   animate={{ ...s.target, opacity: open ? 1 : 0 }}
-                  transition={s.transition}
+                  transition={m.t(s.transition)}
                   whileTap={{ scale: 0.9 }}
                   {...hoverProps(String(i))}
                   onClick={() => {
@@ -639,7 +644,7 @@ function CircleMenu({
                       }}
                       initial={false}
                       animate={{ opacity: sub === i ? 0 : 1, scale: sub === i ? 0.5 : 1 }}
-                      transition={hoverSpring}
+                      transition={m.t(hoverSpring)}
                     >
                       <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4.5 3 7.5 6l-3 3" />
@@ -671,7 +676,7 @@ function CircleMenu({
                     data-hidden={!c.shown || undefined}
                     initial={false}
                     animate={{ ...c.target, opacity: c.shown ? 1 : 0 }}
-                    transition={c.transition}
+                    transition={m.t(c.transition)}
                     whileTap={{ scale: 0.9 }}
                     {...hoverProps(`${i}-${j}`)}
                     // Scelta fatta: tutto rientra nel centro
@@ -689,7 +694,7 @@ function CircleMenu({
           </div>
         </div>
       </div>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

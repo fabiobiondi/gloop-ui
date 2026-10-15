@@ -1,7 +1,6 @@
 import { useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import {
   AnimatePresence,
-  MotionConfig,
   motion,
   type Transition,
   type Variants,
@@ -22,6 +21,7 @@ import {
   visualIndex,
   type TabMenuDirection,
 } from './tab-drop'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './TabMenuMotion.css'
 import './TabMenuSubmenu.css'
@@ -50,7 +50,7 @@ export type TabMenuSubmenuProps = {
    * false: niente goccia, il sottomenu compare separato senza fondersi col tab
    */
   attached?: boolean
-}
+} & MotionProps
 
 const DRIP_SIZE = 28
 /** Distanza tra barra e pannello: oltre ~12px il filtro goo non li fonde da fermi */
@@ -95,7 +95,15 @@ const slide: Variants = {
   }),
 }
 
-function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', attached = true }: TabMenuSubmenuProps) {
+function TabMenuSubmenu({
+  icon,
+  label,
+  tabs,
+  direction: placement = 'left',
+  attached = true,
+  ...motionProps
+}: TabMenuSubmenuProps) {
+  const m = useGloopMotion(motionProps)
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
@@ -112,6 +120,15 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
       setAutoSide(resolveDirection('auto', triggerRef.current, boundaryRef?.current, tabs.length, 'morph'))
   }
   const vertical = isVertical(direction)
+  // Goccia del tab i, con la molla adattata a velocità e preset
+  const tabDropOf = (i: number) => {
+    const d = tabDrop(i, tabs.length, direction)
+    return {
+      ...d,
+      animate: { ...d.animate, transition: m.t(d.animate.transition) },
+      exit: { ...d.exit, transition: m.t(d.exit.transition) },
+    }
+  }
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const barId = useId()
   const submenuId = useId()
@@ -259,14 +276,15 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
   const region = barFilterRegion(n, PANEL_GAP + Math.max(PANEL_WIDTH, panelHeight(longest)) + 60)
 
   return (
-    <MotionConfig transition={morph} reducedMotion="user">
+    <MotionScope m={m} props={motionProps} transition={morph}>
       {/* Filtro goo su barra, pannello e gocce: si fondono come liquido */}
       <div
+        {...m.rootProps}
         ref={rootRef}
         className="tab-menu-submenu"
         data-direction={direction}
         data-panel={panelSide}
-        style={{ filter: `url(#${CSS.escape(filterId)})` }}
+        style={{ ...m.rootProps.style, filter: `url(#${CSS.escape(filterId)})` }}
       >
         {/* Area ampia: il pannello sta sopra la barra, fuori dal suo riquadro */}
         <GooFilter id={filterId} region={region} />
@@ -283,9 +301,9 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
               animate={{
                 ...drip.to,
                 scale: [0.6, 1, NECK_SCALE],
-                transition: { duration: 0.45, ease: [0.23, 1, 0.32, 1] },
+                transition: m.t({ duration: 0.45, ease: [0.23, 1, 0.32, 1] }),
               }}
-              variants={dropVariants}
+              variants={m.v(dropVariants)}
               exit="gone"
             />
           )}
@@ -308,14 +326,14 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
                 scaleY: 1,
                 x: 0,
                 y: 0,
-                transition: { ...morph, opacity: { duration: 0.12 } },
+                transition: m.t({ ...morph, opacity: { duration: 0.12 } }),
               }}
               exit={{
                 opacity: 0,
                 scaleX: 0.4,
                 scaleY: 0.3,
                 ...panelFrom,
-                transition: exitFast,
+                transition: m.t(exitFast),
               }}
             >
               <AnimatePresence mode="popLayout" initial={false} custom={{ dir: slideDir, axis: vertical ? 'y' : 'x' }}>
@@ -324,7 +342,7 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
                   layout="position"
                   className="tab-menu-submenu__list-wrap"
                   custom={{ dir: slideDir, axis: vertical ? 'y' : 'x' }}
-                  variants={slide}
+                  variants={m.v(slide)}
                   initial="enter"
                   animate="center"
                   exit="exit"
@@ -380,7 +398,7 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
                     aria-expanded={tab.items?.length ? submenu === i : undefined}
                     aria-controls={submenu === i ? submenuId : undefined}
                     onClick={() => onTabClick(i)}
-                    {...tabDrop(i, tabs.length, direction)}
+                    {...tabDropOf(i)}
                     // La pressione scala solo il contenuto: un transform sul bottone porterebbe
                     // la goccia (z-index -1) sopra la pillola, come un cerchio scuro
                     whileTap="pressed"
@@ -423,7 +441,7 @@ function TabMenuSubmenu({ icon, label, tabs, direction: placement = 'left', atta
           </motion.button>
         </motion.div>
       </div>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

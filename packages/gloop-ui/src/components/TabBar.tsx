@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { MotionConfig, motion, type Transition } from 'motion/react'
+import { motion, type Transition } from 'motion/react'
 import GooPill from './GooPill'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './TabMenuMotion.css'
 import './TabBar.css'
@@ -23,7 +24,7 @@ export type TabBarProps = {
   layout?: 'stacked' | 'inline'
   /** fixed: fissa in basso allo schermo. static: nel flusso della pagina (header, toolbar) */
   position?: 'fixed' | 'static'
-}
+} & MotionProps
 
 export type TabBarEnter = 'bottom' | 'top' | 'left' | 'right'
 
@@ -49,7 +50,9 @@ function TabBar({
   enterFrom = 'bottom',
   layout = 'stacked',
   position = 'fixed',
+  ...motionProps
 }: TabBarProps) {
+  const m = useGloopMotion(motionProps)
   const [active, setActive] = useState(0)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [pill, setPill] = useState<{ offset: number; width: number } | null>(null)
@@ -71,14 +74,15 @@ function TabBar({
   }, [active, tabs, layout])
 
   return (
-    <MotionConfig transition={spring} reducedMotion="user">
+    <MotionScope m={m} props={motionProps} transition={spring}>
       <motion.nav
+        {...m.rootProps}
         aria-label={label}
         className="tab-bar"
         data-layout={layout}
         data-position={position}
         initial={enterFrom ? { ...enterOffset[enterFrom], opacity: 0 } : false}
-        animate={{ x: 0, y: 0, opacity: 1, transition: { ...spring, delay: 0.2 } }}
+        animate={{ x: 0, y: 0, opacity: 1, transition: m.t({ ...spring, delay: 0.2 }) }}
       >
         {/* step 1: l'indice passato alla pillola è già la distanza in px */}
         {pill && (
@@ -112,7 +116,7 @@ function TabBar({
               aria-hidden="true"
               initial={active === i ? { scale: 1, y: 0 } : false}
               animate={active === i ? { scale: [1, 1.3, 1], y: [0, -4, 0] } : { scale: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
+              transition={m.t({ duration: 0.4, ease: 'easeOut' })}
             >
               {tab.icon}
             </motion.span>
@@ -127,7 +131,7 @@ function TabBar({
           </motion.button>
         ))}
       </motion.nav>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

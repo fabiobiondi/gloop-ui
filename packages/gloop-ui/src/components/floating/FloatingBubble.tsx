@@ -1,7 +1,8 @@
 import { useId, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, MotionConfig, motion, type Transition, type Variants } from 'motion/react'
+import { AnimatePresence, motion, type Transition, type Variants } from 'motion/react'
 import { GooFilter } from '../goo'
+import { MotionScope, type GloopMotion, type MotionProps } from '../motion'
 import type { FloatingPosition, FloatingSide } from './position'
 import { ARROW } from './useFloating'
 import '../theme.css'
@@ -18,6 +19,9 @@ type FloatingBubbleProps = {
   /** Eventi del livello: coprono bolla e freccia */
   layerProps?: HTMLAttributes<HTMLDivElement>
   style?: CSSProperties
+  /** Animazioni risolte dal Tooltip/Popover che usa la bolla */
+  m: GloopMotion
+  motionProps: MotionProps
   children: ReactNode
 }
 
@@ -118,6 +122,8 @@ function FloatingBubble({
   bubbleProps,
   layerProps,
   style,
+  m,
+  motionProps,
   children,
 }: FloatingBubbleProps) {
   const filterId = useId()
@@ -128,16 +134,18 @@ function FloatingBubble({
   const shown = position ? 'open' : 'hidden'
 
   return createPortal(
-    <MotionConfig reducedMotion="user">
+    <MotionScope m={m} props={motionProps}>
       <AnimatePresence>
         {open && (
           <div
             key="floating"
             {...layerProps}
+            {...m.rootProps}
             className={`floating floating--${variant}`}
             data-placement={placement}
             style={
               {
+                ...m.rootProps.style,
                 ...themeVars,
                 ...style,
                 transform: position ? `translate3d(${position.x}px, ${position.y}px, 0)` : undefined,
@@ -157,12 +165,12 @@ function FloatingBubble({
               className="floating__bubble"
               style={origin(position)}
               custom={position}
-              variants={bubbleVariants}
+              variants={m.v(bubbleVariants)}
               initial="hidden"
               animate={shown}
               exit="exit"
             >
-              <motion.div className="floating__content" variants={contentVariants}>
+              <motion.div className="floating__content" variants={m.v(contentVariants)}>
                 {children}
               </motion.div>
             </motion.div>
@@ -172,7 +180,7 @@ function FloatingBubble({
               className="floating__arrow"
               aria-hidden="true"
               style={{ x: '-50%', y: '-50%', rotate: 45 }}
-              variants={arrowVariants}
+              variants={m.v(arrowVariants)}
               initial="hidden"
               animate={shown}
               exit="exit"
@@ -180,7 +188,7 @@ function FloatingBubble({
           </div>
         )}
       </AnimatePresence>
-    </MotionConfig>,
+    </MotionScope>,
     document.body,
   )
 }

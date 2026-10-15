@@ -86,7 +86,7 @@
   color: color-mix(in srgb, var(--ui-fg) 55%, transparent);
   transform-origin: left center;
   cursor: text;
-  transition: color 0.2s;
+  transition: color calc(0.2s / var(--ui-motion-speed, 1));
 }
 
 .input[data-floated] .input__label {
@@ -114,7 +114,7 @@
   &::placeholder {
     color: color-mix(in srgb, var(--ui-fg) 45%, transparent);
     opacity: 0;
-    transition: opacity 0.12s;
+    transition: opacity calc(0.12s / var(--ui-motion-speed, 1));
   }
 
   /* Sfondo dell'autofill coperto col colore del campo */
@@ -131,7 +131,7 @@
 
 .input[data-floated] .input__control::placeholder {
   opacity: 1;
-  transition-delay: 0.12s;
+  transition-delay: calc(0.12s / var(--ui-motion-speed, 1));
 }
 
 .input[data-disabled] {
@@ -152,9 +152,11 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .input__control::placeholder,
-  .input[data-floated] .input__control::placeholder {
-    transition: none;
-  }
+/*
+ * Movimento ridotto o animazioni spente: il placeholder compare subito. La regola globale
+ * di theme.css esclude .input__control (l'animazione dell'autofill deve restare) e
+ * comunque non raggiunge lo pseudo-elemento ::placeholder.
+ */
+.input:is([data-motion='reduced'], [data-motion='off']) .input__control::placeholder {
+  transition: none;
 }

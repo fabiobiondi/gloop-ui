@@ -1,14 +1,13 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type InputHTMLAttributes, type Ref } from 'react'
 import {
-  MotionConfig,
   animate,
   motion,
   useMotionValue,
-  useReducedMotion,
   useTransform,
   useVelocity,
 } from 'motion/react'
 import { GooFilter } from './goo'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './Input.css'
 
@@ -16,7 +15,7 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   /** Etichetta: dentro il campo da vuoto, sopra come goccia al focus o con un valore */
   label: string
   ref?: Ref<HTMLInputElement>
-}
+} & MotionProps
 
 // Misure in px: devono restare allineate con Input.css
 const FIELD_H = 44
@@ -51,12 +50,18 @@ function Input({
   onFocus,
   onBlur,
   onAnimationStart,
+  speed,
+  motion: motionPreset,
+  animated,
+  reducedMotion,
   ...rest
 }: InputProps) {
+  const motionProps = { speed, motion: motionPreset, animated, reducedMotion }
+  const m = useGloopMotion(motionProps)
   const autoId = useId()
   const inputId = id ?? autoId
   const filterId = useId()
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = m.reduced
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const [focused, setFocused] = useState(false)
@@ -75,13 +80,14 @@ function Input({
   const scaleY = useTransform(() => size.get() * stretch.get())
 
   useEffect(() => {
-    const transition = reduceMotion ? { duration: 0 } : floated ? flow : suck
+    // Movimento ridotto: la goccia si sposta subito, senza molla
+    const transition = reduceMotion ? { duration: 0 } : m.t(floated ? flow : suck)
     const controls = [
       animate(y, floated ? 0 : SUNK, transition),
       animate(size, floated ? 1 : 0.6, transition),
     ]
     return () => controls.forEach((c) => c.stop())
-  }, [floated, reduceMotion, y, size])
+  }, [floated, reduceMotion, m, y, size])
 
   // L'autofill (e il ripristino del form dal browser) non sempre scatena onChange
   function syncValue() {
@@ -96,10 +102,11 @@ function Input({
   }
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionScope m={m} props={motionProps}>
       <div
+        {...m.rootProps}
         className={className ? `input ${className}` : 'input'}
-        style={style}
+        style={{ ...m.rootProps.style, ...style }}
         data-floated={floated || undefined}
         data-focused={focused || undefined}
         data-disabled={disabled || undefined}
@@ -122,7 +129,7 @@ function Input({
           htmlFor={inputId}
           initial={false}
           animate={floated ? { x: 24, y: 0, scale: 0.8 } : { x: 18, y: SUNK, scale: 1 }}
-          transition={reduceMotion ? { duration: 0 } : floated ? flow : suck}
+          transition={reduceMotion ? { duration: 0 } : m.t(floated ? flow : suck)}
         >
           {label}
         </motion.label>
@@ -155,7 +162,7 @@ function Input({
           }}
         />
       </div>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

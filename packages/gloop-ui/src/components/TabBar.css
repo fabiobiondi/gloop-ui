@@ -79,8 +79,8 @@
   color: color-mix(in srgb, var(--ui-fg) 75%, transparent);
   background: color-mix(in srgb, var(--ui-fg) 12%, transparent);
   transition:
-    color 200ms ease,
-    background-color 200ms ease;
+    color calc(200ms / var(--ui-motion-speed, 1)) ease,
+    background-color calc(200ms / var(--ui-motion-speed, 1)) ease;
 }
 
 .tab-menu-motion__tab[aria-current='page'] .tab-bar__value {

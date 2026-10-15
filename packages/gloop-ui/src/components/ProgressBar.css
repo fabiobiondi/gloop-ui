@@ -190,7 +190,7 @@
 }
 
 .progress__drop {
-  animation: progress-drip 2.6s cubic-bezier(0.55, 0, 0.75, 0.4) infinite both;
+  animation: progress-drip calc(2.6s / var(--progress-speed)) cubic-bezier(0.55, 0, 0.75, 0.4) infinite both;
 }
 
 @keyframes progress-drip {
@@ -285,24 +285,27 @@
   }
 }
 
-/* Riduzione del movimento: niente corsa né gocce, un segmento fermo che pulsa piano */
-@media (prefers-reduced-motion: reduce) {
-  .progress__runner,
-  .progress__runner-blob {
+/*
+ * Riduzione del movimento: niente corsa né gocce, un segmento fermo che pulsa piano.
+ * Con le animazioni spente (data-motion='off') theme.css toglie anche la pulsazione.
+ */
+.progress:is([data-motion='reduced'], [data-motion='off']) {
+  & .progress__runner,
+  & .progress__runner-blob {
     animation: none;
   }
 
-  .progress__runner:not([data-runner='0']),
-  .progress__runner-drop {
+  & .progress__runner:not([data-runner='0']),
+  & .progress__runner-drop {
     display: none;
   }
 
-  .progress__runner[data-runner='0'] {
+  & .progress__runner[data-runner='0'] {
     transform: translateX(calc(50% - var(--w) / 2));
-    animation: progress-pulse 1.6s ease-in-out infinite;
+    animation: progress-pulse calc(1.6s / var(--progress-speed)) ease-in-out infinite;
   }
 
-  .progress__drop {
+  & .progress__drop {
     display: none;
   }
 }

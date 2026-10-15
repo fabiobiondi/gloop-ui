@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, MotionConfig, motion, type Transition } from 'motion/react'
+import { AnimatePresence, motion, type Transition } from 'motion/react'
 import ExpandButton from './ExpandButton'
 import { GooFilter } from './goo'
 import { useThemeVars } from './floating/useThemeVars'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './Dialog.css'
 
@@ -34,7 +35,7 @@ export type DialogProps = {
   backdropOpacity?: number
   /** Sfocatura della pagina dietro il dialog, in px (default 0) */
   backdropBlur?: number
-}
+} & MotionProps
 
 // Gli spazi tra badge, scheda e pulsanti: oltre ~12px il filtro goo non li fonde da fermi
 const GAP = 14
@@ -66,7 +67,9 @@ function Dialog({
   backdropColor,
   backdropOpacity,
   backdropBlur,
+  ...motionProps
 }: DialogProps) {
+  const m = useGloopMotion(motionProps)
   const anchorRef = useRef<HTMLSpanElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -141,18 +144,23 @@ function Dialog({
     <>
       <span ref={anchorRef} hidden />
       {createPortal(
-        <MotionConfig reducedMotion="user">
+        <MotionScope m={m} props={motionProps}>
           <AnimatePresence>
             {open && (
-              <div key="dialog" className="dialog-layer" style={themeVars}>
+              <div
+                key="dialog"
+                {...m.rootProps}
+                className="dialog-layer"
+                style={{ ...m.rootProps.style, ...themeVars }}
+              >
                 <motion.div
                   className="dialog-backdrop"
                   aria-hidden="true"
                   style={backdropVars}
                   onClick={onClose}
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 1, transition: { duration: 0.2 } }}
-                  exit={{ opacity: 0, transition: { duration: 0.15, delay: 0.05 } }}
+                  animate={{ opacity: 1, transition: m.t({ duration: 0.2 }) }}
+                  exit={{ opacity: 0, transition: m.t({ duration: 0.15, delay: 0.05 }) }}
                 />
 
                 <div
@@ -169,18 +177,18 @@ function Dialog({
                       style={{ width: BADGE_SIZE, height: BADGE_SIZE }}
                       // Parte dentro la scheda e si stacca verso l'alto
                       initial={{ y: BADGE_SIZE / 2 + GAP + 8, scale: 0.4 }}
-                      animate={{ y: 0, scale: 1, transition: { ...drip, delay: 0.08 } }}
+                      animate={{ y: 0, scale: 1, transition: m.t({ ...drip, delay: 0.08 }) }}
                       exit={{
                         y: BADGE_SIZE / 2 + GAP + 8,
                         scale: 0.4,
                         opacity: 0,
-                        transition: { ...suck, opacity: { duration: 0.12, delay: 0.08 } },
+                        transition: m.t({ ...suck, opacity: { duration: 0.12, delay: 0.08 } }),
                       }}
                     >
                       <motion.span
                         className="dialog__badge-icon"
                         initial={{ scale: 0.5, rotate: -20 }}
-                        animate={{ scale: 1, rotate: 0, transition: { ...drip, delay: 0.16 } }}
+                        animate={{ scale: 1, rotate: 0, transition: m.t({ ...drip, delay: 0.16 }) }}
                       >
                         {icon}
                       </motion.span>
@@ -200,13 +208,13 @@ function Dialog({
                       scaleX: 1,
                       scaleY: 1,
                       opacity: 1,
-                      transition: { ...swell, opacity: { duration: 0.1 } },
+                      transition: m.t({ ...swell, opacity: { duration: 0.1 } }),
                     }}
                     exit={{
                       scaleX: 0.35,
                       scaleY: 0.2,
                       opacity: 0,
-                      transition: { ...suck, delay: 0.06, opacity: { duration: 0.12, delay: 0.1 } },
+                      transition: m.t({ ...suck, delay: 0.06, opacity: { duration: 0.12, delay: 0.1 } }),
                     }}
                   >
                     {/* Il contenuto arriva quando la goccia ha quasi preso forma */}
@@ -216,9 +224,9 @@ function Dialog({
                         opacity: 1,
                         y: 0,
                         filter: 'blur(0px)',
-                        transition: { duration: 0.25, delay: 0.12, ease: [0.23, 1, 0.32, 1] },
+                        transition: m.t({ duration: 0.25, delay: 0.12, ease: [0.23, 1, 0.32, 1] }),
                       }}
-                      exit={{ opacity: 0, transition: { duration: 0.08 } }}
+                      exit={{ opacity: 0, transition: m.t({ duration: 0.08 }) }}
                     >
                       <h2 id={titleId} className="dialog__title">
                         {title}
@@ -238,12 +246,12 @@ function Dialog({
                           key={action.label}
                           // Colano giù dal bordo della scheda, uno dopo l'altro
                           initial={{ y: -(BUTTON_HEIGHT / 2 + GAP + 8), scale: 0.4 }}
-                          animate={{ y: 0, scale: 1, transition: { ...drip, delay: 0.1 + i * 0.05 } }}
+                          animate={{ y: 0, scale: 1, transition: m.t({ ...drip, delay: 0.1 + i * 0.05 }) }}
                           exit={{
                             y: -(BUTTON_HEIGHT / 2 + GAP + 8),
                             scale: 0.4,
                             opacity: 0,
-                            transition: { ...suck, opacity: { duration: 0.12, delay: 0.08 } },
+                            transition: m.t({ ...suck, opacity: { duration: 0.12, delay: 0.08 } }),
                           }}
                         >
                           <ExpandButton
@@ -265,7 +273,7 @@ function Dialog({
               </div>
             )}
           </AnimatePresence>
-        </MotionConfig>,
+        </MotionScope>,
         document.body,
       )}
     </>

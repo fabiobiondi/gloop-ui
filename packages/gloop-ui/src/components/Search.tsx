@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   AnimatePresence,
-  MotionConfig,
   animate,
   motion,
   useMotionValue,
-  useReducedMotion,
   useTransform,
   useVelocity,
   type Variants,
 } from 'motion/react'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './Search.css'
 
@@ -23,7 +22,7 @@ export type SearchProps = {
    * false: lo slot cresce con il campo e spinge il contenuto a destra.
    */
   reserveSpace?: boolean
-}
+} & MotionProps
 
 const CLOSED_WIDTH = 44
 // Spazio extra a destra: la molla può "sforare" e rientrare senza essere tagliata
@@ -62,6 +61,7 @@ const iconSpring = { type: 'spring', duration: 0.45, bounce: 0.25 } as const
  * - tutto ruota di 90° per dare un piccolo giro
  */
 function SearchCloseIcon({ open }: { open: boolean }) {
+  const m = useGloopMotion()
   return (
     <motion.svg
       viewBox="0 0 24 24"
@@ -72,14 +72,14 @@ function SearchCloseIcon({ open }: { open: boolean }) {
       aria-hidden="true"
       initial={false}
       animate={{ rotate: open ? 90 : 0 }}
-      transition={iconSpring}
+      transition={m.t(iconSpring)}
     >
       <motion.circle
         cx="11"
         cy="11"
         initial={false}
         animate={open ? { r: 0, opacity: 0 } : { r: 7, opacity: 1 }}
-        transition={iconSpring}
+        transition={m.t(iconSpring)}
       />
       <motion.line
         initial={false}
@@ -88,7 +88,7 @@ function SearchCloseIcon({ open }: { open: boolean }) {
             ? { x1: 6, y1: 6, x2: 18, y2: 18 }
             : { x1: 16.5, y1: 16.5, x2: 20, y2: 20 }
         }
-        transition={iconSpring}
+        transition={m.t(iconSpring)}
       />
       <motion.line
         x1="18"
@@ -97,7 +97,7 @@ function SearchCloseIcon({ open }: { open: boolean }) {
         y2="18"
         initial={false}
         animate={open ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
-        transition={open ? { ...iconSpring, delay: 0.08 } : { duration: 0.12 }}
+        transition={m.t(open ? { ...iconSpring, delay: 0.08 } : { duration: 0.12 })}
       />
     </motion.svg>
   )
@@ -108,13 +108,15 @@ function Search({
   width = 280,
   onSearch,
   reserveSpace = true,
+  ...motionProps
 }: SearchProps) {
+  const m = useGloopMotion(motionProps)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLFormElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = m.reduced
 
   const progress = useMotionValue(0)
   const hidden = width - CLOSED_WIDTH
@@ -130,13 +132,10 @@ function Search({
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
-    const controls = animate(
-      progress,
-      open ? 1 : 0,
-      reduceMotion ? { duration: 0 } : open ? openSpring : closeSpring,
-    )
+    // Movimento ridotto: il campo compare e sparisce di colpo
+    const controls = animate(progress, open ? 1 : 0, m.reduced ? { duration: 0 } : m.t(open ? openSpring : closeSpring))
     return () => controls.stop()
-  }, [open, progress, reduceMotion])
+  }, [open, progress, m])
 
   function close() {
     setOpen(false)
@@ -144,15 +143,16 @@ function Search({
   }
 
   return (
-    <MotionConfig reducedMotion="user">
+    <MotionScope m={m} props={motionProps}>
       {/*
        * reserveSpace: lo slot ha già la larghezza da aperto, il campo cresce solo verso destra.
        * Altrimenti lo slot coincide con il bordo del clip-path e taglia il resto del form.
        */}
       <motion.div
+        {...m.rootProps}
         className="search-slot"
         data-push={reserveSpace ? undefined : true}
-        style={{ width: reserveSpace ? width + OVERSHOOT : slotWidth }}
+        style={{ ...m.rootProps.style, width: reserveSpace ? width + OVERSHOOT : slotWidth }}
       >
         <motion.form
           ref={rootRef}
@@ -201,7 +201,7 @@ function Search({
                 className="search__field"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.08 } }}
+                exit={{ opacity: 0, transition: m.t({ duration: 0.08 }) }}
               >
                 <input
                   ref={inputRef}
@@ -215,12 +215,12 @@ function Search({
                   <motion.span
                     className="search__placeholder"
                     aria-hidden="true"
-                    variants={placeholderVariants}
+                    variants={m.v(placeholderVariants)}
                     initial="hidden"
                     animate="visible"
                   >
                     {[...placeholder].map((char, i) => (
-                      <motion.span key={i} className="search__char" variants={charVariants}>
+                      <motion.span key={i} className="search__char" variants={m.v(charVariants)}>
                         {char === ' ' ? ' ' : char}
                       </motion.span>
                     ))}
@@ -231,7 +231,7 @@ function Search({
           </AnimatePresence>
         </motion.form>
       </motion.div>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

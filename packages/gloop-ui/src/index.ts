@@ -64,6 +64,8 @@ export type {
 } from './components/TabMenuSubmenu'
 
 export { default as ShapeEditor } from './components/shape-toolbar/ShapeEditor'
+export type { ShapeEditorProps } from './components/shape-toolbar/ShapeEditor'
+
 
 export { default as Tooltip } from './components/Tooltip'
 export type { TooltipProps } from './components/Tooltip'
@@ -72,3 +74,13 @@ export { default as FloatingBoundary } from './components/FloatingBoundary'
 export type { FloatingBoundaryProps } from './components/FloatingBoundary'
 
 export type { FloatingPlacement, FloatingSide, FloatingAlign } from './components/floating/position'
+
+export { GloopMotionProvider, useGloopMotion, tuneTransition } from './components/motion'
+export type {
+  GloopMotionProviderProps,
+  GloopMotionPreset,
+  GloopReducedMotion,
+  GloopMotion,
+  MotionProps,
+  MotionState,
+} from './components/motion'

@@ -1,5 +1,5 @@
 import { useId, type CSSProperties, type ReactNode } from 'react'
-import { useReducedMotion } from 'motion/react'
+import { useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './GloopLoading.css'
 
@@ -14,13 +14,11 @@ export type GloopLoadingProps = {
   size?: number
   /** Colore pieno o gradiente [inizio, fine] (default rosa → viola, come il logo) */
   color?: string | [string, string]
-  /** Moltiplicatore di velocità: 2 = il doppio più veloce, 0.5 = la metà (default 1) */
-  speed?: number
   /** La goccia cade dall'alto, rimbalza e si gonfia prima di colare (default true) */
   intro?: boolean
   className?: string
   style?: CSSProperties
-}
+} & MotionProps
 
 // Durate a velocità 1, in secondi
 const INTRO = 1.2
@@ -33,9 +31,19 @@ const GRADIENT: [string, string] = ['#ff7ab6', '#7b5cff']
  * fino al blob; poi una goccia cola di continuo dal fondo. Animata in SMIL e fusa con
  * un filtro goo SVG, così scala con size senza ricalcolare nulla.
  */
-function Blob({ color, speed, intro }: { color: string | [string, string]; speed: number; intro: boolean }) {
+function Blob({
+  color,
+  speed,
+  intro,
+  animated,
+}: {
+  color: string | [string, string]
+  speed: number
+  intro: boolean
+  /** false con movimento ridotto o animazioni spente: bolla ferma */
+  animated: boolean
+}) {
   const id = useId()
-  const reduce = useReducedMotion()
   const [from, to] = typeof color === 'string' ? [color, color] : color
   const introDur = intro ? INTRO / speed : 0
   const drip = `${DRIP / speed}s`
@@ -48,7 +56,6 @@ function Blob({ color, speed, intro }: { color: string | [string, string]; speed
     // caduta accelerata, schiacciata, gonfiata in salita, assestamento
     keySplines: '.55 0 1 .45;0 0 .2 1;.2 .8 .3 1;.45 0 .55 1;.45 0 .55 1',
   } as const
-  const animated = !reduce
   const falling = animated && intro
 
   return (
@@ -66,7 +73,7 @@ function Blob({ color, speed, intro }: { color: string | [string, string]; speed
       <g filter={`url(#${id}-goo)`} fill={`url(#${id}-g)`}>
         {falling ? (
           <ellipse cx="50" cy="0" rx="9" ry="9" opacity="0">
-            <animate attributeName="opacity" values="0;1" dur=".15s" fill="freeze" />
+            <animate attributeName="opacity" values="0;1" dur={`${0.15 / speed}s`} fill="freeze" />
             <animate attributeName="cy" values="0;96;100;36;44;42" {...fall} />
             <animate attributeName="rx" values="9;8;18;29;34;32" {...fall} />
             <animate attributeName="ry" values="9;11;9;36;30;32" {...fall} />
@@ -92,7 +99,7 @@ function Blob({ color, speed, intro }: { color: string | [string, string]; speed
         transform="rotate(-30 38 28)"
       >
         {falling && (
-          <animate attributeName="opacity" values="0;.45" begin={`${introDur * 0.75}s`} dur=".3s" fill="freeze" />
+          <animate attributeName="opacity" values="0;.45" begin={`${introDur * 0.75}s`} dur={`${0.3 / speed}s`} fill="freeze" />
         )}
       </ellipse>
     </svg>
@@ -105,22 +112,25 @@ function GloopLoading({
   label = 'Loading',
   size = 96,
   color = GRADIENT,
-  speed = 1,
   intro = true,
   className,
   style,
+  ...motionProps
 }: GloopLoadingProps) {
-  const rate = speed > 0 ? speed : 1
+  // Durate SMIL divise per m.speed; con movimento ridotto o spento niente <animate>: bolla statica
+  const m = useGloopMotion(motionProps)
+  const rate = m.speed
   return (
     <div
+      {...m.rootProps}
       role="status"
       // Con un titolo il lettore di schermo annuncia il testo; senza, la label
       aria-label={title == null ? label : undefined}
       className={className ? `gloop-loading ${className}` : 'gloop-loading'}
-      style={{ '--gloop-loading-size': `${size}px`, ...style } as CSSProperties}
+      style={{ ...m.rootProps.style, '--gloop-loading-size': `${size}px`, ...style } as CSSProperties}
     >
       {/* key: cambiando la velocità le animazioni SMIL ripartono con le nuove durate */}
-      <Blob key={`${rate}-${intro}`} color={color} speed={rate} intro={intro} />
+      <Blob key={`${rate}-${intro}-${m.state}`} color={color} speed={rate} intro={intro} animated={!m.reduced} />
       {title != null && <p className="gloop-loading__title">{title}</p>}
       {description != null && <p className="gloop-loading__description">{description}</p>}
     </div>

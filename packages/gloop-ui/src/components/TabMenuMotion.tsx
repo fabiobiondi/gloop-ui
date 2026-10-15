@@ -1,5 +1,5 @@
 import { useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { AnimatePresence, MotionConfig, motion, type Transition } from 'motion/react'
+import { AnimatePresence, motion, type Transition } from 'motion/react'
 import GooPill from './GooPill'
 import { GooFilter } from './goo'
 import { BoundaryContext } from './floating/boundary-context'
@@ -14,6 +14,7 @@ import {
   visualIndex,
   type TabMenuDirection,
 } from './tab-drop'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './TabMenuMotion.css'
 
@@ -32,15 +33,18 @@ export type TabMenuMotionProps = {
    * 'auto': all'apertura il primo lato in cui entra (left, right, top, bottom)
    */
   direction?: TabMenuPlacement
-}
+} & MotionProps
 
 // Molla principale: il "+" si allarga e diventa la barra
 const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
 
-function TabMenuMotion({ icon, label, tabs, direction: placement = 'left' }: TabMenuMotionProps) {
+function TabMenuMotion({ icon, label, tabs, direction: placement = 'left', ...motionProps }: TabMenuMotionProps) {
+  const m = useGloopMotion(motionProps)
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
+  // Tab sotto il cursore: una seconda pillola liquida lo segue
+  const [hovered, setHovered] = useState<number | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   // direction="auto": il lato si sceglie all'apertura, misurando lo spazio attorno al "+"
@@ -52,11 +56,23 @@ function TabMenuMotion({ icon, label, tabs, direction: placement = 'left' }: Tab
       setAutoSide(resolveDirection('auto', triggerRef.current, boundaryRef?.current, tabs.length, 'morph'))
   }
   const vertical = isVertical(direction)
+  // Goccia del tab i, con la molla adattata a velocità e preset
+  const drop = (i: number) => {
+    const d = tabDrop(i, tabs.length, direction)
+    return {
+      ...d,
+      animate: { ...d.animate, transition: m.t(d.animate.transition) },
+      exit: { ...d.exit, transition: m.t(d.exit.transition) },
+    }
+  }
   const barId = useId()
   const filterId = useId()
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setHovered(null)
+      return
+    }
 
     function onPointerDown(e: PointerEvent) {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
@@ -77,13 +93,14 @@ function TabMenuMotion({ icon, label, tabs, direction: placement = 'left' }: Tab
   }, [open])
 
   return (
-    // reducedMotion="user": con prefers-reduced-motion restano solo le dissolvenze
-    <MotionConfig transition={morph} reducedMotion="user">
+    // Movimento ridotto: restano solo le dissolvenze
+    <MotionScope m={m} props={motionProps} transition={morph}>
       {/* Filtro goo sull'insieme: barra e gocce si fondono come liquido */}
       <div
+        {...m.rootProps}
         ref={rootRef}
         className="tab-menu-motion-wrap"
-        style={{ filter: `url(#${CSS.escape(filterId)})` }}
+        style={{ ...m.rootProps.style, filter: `url(#${CSS.escape(filterId)})` }}
       >
         <GooFilter id={filterId} region={barFilterRegion(tabs.length)} />
         <motion.div
@@ -93,7 +110,12 @@ function TabMenuMotion({ icon, label, tabs, direction: placement = 'left' }: Tab
           // border-radius nello style: Motion lo corregge durante la morph
           style={{ borderRadius: 26 }}
         >
-          <div id={barId} role="tablist" className="tab-menu-motion__tabs">
+          <div
+            id={barId}
+            role="tablist"
+            className="tab-menu-motion__tabs"
+            onPointerLeave={() => setHovered(null)}
+          >
             {/* Niente uscita animata: chiudendo, la barra scalata la stirerebbe (vedi tabDrop) */}
             {open && active !== null && (
               <GooPill
@@ -102,6 +124,18 @@ function TabMenuMotion({ icon, label, tabs, direction: placement = 'left' }: Tab
                 axis={vertical ? 'y' : 'x'}
               />
             )}
+            {/* Rollover: pillola più tenue che scorre da un tab all'altro */}
+            <AnimatePresence>
+              {open && hovered !== null && (
+                <GooPill
+                  key="hover"
+                  index={visualIndex(hovered, tabs.length, direction)}
+                  step={vertical ? TAB_HEIGHT : TAB_WIDTH}
+                  axis={vertical ? 'y' : 'x'}
+                  opacity={0.08}
+                />
+              )}
+            </AnimatePresence>
             <AnimatePresence mode="popLayout" initial={false}>
               {open &&
                 tabs.map((tab, i) => (
@@ -112,13 +146,17 @@ function TabMenuMotion({ icon, label, tabs, direction: placement = 'left' }: Tab
                     role="tab"
                     className="tab-menu-motion__tab"
                     aria-selected={active === i}
+                    // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
+                    onPointerEnter={(e) => e.pointerType !== 'touch' && setHovered(i)}
+                    onFocus={() => setHovered(i)}
+                    onBlur={() => setHovered(null)}
                     // Scelta fatta: si chiude subito, con la sua animazione di uscita
                     onClick={() => {
                       setActive(i)
                       setOpen(false)
                       triggerRef.current?.focus()
                     }}
-                    {...tabDrop(i, tabs.length, direction)}
+                    {...drop(i)}
                     // La pressione scala solo il contenuto: un transform sul bottone porterebbe
                     // la goccia (z-index -1) sopra la pillola, come un cerchio scuro
                     whileTap="pressed"
@@ -163,7 +201,7 @@ function TabMenuMotion({ icon, label, tabs, direction: placement = 'left' }: Tab
           </motion.button>
         </motion.div>
       </div>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

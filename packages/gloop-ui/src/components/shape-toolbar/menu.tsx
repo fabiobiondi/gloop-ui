@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { AnimatePresence, MotionConfig, motion, type HTMLMotionProps } from 'motion/react'
+import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react'
+import { useGloopMotion } from '../motion'
 import {
   MenuContext,
   glide,
@@ -47,13 +48,12 @@ export function MenuRoot({ className, children }: { className?: string; children
   }
 
   return (
-    <MotionConfig reducedMotion="user">
-      <MenuContext.Provider value={value}>
-        <div ref={rootRef} className={className} role="toolbar">
-          {children}
-        </div>
-      </MenuContext.Provider>
-    </MotionConfig>
+    // Animazioni: le decide il MotionScope di ShapeEditor
+    <MenuContext.Provider value={value}>
+      <div ref={rootRef} className={className} role="toolbar">
+        {children}
+      </div>
+    </MenuContext.Provider>
   )
 }
 
@@ -65,6 +65,7 @@ type ToolButtonProps = Omit<HTMLMotionProps<'button'>, 'children'> & {
 
 export function ToolButton({ active, wide, className, children, ...props }: ToolButtonProps) {
   const { rootId, depth } = useMenu()
+  const m = useGloopMotion()
 
   return (
     <motion.button
@@ -78,7 +79,7 @@ export function ToolButton({ active, wide, className, children, ...props }: Tool
         <motion.span
           layoutId={`${rootId}-active-${depth}`}
           className="st-btn__active"
-          transition={glide}
+          transition={m.t(glide)}
           style={{ borderRadius: 8 }}
         />
       )}
@@ -109,6 +110,7 @@ export function Popover({
   wide,
 }: PopoverProps) {
   const ctx = useMenu()
+  const m = useGloopMotion()
   const open = ctx.path[ctx.depth] === id
   const panelId = `${ctx.rootId}-${id}`
   const tId = triggerId(ctx.rootId, id)
@@ -152,7 +154,7 @@ export function Popover({
               originY: placement === 'top' ? 1 : 0,
               x: align === 'center' ? '-50%' : 0,
             }}
-            variants={panelVariants(placement)}
+            variants={m.v(panelVariants(placement))}
             initial="closed"
             animate="open"
             exit="closed"
@@ -167,8 +169,9 @@ export function Popover({
 
 /** Wrapper per far entrare a cascata qualsiasi contenuto di un popover */
 export function Item({ children }: { children: ReactNode }) {
+  const m = useGloopMotion()
   return (
-    <motion.div className="st-item" variants={itemVariants}>
+    <motion.div className="st-item" variants={m.v(itemVariants)}>
       {children}
     </motion.div>
   )

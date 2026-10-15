@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { MotionConfig, type Transition } from 'motion/react'
+import { type Transition } from 'motion/react'
 import ListCore, { flattenEntries, type ListDivider, type ListEntry, type ListGroup, type ListItem } from './list/ListCore'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 
 export type { ListDivider, ListEntry, ListGroup, ListItem }
 
@@ -20,7 +21,7 @@ export type ListProps = {
   gap?: number
   radius?: number
   className?: string
-}
+} & MotionProps
 
 const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
 
@@ -35,7 +36,9 @@ function List({
   gap,
   radius,
   className,
+  ...motionProps
 }: ListProps) {
+  const m = useGloopMotion(motionProps)
   const [internal, setInternal] = useState(defaultValue)
   const selected = value !== undefined ? value : internal
   const flat = flattenEntries(items)
@@ -45,8 +48,9 @@ function List({
   const Root = flat.some((item) => item.href !== undefined) ? 'nav' : 'div'
 
   return (
-    <MotionConfig transition={morph} reducedMotion="user">
+    <MotionScope m={m} props={motionProps} transition={morph}>
       <Root
+        {...m.rootProps}
         className={className ? `list ${className}` : 'list'}
         // Un <div> ha bisogno di un ruolo per esporre il nome
         role={Root === 'div' && label ? 'group' : undefined}
@@ -68,7 +72,7 @@ function List({
           }}
         />
       </Root>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { AnimatePresence, MotionConfig, motion, type Transition, type Variants } from 'motion/react'
+import { AnimatePresence, motion, type Transition, type Variants } from 'motion/react'
 import { GooFilter } from './goo'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './ExpandButton.css'
 
@@ -24,7 +25,7 @@ export type ExpandButtonProps = {
   drip?: boolean | 'hover'
   onClick?: () => void
   autoFocus?: boolean
-}
+} & MotionProps
 
 const morph: Transition = { type: 'spring', duration: 0.45, bounce: 0.3 }
 
@@ -86,8 +87,8 @@ function DripDrop({ drop, active }: { drop: Drop; active: boolean }) {
         {
           left: `${drop.left}%`,
           '--drop-size': `${drop.size}px`,
-          animationDelay: `${drop.delay}s`,
-          animationDuration: `${drop.duration}s`,
+          animationDelay: `calc(${drop.delay}s / var(--ui-motion-speed, 1))`,
+          animationDuration: `calc(${drop.duration}s / var(--ui-motion-speed, 1))`,
         } as CSSProperties
       }
     />
@@ -100,6 +101,7 @@ function Drips({ hover, active }: { hover: boolean; active: boolean }) {
 
 /* Esplosione di particelle attorno all'icona, solo all'attivazione */
 function Burst({ color }: { color: string }) {
+  const m = useGloopMotion()
   return (
     <span className="expand-button__burst" aria-hidden="true">
       {Array.from({ length: PARTICLES }, (_, i) => {
@@ -116,7 +118,7 @@ function Burst({ color }: { color: string }) {
               scale: 0,
               opacity: 0,
             }}
-            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            transition={m.t({ duration: 0.5, ease: [0.23, 1, 0.32, 1] })}
           />
         )
       })}
@@ -133,7 +135,11 @@ function ExpandButton({
   drip,
   onClick,
   autoFocus,
+  ...motionProps
 }: ExpandButtonProps) {
+  const m = useGloopMotion(motionProps)
+  // Riduzione del movimento: niente gocce
+  const dripping = m.reduced ? false : drip
   const [open, setOpen] = useState(false)
   const filterId = useId()
   const [hovered, setHovered] = useState(false)
@@ -146,12 +152,13 @@ function ExpandButton({
   const surface = filled && color ? color : 'var(--ui-bg)'
 
   return (
-    // reducedMotion="user": con prefers-reduced-motion niente movimento, solo dissolvenze
-    <MotionConfig reducedMotion="user">
+    // Movimento ridotto: niente spostamenti, solo dissolvenze
+    <MotionScope m={m} props={motionProps}>
       <span
+        {...m.rootProps}
         className="expand-button-wrap"
         data-filled={filled || undefined}
-        style={{ '--expand-surface': surface } as CSSProperties}
+        style={{ ...m.rootProps.style, '--expand-surface': surface } as CSSProperties}
         // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
         onPointerEnter={(e) => e.pointerType !== 'touch' && setHovered(true)}
         onPointerLeave={() => setHovered(false)}
@@ -160,13 +167,13 @@ function ExpandButton({
         <span
           className="expand-button__goo"
           style={
-            drip
+            dripping
               ? { filter: `url(#${CSS.escape(filterId)})` }
               : undefined
           }
         >
-          {drip && <GooFilter id={filterId} blur={5} shadow={false} color="var(--expand-fill)" />}
-          {drip && <Drips hover={drip === 'hover'} active={drip !== 'hover' || hovered} />}
+          {dripping && <GooFilter id={filterId} blur={5} shadow={false} color="var(--expand-fill)" />}
+          {dripping && <Drips hover={dripping === 'hover'} active={dripping !== 'hover' || hovered} />}
           <motion.button
             layout
             type="button"
@@ -183,8 +190,8 @@ function ExpandButton({
             // border-radius nello style: Motion lo corregge durante la morph.
             // Il colore di sfondo (--expand-fill, vedi CSS) cambia con una transition CSS.
             style={{ borderRadius: 999 }}
-            transition={{ layout: morph }}
-            whileHover={{ scale: 1.02, transition: { type: 'spring', duration: 0.6, bounce: 0.15 } }}
+            transition={m.t({ layout: morph })}
+            whileHover={{ scale: 1.02, transition: m.t({ type: 'spring', duration: 0.6, bounce: 0.15 }) }}
             whileTap={{ scale: 0.95 }}
           >
             {/* Icona: "pop" con un piccolo dondolio quando si attiva */}
@@ -198,7 +205,7 @@ function ExpandButton({
                     ? { scale: [1, 1.35, 0.9, 1], rotate: [0, -12, 8, 0] }
                     : { scale: 1, rotate: 0 }
                 }
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                transition={m.t({ duration: 0.5, ease: 'easeOut' })}
               >
                 {icon}
               </motion.span>
@@ -211,14 +218,14 @@ function ExpandButton({
                   layout="position"
                   className="expand-button__label"
                   aria-hidden="true"
-                  variants={labelVariants}
+                  variants={m.v(labelVariants)}
                   initial="hidden"
                   animate="visible"
                   // Uscita rapida e tutta insieme: il bottone si richiude subito
-                  exit={{ opacity: 0, filter: 'blur(4px)', transition: { duration: 0.1 } }}
+                  exit={{ opacity: 0, filter: 'blur(4px)', transition: m.t({ duration: 0.1 }) }}
                 >
                   {[...label].map((char, i) => (
-                    <motion.span key={i} className="expand-button__char" variants={charVariants}>
+                    <motion.span key={i} className="expand-button__char" variants={m.v(charVariants)}>
                       {char === ' ' ? ' ' : char}
                     </motion.span>
                   ))}
@@ -230,7 +237,7 @@ function ExpandButton({
 
         {open && color && <Burst color={color} />}
       </span>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

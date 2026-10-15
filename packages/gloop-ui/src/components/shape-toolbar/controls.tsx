@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, type Variants } from 'motion/react'
 import { PipetteIcon } from './icons'
+import { useGloopMotion } from '../motion'
 import { glide, itemVariants, useDismiss, useMountId } from './menu-shared'
 
 /* ---------- Valore numerico che scorre su/giù quando cambia ---------- */
@@ -22,6 +23,7 @@ const valueVariants: Variants = {
 }
 
 export function AnimatedValue({ value }: { value: number }) {
+  const m = useGloopMotion()
   const [prev, setPrev] = useState(value)
   const [dir, setDir] = useState(1)
   if (value !== prev) {
@@ -35,7 +37,7 @@ export function AnimatedValue({ value }: { value: number }) {
         <motion.span
           key={value}
           custom={dir}
-          variants={valueVariants}
+          variants={m.v(valueVariants)}
           initial="enter"
           animate="center"
           exit="exit"
@@ -85,6 +87,7 @@ type ColorPickerProps = {
 }
 
 export function ColorPicker({ value, onChange, allowNone = true }: ColorPickerProps) {
+  const m = useGloopMotion()
   const ringId = useMountId()
   const [text, setText] = useState(value)
   const [prev, setPrev] = useState(value)
@@ -107,12 +110,12 @@ export function ColorPicker({ value, onChange, allowNone = true }: ColorPickerPr
             aria-pressed={value === c}
             data-none={c === 'transparent' || undefined}
             style={{ background: c === 'transparent' ? undefined : c }}
-            variants={itemVariants}
+            variants={m.v(itemVariants)}
             whileTap={{ scale: 0.9 }}
             onClick={() => onChange(c)}
           >
             {value === c && (
-              <motion.span layoutId={ringId} className="st-ring" transition={glide} />
+              <motion.span layoutId={ringId} className="st-ring" transition={m.t(glide)} />
             )}
           </motion.button>
         ))}
@@ -121,7 +124,7 @@ export function ColorPicker({ value, onChange, allowNone = true }: ColorPickerPr
             type="button"
             className="st-swatch-btn st-swatch-btn--tool"
             aria-label="Eyedropper"
-            variants={itemVariants}
+            variants={m.v(itemVariants)}
             whileTap={{ scale: 0.9 }}
             onClick={() =>
               new EyeDropper()
@@ -140,7 +143,7 @@ export function ColorPicker({ value, onChange, allowNone = true }: ColorPickerPr
         placeholder="#rrggbb"
         spellCheck={false}
         value={text === 'transparent' ? '' : text}
-        variants={itemVariants}
+        variants={m.v(itemVariants)}
         onChange={(e) => {
           setText(e.target.value)
           if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value)
@@ -159,6 +162,7 @@ type SwatchRowProps<T extends string> = {
 }
 
 export function SwatchRow<T extends string>({ options, value, onChange }: SwatchRowProps<T>) {
+  const m = useGloopMotion()
   const ringId = useMountId()
 
   return (
@@ -170,12 +174,12 @@ export function SwatchRow<T extends string>({ options, value, onChange }: Swatch
           className="st-option-tile"
           aria-label={o.label}
           aria-pressed={value === o.value}
-          variants={itemVariants}
+          variants={m.v(itemVariants)}
           whileTap={{ scale: 0.92 }}
           onClick={() => onChange(o.value)}
         >
           {value === o.value && (
-            <motion.span layoutId={ringId} className="st-ring" transition={glide} />
+            <motion.span layoutId={ringId} className="st-ring" transition={m.t(glide)} />
           )}
           {o.render}
         </motion.button>
@@ -195,6 +199,7 @@ type OptionListProps = {
 
 export function OptionList({ options, value, onChange, render = (v) => v }: OptionListProps) {
   const dismiss = useDismiss()
+  const m = useGloopMotion()
   const hoverId = useMountId()
   const [hovered, setHovered] = useState<number | null>(null)
 
@@ -206,7 +211,7 @@ export function OptionList({ options, value, onChange, render = (v) => v }: Opti
           type="button"
           className="st-option"
           aria-pressed={value === o}
-          variants={itemVariants}
+          variants={m.v(itemVariants)}
           onPointerEnter={() => setHovered(o)}
           onFocus={() => setHovered(o)}
           onClick={() => {
@@ -218,7 +223,7 @@ export function OptionList({ options, value, onChange, render = (v) => v }: Opti
             <motion.span
               layoutId={hoverId}
               className="st-option__hover"
-              transition={{ type: 'spring', duration: 0.25, bounce: 0 }}
+              transition={m.t({ type: 'spring', duration: 0.25, bounce: 0 })}
             />
           )}
           <span className="st-option__content">{render(o)}</span>
