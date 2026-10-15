@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { TabMenu, TabMenuMotion, type TabMenuDirection } from './index'
+import { TabPop, TabFab, type TabPopDirection } from './index'
 import { tabDrop, visualIndex } from './components/tab-drop'
 
 const icon = <svg aria-hidden="true" />
@@ -10,7 +10,7 @@ const tabs = [
   { icon, label: 'Search' },
   { icon, label: 'User' },
 ]
-const directions: TabMenuDirection[] = ['top', 'bottom', 'left', 'right']
+const directions: TabPopDirection[] = ['top', 'bottom', 'left', 'right']
 
 describe('tabDrop', () => {
   it('left: tabs come from the closed "+", half a trigger from the start of the bar', () => {
@@ -45,40 +45,40 @@ describe('tabDrop', () => {
   })
 })
 
-describe('TabMenu direction', () => {
-  it.each(directions)('TabMenu %s opens its bar', async (direction) => {
+describe('TabPop direction', () => {
+  it.each(directions)('TabPop %s opens its bar', async (direction) => {
     const user = userEvent.setup()
-    const { container } = render(<TabMenu icon={icon} label="Menu" tabs={tabs} direction={direction} />)
-    expect(container.querySelector('.tab-menu')?.getAttribute('data-direction')).toBe(direction)
+    const { container } = render(<TabPop icon={icon} label="Menu" tabs={tabs} direction={direction} />)
+    expect(container.querySelector('.tab-pop')?.getAttribute('data-direction')).toBe(direction)
     await user.click(screen.getByRole('button', { name: 'Menu' }))
     expect(screen.getAllByRole('tab')).toHaveLength(3)
   })
 
   it.each(directions.flatMap((d) => (['pop', 'bounce'] as const).map((a) => [a, d] as const)))(
-    'TabMenu %s %s opens its bar',
+    'TabPop %s %s opens its bar',
     async (animation, direction) => {
       const user = userEvent.setup()
       const { container } = render(
-        <TabMenu icon={icon} label="Menu" tabs={tabs} direction={direction} animation={animation} />,
+        <TabPop icon={icon} label="Menu" tabs={tabs} direction={direction} animation={animation} />,
       )
-      expect(container.querySelector('.tab-menu')?.getAttribute('data-direction')).toBe(direction)
+      expect(container.querySelector('.tab-pop')?.getAttribute('data-direction')).toBe(direction)
       await user.click(screen.getByRole('button', { name: 'Menu' }))
       expect(screen.getAllByRole('tab')).toHaveLength(3)
     },
   )
 
-  it.each(directions)('TabMenuMotion %s opens its tabs', async (direction) => {
+  it.each(directions)('TabFab %s opens its tabs', async (direction) => {
     const user = userEvent.setup()
-    const { container } = render(<TabMenuMotion icon={icon} label="Menu" tabs={tabs} direction={direction} />)
-    expect(container.querySelector('.tab-menu-motion')?.getAttribute('data-direction')).toBe(direction)
+    const { container } = render(<TabFab icon={icon} label="Menu" tabs={tabs} direction={direction} />)
+    expect(container.querySelector('.tab-fab')?.getAttribute('data-direction')).toBe(direction)
     await user.click(screen.getByRole('button', { name: 'Menu' }))
     expect(screen.getAllByRole('tab')).toHaveLength(3)
   })
 
-  it('TabMenuMotion with sub-menus in a column opens the sub-menu next to the tab', async () => {
+  it('TabFab with sub-menus in a column opens the sub-menu next to the tab', async () => {
     const user = userEvent.setup()
     render(
-      <TabMenuMotion
+      <TabFab
         icon={icon}
         label="Menu"
         direction="bottom"
@@ -96,13 +96,13 @@ describe('TabMenu direction', () => {
   it('defaults keep the previous layouts', () => {
     const { container } = render(
       <>
-        <TabMenu icon={icon} label="A" tabs={tabs} />
-        <TabMenuMotion icon={icon} label="B" tabs={tabs} />
-        <TabMenuMotion icon={icon} label="C" tabs={tabs} />
+        <TabPop icon={icon} label="A" tabs={tabs} />
+        <TabFab icon={icon} label="B" tabs={tabs} />
+        <TabFab icon={icon} label="C" tabs={tabs} />
       </>,
     )
-    expect(container.querySelector('.tab-menu')?.getAttribute('data-direction')).toBe('top')
-    expect([...container.querySelectorAll('.tab-menu-motion')].map((e) => e.getAttribute('data-direction'))).toEqual([
+    expect(container.querySelector('.tab-pop')?.getAttribute('data-direction')).toBe('top')
+    expect([...container.querySelectorAll('.tab-fab')].map((e) => e.getAttribute('data-direction'))).toEqual([
       'left',
       'left',
     ])

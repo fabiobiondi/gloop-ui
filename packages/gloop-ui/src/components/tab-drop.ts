@@ -1,24 +1,24 @@
 const dropSpring = { type: 'spring', stiffness: 260, damping: 18, mass: 0.9 } as const
 
 /** Lato del "+" da cui esce la barra */
-export type TabMenuDirection = 'top' | 'bottom' | 'left' | 'right'
+export type TabPopDirection = 'top' | 'bottom' | 'left' | 'right'
 
 export const TAB_WIDTH = 68
 export const TAB_HEIGHT = 52
 export const TRIGGER_SIZE = 52
 
-export const isVertical = (d: TabMenuDirection) => d === 'top' || d === 'bottom'
+export const isVertical = (d: TabPopDirection) => d === 'top' || d === 'bottom'
 
 /*
  * Posizione visiva del tab i lungo la barra, contata dall'inizio del contenitore dei tab.
  * In colonna il primo tab è sempre il più vicino al "+": con 'top' (tab sopra il "+")
  * l'ordine visivo è rovesciato.
  */
-export const visualIndex = (i: number, count: number, d: TabMenuDirection) => (d === 'top' ? count - 1 - i : i)
+export const visualIndex = (i: number, count: number, d: TabPopDirection) => (d === 'top' ? count - 1 - i : i)
 
 /*
  * Animazione dei tab nelle tabbar che nascono dal "+": ogni tab viaggia su una goccia
- * (.tab-menu-motion__drop, dietro lo sfondo della barra). All'apertura schizza dal "+"
+ * (.tab-fab__drop, dietro lo sfondo della barra). All'apertura schizza dal "+"
  * verso il suo posto, più veloce della barra che si allarga: fuori dalla barra la goccia
  * si vede e il filtro goo la lega al resto.
  * La distanza punta al centro del "+" com'era da chiuso: all'apertura Motion disegna la
@@ -32,7 +32,7 @@ export const visualIndex = (i: number, count: number, d: TabMenuDirection) => (d
  * di layout che la scala, e i tab in uscita (popLayout, fuori dal flusso) non vengono
  * compensati. Visibili, si vedrebbero stirati e lanciati lontano dalla barra.
  */
-export function tabDrop(i: number, count: number, direction: TabMenuDirection = 'left') {
+export function tabDrop(i: number, count: number, direction: TabPopDirection = 'left') {
   const vertical = isVertical(direction)
   const size = vertical ? TAB_HEIGHT : TAB_WIDTH
   const before = direction === 'left' || direction === 'top'

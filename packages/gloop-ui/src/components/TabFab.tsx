@@ -11,7 +11,7 @@ import GooPill from './GooPill'
 import ListCore from './list/ListCore'
 import { GooFilter } from './goo'
 import { BoundaryContext } from './floating/boundary-context'
-import { availableArea, pickSide, resolveDirection, type Box, type TabMenuPlacement } from './tab-placement'
+import { availableArea, pickSide, resolveDirection, type Box, type TabPopPlacement } from './tab-placement'
 import {
   TAB_HEIGHT,
   TAB_WIDTH,
@@ -21,11 +21,11 @@ import {
   pressed,
   tabDrop,
   visualIndex,
-  type TabMenuDirection,
+  type TabPopDirection,
 } from './tab-drop'
 import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
-import './TabMenuMotion.css'
+import './TabFab.css'
 
 /** Voce del sottomenu: solo testo, o testo con icona opzionale */
 export type SubmenuItem = string | { label: string; icon?: ReactNode }
@@ -36,7 +36,7 @@ export type Tab = {
   items?: SubmenuItem[]
 }
 
-export type TabMenuMotionProps = {
+export type TabFabProps = {
   icon: ReactNode
   label: string
   /** Tab della barra; con items il tab apre un sottomenu invece di chiudere la barra */
@@ -46,7 +46,7 @@ export type TabMenuMotionProps = {
    * top/bottom: colonna sopra/sotto (primo tab vicino al "+"), sottomenu a destra del tab.
    * 'auto': all'apertura il primo lato in cui entra (left, right, top, bottom)
    */
-  direction?: TabMenuPlacement
+  direction?: TabPopPlacement
   /**
    * true: la goccia resta tra tab e sottomenu, come un collo che li tiene uniti.
    * false: niente goccia, il sottomenu compare separato senza fondersi col tab
@@ -101,14 +101,14 @@ const slide: Variants = {
  * Barra che nasce dal "+" come un liquido. I tab con items aprono un sottomenu
  * in un pannello che si fonde con la barra; gli altri chiudono la barra.
  */
-function TabMenuMotion({
+function TabFab({
   icon,
   label,
   tabs,
   direction: placement = 'left',
   attached = true,
   ...motionProps
-}: TabMenuMotionProps) {
+}: TabFabProps) {
   const m = useGloopMotion(motionProps)
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
@@ -120,7 +120,7 @@ function TabMenuMotion({
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   // direction="auto": il lato si sceglie all'apertura, misurando lo spazio attorno al "+"
-  const [autoSide, setAutoSide] = useState<TabMenuDirection>('left')
+  const [autoSide, setAutoSide] = useState<TabPopDirection>('left')
   const direction = placement === 'auto' ? autoSide : placement
   const boundaryRef = useContext(BoundaryContext)
   const chooseSide = () => {
@@ -319,7 +319,7 @@ function TabMenuMotion({
       <div
         {...m.rootProps}
         ref={rootRef}
-        className="tab-menu-motion-wrap"
+        className="tab-fab-wrap"
         data-direction={direction}
         data-panel={panelSide}
         style={{ ...m.rootProps.style, filter: `url(#${CSS.escape(filterId)})` }}
@@ -353,7 +353,7 @@ function TabMenuMotion({
               id={submenuId}
               role="menu"
               layout
-              className="tab-menu-motion__panel"
+              className="tab-fab__panel"
               // Il pannello nasce dal tab che lo ha aperto
               style={{ borderRadius: 20, ...panelStyle }}
               // Come una goccia: parte stretta e schiacciata sul tab, poi si allarga
@@ -378,7 +378,7 @@ function TabMenuMotion({
                 <motion.div
                   key={submenu}
                   layout="position"
-                  className="tab-menu-motion__list-wrap"
+                  className="tab-fab__list-wrap"
                   custom={{ dir: slideDir, axis: vertical ? 'y' : 'x' }}
                   variants={m.v(slide)}
                   initial="enter"
@@ -407,14 +407,14 @@ function TabMenuMotion({
 
         <motion.div
           layout
-          className="tab-menu-motion"
+          className="tab-fab"
           data-direction={direction}
           style={{ borderRadius: 26 }}
         >
           <div
             id={barId}
             role={hasSubmenus ? undefined : 'tablist'}
-            className="tab-menu-motion__tabs"
+            className="tab-fab__tabs"
             onPointerLeave={() => setHovered(null)}
           >
             {/* Niente uscita animata: chiudendo, la barra scalata la stirerebbe (vedi tabDrop) */}
@@ -447,7 +447,7 @@ function TabMenuMotion({
                     }}
                     layout="position"
                     type="button"
-                    className="tab-menu-motion__tab"
+                    className="tab-fab__tab"
                     role={hasSubmenus ? undefined : 'tab'}
                     aria-selected={hasSubmenus ? undefined : active === i}
                     aria-pressed={hasSubmenus ? active === i : undefined}
@@ -464,12 +464,12 @@ function TabMenuMotion({
                     // la goccia (z-index -1) sopra la pillola, come un cerchio scuro
                     whileTap="pressed"
                   >
-                    <span className="tab-menu-motion__drop" aria-hidden="true" />
-                    <motion.span className="tab-menu-motion__tab-content" variants={pressed}>
-                      <span className="tab-menu-motion__tab-icon" aria-hidden="true">
+                    <span className="tab-fab__drop" aria-hidden="true" />
+                    <motion.span className="tab-fab__tab-content" variants={pressed}>
+                      <span className="tab-fab__tab-icon" aria-hidden="true">
                         {tab.icon}
                       </span>
-                      <span className="tab-menu-motion__tab-label">{tab.label}</span>
+                      <span className="tab-fab__tab-label">{tab.label}</span>
                     </motion.span>
                   </motion.button>
                 ))}
@@ -480,7 +480,7 @@ function TabMenuMotion({
             ref={triggerRef}
             layout="position"
             type="button"
-            className="tab-menu-motion__trigger"
+            className="tab-fab__trigger"
             aria-label={label}
             aria-expanded={open}
             aria-controls={barId}
@@ -493,7 +493,7 @@ function TabMenuMotion({
             whileTap={{ scale: 0.92 }}
           >
             <motion.span
-              className="tab-menu-motion__trigger-icon"
+              className="tab-fab__trigger-icon"
               aria-hidden="true"
               animate={{ rotate: open ? 45 : 0 }}
             >
@@ -506,4 +506,4 @@ function TabMenuMotion({
   )
 }
 
-export default TabMenuMotion
+export default TabFab

@@ -1,15 +1,15 @@
 import { useState, type ReactNode } from 'react'
-import { FloatingBoundary, type TabMenuDirection } from 'gloop-ui'
+import { FloatingBoundary, type TabPopDirection } from 'gloop-ui'
 import './DirectionDemo.css'
 
-const DIRECTIONS: TabMenuDirection[] = ['top', 'bottom', 'left', 'right']
+const DIRECTIONS: TabPopDirection[] = ['top', 'bottom', 'left', 'right']
 
 /*
  * Selettore della direction sopra l'anteprima. Cambiando direzione il componente
  * si rimonta (key): riparte chiuso e senza tab selezionati.
  * options e label lo riusano per altre prop a scelta (es. enterFrom della TabBar).
  */
-export function DirectionDemo<T extends string = TabMenuDirection>({
+export function DirectionDemo<T extends string = TabPopDirection>({
   initial,
   options = DIRECTIONS as T[],
   label = 'direction',

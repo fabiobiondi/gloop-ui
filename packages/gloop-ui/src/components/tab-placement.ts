@@ -1,9 +1,9 @@
-import { TAB_HEIGHT, TAB_WIDTH, type TabMenuDirection } from './tab-drop'
+import { TAB_HEIGHT, TAB_WIDTH, type TabPopDirection } from './tab-drop'
 import type { RectLike } from './floating/position'
 import { visiblePart } from './floating/useFloating'
 
 /** Un lato fisso, oppure 'auto': il primo lato in cui la barra entra nello spazio disponibile */
-export type TabMenuPlacement = TabMenuDirection | 'auto'
+export type TabPopPlacement = TabPopDirection | 'auto'
 
 /** Riquadro in coordinate del viewport */
 export type Box = { top: number; left: number; right: number; bottom: number }
@@ -11,10 +11,10 @@ export type Box = { top: number; left: number; right: number; bottom: number }
 /** Distanza minima dai bordi dell'area disponibile, in px */
 const PADDING = 8
 
-// Ordini di 'auto': TabMenu come Tooltip/Popover (sopra o sotto disturba meno di un lato),
+// Ordini di 'auto': TabPop come Tooltip/Popover (sopra o sotto disturba meno di un lato),
 // le barre che nascono dal "+" prima in orizzontale, come il loro default
-export const DETACHED_ORDER: TabMenuDirection[] = ['top', 'bottom', 'right', 'left']
-export const MORPH_ORDER: TabMenuDirection[] = ['left', 'right', 'top', 'bottom']
+export const DETACHED_ORDER: TabPopDirection[] = ['top', 'bottom', 'right', 'left']
+export const MORPH_ORDER: TabPopDirection[] = ['left', 'right', 'top', 'bottom']
 
 /** Quanti px del riquadro escono dall'area (somma sui quattro lati) */
 export function overflow(box: Box, bounds: RectLike, padding = PADDING) {
@@ -43,13 +43,13 @@ export function pickSide<S extends string>(order: S[], footprint: (side: S) => B
 
 /*
  * Ingombro della barra aperta attorno al "+" (trigger), per ogni lato.
- * - 'detached' (TabMenu): una riga di tab a `gap` px dal "+", centrata sull'altro asse
- * - 'morph' (TabMenuMotion): la barra comprende il "+" e cresce da lì;
+ * - 'detached' (TabPop): una riga di tab a `gap` px dal "+", centrata sull'altro asse
+ * - 'morph' (TabFab): la barra comprende il "+" e cresce da lì;
  *   in colonna è larga un tab e centrata sul "+"
  */
 export function barFootprint(
   trigger: RectLike,
-  side: TabMenuDirection,
+  side: TabPopDirection,
   count: number,
   kind: 'detached' | 'morph',
   gap = 16,
@@ -93,12 +93,12 @@ export function availableArea(boundary: HTMLElement | null | undefined): RectLik
 
 /** Lato effettivo: con 'auto' si misura lo spazio attorno al "+" (solo all'apertura) */
 export function resolveDirection(
-  placement: TabMenuPlacement,
+  placement: TabPopPlacement,
   trigger: HTMLElement | null,
   boundary: HTMLElement | null | undefined,
   count: number,
   kind: 'detached' | 'morph',
-): TabMenuDirection {
+): TabPopDirection {
   const order = kind === 'detached' ? DETACHED_ORDER : MORPH_ORDER
   if (placement !== 'auto') return placement
   if (!trigger) return order[0]

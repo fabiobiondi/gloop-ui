@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import GooPill from './GooPill'
 import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
-import './TabMenuMotion.css'
+import './TabFab.css'
 import './TabBar.css'
 
 export type Tab = {
@@ -57,7 +57,7 @@ function TabBar({
 }: TabBarProps) {
   const m = useGloopMotion(motionProps)
   const [active, setActive] = useState(0)
-  // Tab sotto il cursore: una seconda pillola liquida, tenue, lo segue (come in TabMenuMotion)
+  // Tab sotto il cursore: una seconda pillola liquida, tenue, lo segue (come in TabFab)
   const [hovered, setHovered] = useState<number | null>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const vertical = orientation === 'vertical'
@@ -112,7 +112,7 @@ function TabBar({
         animate={{ x: 0, y: 0, opacity: 1, transition: m.t({ ...spring, delay: 0.2 }) }}
       >
         {rects[active] && <GooPill {...pillProps(active)} className="tab-bar__pill" opacity={0.3} />}
-        {/* Rollover: stessa pillola tenue di TabMenuMotion, nel colore del testo */}
+        {/* Rollover: stessa pillola tenue di TabFab, nel colore del testo */}
         <AnimatePresence>
           {hovered !== null && rects[hovered] && <GooPill key="hover" {...pillProps(hovered)} opacity={0.08} />}
         </AnimatePresence>
@@ -123,7 +123,7 @@ function TabBar({
               tabRefs.current[i] = el
             }}
             type="button"
-            className="tab-menu-motion__tab"
+            className="tab-fab__tab"
             aria-current={active === i ? 'page' : undefined}
             whileTap={{ scale: 0.95 }}
             // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
@@ -138,7 +138,7 @@ function TabBar({
             <motion.span
               // key cambia a ogni selezione: l'animazione riparte anche sullo stesso tab
               key={active === i ? 'on' : 'off'}
-              className="tab-menu-motion__tab-icon"
+              className="tab-fab__tab-icon"
               aria-hidden="true"
               initial={active === i ? { scale: 1, y: 0 } : false}
               animate={active === i ? { scale: [1, 1.3, 1], y: [0, -4, 0] } : { scale: 1, y: 0 }}
@@ -146,7 +146,7 @@ function TabBar({
             >
               {tab.icon}
             </motion.span>
-            <span className="tab-menu-motion__tab-label">{tab.label}</span>
+            <span className="tab-fab__tab-label">{tab.label}</span>
             {/* Lo spazio sparisce nel flex ma separa label e value nel nome accessibile */}
             {tab.value != null && (
               <>

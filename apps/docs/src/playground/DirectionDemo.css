@@ -1,4 +1,4 @@
-/* Demo "Direction" dei TabMenu: selettore in alto, componente al centro dell'area */
+/* Demo "Direction" dei TabPop: selettore in alto, componente al centro dell'area */
 .dd {
   display: grid;
   justify-items: center;

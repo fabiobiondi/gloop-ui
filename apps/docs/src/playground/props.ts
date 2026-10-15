@@ -6,7 +6,7 @@ export type PropDoc = {
   description: string
 }
 
-const tabMenuProps: PropDoc[] = [
+const tabPopProps: PropDoc[] = [
   { name: 'icon', type: 'ReactNode', required: true, description: 'Icon of the trigger button.' },
   { name: 'label', type: 'string', required: true, description: 'Accessible name of the trigger.' },
   { name: 'tabs', type: '{ icon: ReactNode; label: string }[]', required: true, description: 'Tabs that drop out of the trigger.' },
@@ -163,14 +163,14 @@ const componentProps: Record<string, PropDoc[]> = {
     { name: 'radius', type: 'number', default: '14', description: 'Corner radius of the pill, in px.' },
     { name: 'className', type: 'string', description: 'Extra class on the root element.' },
   ],
-  'tab-menu': [...tabMenuProps, direction('top', 'Side of the "+" where the bar appears. The bar is always a row: above, below or beside the "+". auto: on open, the first side with room (top, bottom, right, left) inside the nearest FloatingBoundary or the viewport.'),
+  'tab-pop': [...tabPopProps, direction('top', 'Side of the "+" where the bar appears. The bar is always a row: above, below or beside the "+". auto: on open, the first side with room (top, bottom, right, left) inside the nearest FloatingBoundary or the viewport.'),
     attached('While open, a liquid neck keeps the bar joined to the "+". false: the drop breaks away and the bar floats on its own.'),
     { name: 'iconOnly', type: 'boolean', default: 'false', description: 'Tabs show only their icon; the label is only announced to screen readers.' },
     { name: 'tabGap', type: 'number', default: '50', description: 'Space between one icon and the next, in px. 0: icons side by side. Below the default the labels no longer fit: pair it with iconOnly.' },
     { name: 'animation', type: "'slide' | 'pop' | 'bounce'", default: "'slide'", description: 'How the bar opens. slide: it leaves the "+" like a drop, growing as it moves away. pop: the drop reaches out first, then the bar pops open from its center with a slight bounce. bounce: opens like pop, with a back-out ease on its width: it overshoots its size, then settles.' },
   ],
-  'tab-menu-motion': [
-    ...tabMenuProps.slice(0, 2),
+  'tab-fab': [
+    ...tabPopProps.slice(0, 2),
     { name: 'tabs', type: '{ icon: ReactNode; label: string; items?: (string | { label: string; icon?: ReactNode })[] }[]', required: true, description: 'Tabs that drop out of the trigger. A tab without items closes the bar when picked; with items it opens a sub-menu. Each item is a string or { label, icon? } to show an optional icon.' },
     direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar, sub-menus above (below if there is no room); top / bottom: a column, first tab next to the "+", sub-menus to the right of the tab (left if there is no room). auto: on open, the first side with room (left, right, top, bottom).'),
     attached('Only with sub-menus: a liquid neck keeps the open sub-menu joined to its tab. false: no drop between them, the sub-menu appears on its own without melting into the tab.'),

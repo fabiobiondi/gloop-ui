@@ -10,8 +10,8 @@ import {
   ShapeEditor,
   Slider,
   TabBar,
-  TabMenu,
-  TabMenuMotion,
+  TabPop,
+  TabFab,
   Tooltip,
 } from 'gloop-ui'
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
@@ -1427,8 +1427,8 @@ handle.close()`,
     ],
   },
   {
-    id: 'tab-menu',
-    name: 'TabMenu',
+    id: 'tab-pop',
+    name: 'TabPop',
     group: 'menus',
     description: 'A "+" that blooms a dark tab bar above itself.',
     demos: [
@@ -1436,7 +1436,7 @@ handle.close()`,
         title: 'Default',
         stage: { minHeight: 240, align: 'end' },
         preview: (
-          <TabMenu
+          <TabPop
             icon={PlusIcon}
             label="Open menu"
             tabs={[
@@ -1446,7 +1446,7 @@ handle.close()`,
             ]}
           />
         ),
-        code: `<TabMenu
+        code: `<TabPop
   icon={PlusIcon}
   label="Open menu"
   tabs={[
@@ -1461,7 +1461,7 @@ handle.close()`,
         description: 'By default a liquid neck keeps the open bar joined to the "+". attached={false} lets the drop break away.',
         stage: { minHeight: 240, align: 'end' },
         preview: (
-          <TabMenu
+          <TabPop
             icon={PlusIcon}
             label="Open menu"
             attached={false}
@@ -1472,7 +1472,7 @@ handle.close()`,
             ]}
           />
         ),
-        code: `<TabMenu
+        code: `<TabPop
   icon={PlusIcon}
   label="Open menu"
   attached={false}
@@ -1491,7 +1491,7 @@ handle.close()`,
         preview: (
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 170 }}>
             {(['slide', 'pop', 'bounce'] as const).map((animation) => (
-              <TabMenu
+              <TabPop
                 key={animation}
                 icon={PlusIcon}
                 label={`Open menu (${animation})`}
@@ -1505,21 +1505,21 @@ handle.close()`,
             ))}
           </div>
         ),
-        code: `<TabMenu
+        code: `<TabPop
   icon={PlusIcon}
   label="Open menu"
   animation="slide" // default
   tabs={tabs}
 />
 
-<TabMenu
+<TabPop
   icon={PlusIcon}
   label="Open menu"
   animation="pop"
   tabs={tabs}
 />
 
-<TabMenu
+<TabPop
   icon={PlusIcon}
   label="Open menu"
   animation="bounce"
@@ -1534,7 +1534,7 @@ handle.close()`,
         preview: (
           <DirectionDemo initial="top">
             {(direction) => (
-              <TabMenu
+              <TabPop
                 icon={PlusIcon}
                 label="Open menu"
                 direction={direction}
@@ -1547,7 +1547,7 @@ handle.close()`,
             )}
           </DirectionDemo>
         ),
-        code: `<TabMenu
+        code: `<TabPop
   icon={PlusIcon}
   label="Open menu"
   direction="top" // 'top' | 'bottom' | 'left' | 'right'
@@ -1565,7 +1565,7 @@ handle.close()`,
         stage: { minHeight: 480 },
         preview: (
           <AutoPlacementDemo>
-            <TabMenu
+            <TabPop
               icon={PlusIcon}
               label="Open menu"
               direction="auto"
@@ -1578,7 +1578,7 @@ handle.close()`,
           </AutoPlacementDemo>
         ),
         code: `<FloatingBoundary className="area">
-  <TabMenu
+  <TabPop
     icon={PlusIcon}
     label="Open menu"
     direction="auto"
@@ -1595,7 +1595,7 @@ handle.close()`,
         description: 'The classic formatting toolbar of a WYSIWYG editor, with icons from react-icons. iconOnly hides the tab labels, tabGap sets the space between icons, down to 0.',
         stage: { minHeight: 340, align: 'end' },
         preview: <TextEditorDemo />,
-        code: `import { TabMenu } from 'gloop-ui'
+        code: `import { TabPop } from 'gloop-ui'
 import {
   LuBold,
   LuItalic,
@@ -1606,7 +1606,7 @@ import {
   LuUnderline,
 } from 'react-icons/lu'
 
-<TabMenu
+<TabPop
   icon={<LuPlus />}
   label="Text formatting"
   iconOnly // only the icons, labels stay for screen readers
@@ -1624,15 +1624,15 @@ import {
     ],
   },
   {
-    id: 'tab-menu-motion',
-    name: 'TabMenuMotion',
+    id: 'tab-fab',
+    name: 'TabFab',
     group: 'menus',
     description: 'The "+" itself morphs into the tab bar; tabs with items open a sub-menu panel.',
     demos: [
       {
         title: 'Default',
         preview: (
-          <TabMenuMotion
+          <TabFab
             icon={PlusIcon}
             label="Open menu"
             tabs={[
@@ -1642,7 +1642,7 @@ import {
             ]}
           />
         ),
-        code: `<TabMenuMotion
+        code: `<TabFab
   icon={PlusIcon}
   label="Open menu"
   tabs={[
@@ -1660,7 +1660,7 @@ import {
         preview: (
           <DirectionDemo initial="left">
             {(direction) => (
-              <TabMenuMotion
+              <TabFab
                 icon={PlusIcon}
                 label="Open menu"
                 direction={direction}
@@ -1673,7 +1673,7 @@ import {
             )}
           </DirectionDemo>
         ),
-        code: `<TabMenuMotion
+        code: `<TabFab
   icon={PlusIcon}
   label="Open menu"
   direction="left" // 'top' | 'bottom' | 'left' | 'right'
@@ -1691,7 +1691,7 @@ import {
         stage: { minHeight: 480 },
         preview: (
           <AutoPlacementDemo>
-            <TabMenuMotion
+            <TabFab
               icon={PlusIcon}
               label="Open menu"
               direction="auto"
@@ -1704,7 +1704,7 @@ import {
           </AutoPlacementDemo>
         ),
         code: `<FloatingBoundary className="area">
-  <TabMenuMotion
+  <TabFab
     icon={PlusIcon}
     label="Open menu"
     direction="auto"
@@ -1721,7 +1721,7 @@ import {
         description: 'Open the tab bar, then pick an icon to see its sub-menu.',
         stage: { minHeight: 340, align: 'end' },
         preview: (
-          <TabMenuMotion
+          <TabFab
             icon={PlusIcon}
             label="Open menu"
             tabs={[
@@ -1731,7 +1731,7 @@ import {
             ]}
           />
         ),
-        code: `<TabMenuMotion
+        code: `<TabFab
   icon={PlusIcon}
   label="Open menu"
   tabs={[
@@ -1746,7 +1746,7 @@ import {
         description: 'Sub-menu items can be plain strings or { label, icon } objects: the icon is optional.',
         stage: { minHeight: 340, align: 'end' },
         preview: (
-          <TabMenuMotion
+          <TabFab
             icon={PlusIcon}
             label="Open menu"
             tabs={[
@@ -1772,7 +1772,7 @@ import {
             ]}
           />
         ),
-        code: `<TabMenuMotion
+        code: `<TabFab
   icon={PlusIcon}
   label="Open menu"
   tabs={[
@@ -1803,7 +1803,7 @@ import {
         description: 'By default a liquid neck keeps the sub-menu joined to its tab. With attached={false} there is no drop: the sub-menu appears on its own, without melting into the tab.',
         stage: { minHeight: 340, align: 'end' },
         preview: (
-          <TabMenuMotion
+          <TabFab
             icon={PlusIcon}
             label="Open menu"
             attached={false}
@@ -1814,7 +1814,7 @@ import {
             ]}
           />
         ),
-        code: `<TabMenuMotion
+        code: `<TabFab
   icon={PlusIcon}
   label="Open menu"
   attached={false}
@@ -1833,7 +1833,7 @@ import {
         preview: (
           <DirectionDemo initial="left">
             {(direction) => (
-              <TabMenuMotion
+              <TabFab
                 icon={PlusIcon}
                 label="Open menu"
                 direction={direction}
@@ -1846,7 +1846,7 @@ import {
             )}
           </DirectionDemo>
         ),
-        code: `<TabMenuMotion
+        code: `<TabFab
   icon={PlusIcon}
   label="Open menu"
   direction="left" // 'top' | 'bottom' | 'left' | 'right'
@@ -1864,7 +1864,7 @@ import {
         stage: { minHeight: 480 },
         preview: (
           <AutoPlacementDemo>
-            <TabMenuMotion
+            <TabFab
               icon={PlusIcon}
               label="Open menu"
               direction="auto"
@@ -1877,7 +1877,7 @@ import {
           </AutoPlacementDemo>
         ),
         code: `<FloatingBoundary className="area">
-  <TabMenuMotion
+  <TabFab
     icon={PlusIcon}
     label="Open menu"
     direction="auto"

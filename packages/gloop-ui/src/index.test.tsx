@@ -15,8 +15,8 @@ import {
   ShapeEditor,
   Slider,
   TabBar,
-  TabMenu,
-  TabMenuMotion,
+  TabPop,
+  TabFab,
   Toast,
 } from './index'
 
@@ -39,14 +39,14 @@ describe('render', () => {
     ['ShapeEditor', () => <ShapeEditor />],
     ['Slider', () => <Slider label="Volume" marks />],
     ['TabBar', () => <TabBar tabs={tabs} />],
-    ['TabMenu', () => <TabMenu icon={icon} label="Menu" tabs={tabs} />],
-    ['TabMenu pop', () => <TabMenu icon={icon} label="Menu" tabs={tabs} animation="pop" />],
-    ['TabMenu bounce', () => <TabMenu icon={icon} label="Menu" tabs={tabs} animation="bounce" />],
-    ['TabMenuMotion', () => <TabMenuMotion icon={icon} label="Menu" tabs={tabs} />],
+    ['TabPop', () => <TabPop icon={icon} label="Menu" tabs={tabs} />],
+    ['TabPop pop', () => <TabPop icon={icon} label="Menu" tabs={tabs} animation="pop" />],
+    ['TabPop bounce', () => <TabPop icon={icon} label="Menu" tabs={tabs} animation="bounce" />],
+    ['TabFab', () => <TabFab icon={icon} label="Menu" tabs={tabs} />],
     ['Toast', () => <Toast open={false} onClose={() => {}} />],
     [
-      'TabMenuMotion with sub-menus',
-      () => <TabMenuMotion icon={icon} label="Menu" tabs={tabs.map((t) => ({ ...t, items: ['A', 'B'] }))} />,
+      'TabFab with sub-menus',
+      () => <TabFab icon={icon} label="Menu" tabs={tabs.map((t) => ({ ...t, items: ['A', 'B'] }))} />,
     ],
   ])('%s renders without crashing', (_, Component) => {
     const { container } = render(<Component />)
@@ -609,15 +609,15 @@ describe('List', () => {
   })
 })
 
-describe('TabMenuMotion sub-menus', () => {
+describe('TabFab sub-menus', () => {
   it('is a tablist when no tab has items', async () => {
-    render(<TabMenuMotion icon={icon} label="Menu" tabs={tabs} />)
+    render(<TabFab icon={icon} label="Menu" tabs={tabs} />)
     await userEvent.click(screen.getByRole('button', { name: 'Menu' }))
     expect(screen.getByRole('tablist')).toBeTruthy()
     expect(screen.getAllByRole('tab')).toHaveLength(2)
   })
   it('opens a sub-menu and closes it on item click', async () => {
-    render(<TabMenuMotion icon={icon} label="Menu" tabs={[{ icon, label: 'Home', items: ['Dashboard', 'Activity'] }]} />)
+    render(<TabFab icon={icon} label="Menu" tabs={[{ icon, label: 'Home', items: ['Dashboard', 'Activity'] }]} />)
     const trigger = screen.getByRole('button', { name: 'Menu' })
     await userEvent.click(trigger)
     await userEvent.click(screen.getByRole('button', { name: 'Home' }))
@@ -630,7 +630,7 @@ describe('TabMenuMotion sub-menus', () => {
   it('shows optional icons in sub-menu items', async () => {
     const itemIcon = <svg data-testid="item-icon" />
     render(
-      <TabMenuMotion
+      <TabFab
         icon={icon}
         label="Menu"
         tabs={[{ icon, label: 'Home', items: [{ label: 'Saved', icon: itemIcon }, 'Activity'] }]}

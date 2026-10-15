@@ -1,4 +1,4 @@
-.tab-menu-motion {
+.tab-fab {
   /* Sopra le gocce (che sono in position: absolute) */
   position: relative;
   display: inline-flex;
@@ -9,37 +9,37 @@
   /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
 }
 
-.tab-menu-motion__tabs {
+.tab-fab__tabs {
   display: flex;
 }
 
 /*
- * direction (TabMenuMotion): nel DOM i tab vengono sempre prima del "+",
+ * direction (TabFab): nel DOM i tab vengono sempre prima del "+",
  * la posizione la decide l'ordine flex. In colonna il primo tab è il più vicino al "+".
  */
-.tab-menu-motion[data-direction='right'] {
+.tab-fab[data-direction='right'] {
   flex-direction: row-reverse;
 }
 
-.tab-menu-motion:is([data-direction='top'], [data-direction='bottom']) {
+.tab-fab:is([data-direction='top'], [data-direction='bottom']) {
   flex-direction: column;
   /* Larghezza dal contenuto: 68px da aperta (i tab), 52px da chiusa (il "+") */
   height: auto;
 
-  & .tab-menu-motion__tabs {
+  & .tab-fab__tabs {
     flex-direction: column;
   }
 }
 
-.tab-menu-motion[data-direction='top'] .tab-menu-motion__tabs {
+.tab-fab[data-direction='top'] .tab-fab__tabs {
   flex-direction: column-reverse;
 }
 
-.tab-menu-motion[data-direction='bottom'] {
+.tab-fab[data-direction='bottom'] {
   flex-direction: column-reverse;
 }
 
-.tab-menu-motion__tab {
+.tab-fab__tab {
   position: relative;
   display: grid;
   justify-items: center;
@@ -69,23 +69,23 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .tab-menu-motion__tab:hover {
+  .tab-fab__tab:hover {
     color: var(--ui-fg);
   }
 }
 
-.tab-menu-motion__tab-icon,
-.tab-menu-motion__tab-label {
+.tab-fab__tab-icon,
+.tab-fab__tab-label {
   position: relative;
 }
 
-.tab-menu-motion__tab-content {
+.tab-fab__tab-content {
   display: grid;
   justify-items: center;
   gap: 3px;
 }
 
-.tab-menu-motion__tab-icon {
+.tab-fab__tab-icon {
   display: grid;
   width: 18px;
   height: 18px;
@@ -96,7 +96,7 @@
   }
 }
 
-.tab-menu-motion__trigger {
+.tab-fab__trigger {
   display: grid;
   flex: none;
   place-items: center;
@@ -115,7 +115,7 @@
   }
 }
 
-.tab-menu-motion__trigger-icon {
+.tab-fab__trigger-icon {
   display: grid;
   width: 22px;
   height: 22px;
@@ -128,13 +128,13 @@
 
 /* ---------- Pillola liquida (stili in GooPill.css) ---------- */
 
-.tab-menu-motion__tabs {
+.tab-fab__tabs {
   position: relative;
 }
 
 /* ---------- Effetto goo di apertura (goo.tsx) ---------- */
 
-.tab-menu-motion-wrap {
+.tab-fab-wrap {
   position: relative;
   display: inline-flex;
 }
@@ -155,7 +155,7 @@
  * Goccia sotto ogni tab: z-index -1 la porta dietro lo sfondo della barra,
  * quindi si vede solo quando il tab è fuori dalla barra (apertura e chiusura)
  */
-.tab-menu-motion__drop {
+.tab-fab__drop {
   position: absolute;
   z-index: -1;
   inset: 4px 12px;
@@ -166,7 +166,7 @@
 /* ---------- Sottomenu (tab con items) ---------- */
 
 /* Il pannello è largo quanto la barra aperta e sta sopra di essa */
-.tab-menu-motion__panel {
+.tab-fab__panel {
   position: absolute;
   /* Oltre ~12px il filtro goo non le fonde: da ferme barra e pannello restano staccati */
   bottom: calc(100% + 14px);
@@ -180,34 +180,34 @@
 }
 
 /*
- * Lato del pannello (data-panel, scelto da TabMenuMotion.tsx in base allo spazio):
+ * Lato del pannello (data-panel, scelto da TabFab.tsx in base allo spazio):
  * in riga sopra o sotto la barra; in colonna a destra o a sinistra, all'altezza del tab
  * (top e width arrivano dallo style)
  */
-.tab-menu-motion-wrap[data-panel='bottom'] .tab-menu-motion__panel {
+.tab-fab-wrap[data-panel='bottom'] .tab-fab__panel {
   top: calc(100% + 14px);
   bottom: auto;
 }
 
-.tab-menu-motion-wrap:is([data-panel='left'], [data-panel='right']) .tab-menu-motion__panel {
+.tab-fab-wrap:is([data-panel='left'], [data-panel='right']) .tab-fab__panel {
   bottom: auto;
   right: auto;
 }
 
-.tab-menu-motion-wrap[data-panel='right'] .tab-menu-motion__panel {
+.tab-fab-wrap[data-panel='right'] .tab-fab__panel {
   left: calc(100% + 14px);
 }
 
-.tab-menu-motion-wrap[data-panel='left'] .tab-menu-motion__panel {
+.tab-fab-wrap[data-panel='left'] .tab-fab__panel {
   left: auto;
   right: calc(100% + 14px);
 }
 
-.tab-menu-motion__list-wrap {
+.tab-fab__list-wrap {
   position: relative;
 }
 
 /* Con sottomenu i tab sono bottoni, non role="tab": lo stato attivo è aria-pressed */
-.tab-menu-motion-wrap .tab-menu-motion__tab[aria-pressed='true'] {
+.tab-fab-wrap .tab-fab__tab[aria-pressed='true'] {
   color: var(--ui-fg);
 }

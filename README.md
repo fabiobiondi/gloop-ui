@@ -37,7 +37,7 @@ import { ExpandButton, TabBar } from 'gloop-ui'
 | `Input` | Text field whose label drips out on top as a liquid tab |
 | `Slider` | Range slider with a liquid thumb that stretches while dragged and a dripping value |
 | `CircleMenu` | A "+" that throws icons around itself, with optional sub-menus |
-| `TabMenu` · `TabMenuMotion` | Liquid tab menus that drop out of a trigger; `TabMenuMotion` tabs can open sub-menus |
+| `TabPop` · `TabFab` | Liquid tab menus that drop out of a trigger; `TabFab` tabs can open sub-menus |
 | `TabBar` | Navigation bar with a liquid selection pill: fixed at the bottom or inline, with optional counters |
 | `ProgressBar` | Liquid progress bar: a blob head springs ahead and the fill catches up; indeterminate mode, optional drip |
 | `Dialog` | Liquid modal with icon badge and dripping actions |

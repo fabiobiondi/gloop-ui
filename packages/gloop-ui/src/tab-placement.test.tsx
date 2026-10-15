@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { TabMenu, TabMenuMotion } from './index'
+import { TabPop, TabFab } from './index'
 import { barFootprint, overflow, pickSide, MORPH_ORDER, DETACHED_ORDER } from './components/tab-placement'
 
 const icon = <svg aria-hidden="true" />
@@ -61,27 +61,27 @@ describe('direction="auto"', () => {
   })
   afterEach(() => vi.restoreAllMocks())
 
-  it('TabMenu opens below when there is no room above', async () => {
+  it('TabPop opens below when there is no room above', async () => {
     const user = userEvent.setup()
-    const { container } = render(<TabMenu icon={icon} label="Menu" tabs={tabs} direction="auto" />)
+    const { container } = render(<TabPop icon={icon} label="Menu" tabs={tabs} direction="auto" />)
     await user.click(screen.getByRole('button', { name: 'Menu' }))
-    expect(container.querySelector('.tab-menu')?.getAttribute('data-direction')).toBe('bottom')
+    expect(container.querySelector('.tab-pop')?.getAttribute('data-direction')).toBe('bottom')
   })
 
-  it('TabMenuMotion keeps its preferred side when it fits', async () => {
+  it('TabFab keeps its preferred side when it fits', async () => {
     const user = userEvent.setup()
-    const { container } = render(<TabMenuMotion icon={icon} label="Menu" tabs={tabs} direction="auto" />)
+    const { container } = render(<TabFab icon={icon} label="Menu" tabs={tabs} direction="auto" />)
     await user.click(screen.getByRole('button', { name: 'Menu' }))
-    expect(container.querySelector('.tab-menu-motion')?.getAttribute('data-direction')).toBe('left')
+    expect(container.querySelector('.tab-fab')?.getAttribute('data-direction')).toBe('left')
   })
 
-  it('TabMenuMotion with sub-menus flips the sub-menu below the bar when there is no room above', async () => {
+  it('TabFab with sub-menus flips the sub-menu below the bar when there is no room above', async () => {
     const user = userEvent.setup()
     const { container } = render(
-      <TabMenuMotion icon={icon} label="Menu" tabs={tabs.map((t) => ({ ...t, items: ['A', 'B', 'C'] }))} />,
+      <TabFab icon={icon} label="Menu" tabs={tabs.map((t) => ({ ...t, items: ['A', 'B', 'C'] }))} />,
     )
     await user.click(screen.getByRole('button', { name: 'Menu' }))
     await user.click(screen.getByRole('button', { name: /Search/ }))
-    expect(container.querySelector('.tab-menu-motion-wrap')?.getAttribute('data-panel')).toBe('bottom')
+    expect(container.querySelector('.tab-fab-wrap')?.getAttribute('data-panel')).toBe('bottom')
   })
 })

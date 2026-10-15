@@ -49,13 +49,13 @@ export type ListCoreProps = {
   itemHeight?: number
   gap?: number
   radius?: number
-  /** Voci di un menu (sottomenu di TabMenuMotion): il role="menu" sta sul contenitore, ul e li diventano neutri */
+  /** Voci di un menu (sottomenu di TabFab): il role="menu" sta sul contenitore, ul e li diventano neutri */
   itemRole?: 'menuitem'
   onItemClick?: (index: number, item: ListItem, event: MouseEvent) => void
 }
 
 /*
- * Nucleo condiviso da List e i sottomenu di TabMenuMotion: voci ad altezza fissa con una pillola
+ * Nucleo condiviso da List e i sottomenu di TabFab: voci ad altezza fissa con una pillola
  * liquida sulla voce selezionata e una, più leggera, sotto cursore/focus.
  * Le misure arrivano solo da qui: la pillola le usa per il passo, il CSS tramite variabili.
  */

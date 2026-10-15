@@ -55,17 +55,17 @@ export type { PopoverApi } from './components/floating/popover-context'
 export { default as TabBar } from './components/TabBar'
 export type { TabBarProps, TabBarEnter, Tab as TabBarTab } from './components/TabBar'
 
-export { default as TabMenu } from './components/TabMenu'
-export type { TabMenuProps, TabMenuAnimation, Tab as TabMenuTab } from './components/TabMenu'
-export type { TabMenuDirection } from './components/tab-drop'
-export type { TabMenuPlacement } from './components/tab-placement'
+export { default as TabPop } from './components/TabPop'
+export type { TabPopProps, TabPopAnimation, Tab as TabPopTab } from './components/TabPop'
+export type { TabPopDirection } from './components/tab-drop'
+export type { TabPopPlacement } from './components/tab-placement'
 
-export { default as TabMenuMotion } from './components/TabMenuMotion'
+export { default as TabFab } from './components/TabFab'
 export type {
-  TabMenuMotionProps,
-  Tab as TabMenuMotionTab,
-  SubmenuItem as TabMenuMotionItem,
-} from './components/TabMenuMotion'
+  TabFabProps,
+  Tab as TabFabTab,
+  SubmenuItem as TabFabItem,
+} from './components/TabFab'
 
 export { default as ShapeEditor } from './components/shape-toolbar/ShapeEditor'
 export type { ShapeEditorProps } from './components/shape-toolbar/ShapeEditor'

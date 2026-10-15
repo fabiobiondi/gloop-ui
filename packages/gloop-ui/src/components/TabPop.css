@@ -1,18 +1,18 @@
-/* Tab, icone e pillola liquida riusano gli stili di TabMenuMotion.css */
+/* Tab, icone e pillola liquida riusano gli stili di TabFab.css */
 
-.tab-menu {
+.tab-pop {
   position: relative;
   display: inline-flex;
 }
 
-.tab-menu__trigger,
-.tab-menu__bar {
+.tab-pop__trigger,
+.tab-pop__bar {
   color: var(--ui-fg);
   background: var(--ui-bg);
   /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
 }
 
-.tab-menu__trigger {
+.tab-pop__trigger {
   /* Sopra la goccia (in position: absolute) */
   position: relative;
   display: grid;
@@ -31,14 +31,14 @@
   }
 }
 
-.tab-menu__bar {
+.tab-pop__bar {
   position: absolute;
   display: flex;
   border-radius: 26px;
 }
 
 /* Area della pillola: alta come la barra, spostata dal componente per allinearsi alle tab */
-.tab-menu__pill {
+.tab-pop__pill {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -49,22 +49,22 @@
  * direction: la barra sta a 16px dal "+" sul lato scelto, centrata sull'altro asse.
  * Oltre ~12px il filtro goo non le fonde: da ferme barra e trigger restano staccati.
  */
-.tab-menu[data-direction='top'] .tab-menu__bar {
+.tab-pop[data-direction='top'] .tab-pop__bar {
   bottom: calc(100% + 16px);
   left: 50%;
 }
 
-.tab-menu[data-direction='bottom'] .tab-menu__bar {
+.tab-pop[data-direction='bottom'] .tab-pop__bar {
   top: calc(100% + 16px);
   left: 50%;
 }
 
-.tab-menu[data-direction='left'] .tab-menu__bar {
+.tab-pop[data-direction='left'] .tab-pop__bar {
   right: calc(100% + 16px);
   top: 50%;
 }
 
-.tab-menu[data-direction='right'] .tab-menu__bar {
+.tab-pop[data-direction='right'] .tab-pop__bar {
   left: calc(100% + 16px);
   top: 50%;
 }

@@ -1,4 +1,4 @@
-/* Tab, icone e pillola liquida riusano gli stili di TabMenuMotion.css */
+/* Tab, icone e pillola liquida riusano gli stili di TabFab.css */
 
 .tab-bar {
   display: flex;
@@ -14,7 +14,7 @@
     background: var(--ui-accent);
   }
 
-  & .tab-menu-motion__tab[aria-current='page'] {
+  & .tab-fab__tab[aria-current='page'] {
     color: var(--ui-fg);
   }
 }
@@ -48,7 +48,7 @@
   translate: 0 -50%;
 }
 
-.tab-bar[data-orientation='vertical'][data-layout='inline'] .tab-menu-motion__tab {
+.tab-bar[data-orientation='vertical'][data-layout='inline'] .tab-fab__tab {
   /* Tutti larghi come il più largo, contenuto allineato a sinistra */
   justify-content: flex-start;
 }
@@ -60,7 +60,7 @@
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--ui-fg) 8%, transparent);
 
-  & .tab-menu-motion__tab {
+  & .tab-fab__tab {
     display: flex;
     flex: none;
     align-items: center;
@@ -102,7 +102,7 @@
     background-color calc(200ms / var(--ui-motion-speed, 1)) ease;
 }
 
-.tab-menu-motion__tab[aria-current='page'] .tab-bar__value {
+.tab-fab__tab[aria-current='page'] .tab-bar__value {
   color: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-fg));
   background: color-mix(in srgb, var(--ui-accent) 22%, transparent);
 }

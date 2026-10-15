@@ -1,15 +1,15 @@
 import { useState } from 'react'
-import { Slider, TabMenu } from 'gloop-ui'
+import { Slider, TabPop } from 'gloop-ui'
 import { LuBold, LuItalic, LuLink, LuList, LuPlus, LuStrikethrough, LuUnderline } from 'react-icons/lu'
 
-// Demo "Text editor" del TabMenu: barra di formattazione WYSIWYG, con o senza testi e con spazio tra le tab regolabile
+// Demo "Text editor" del TabPop: barra di formattazione WYSIWYG, con o senza testi e con spazio tra le tab regolabile
 export function TextEditorDemo() {
   const [iconOnly, setIconOnly] = useState(false)
   const [tabGap, setTabGap] = useState(50)
 
   return (
     <div style={{ display: 'grid', justifyItems: 'center', gap: 20 }}>
-      <TabMenu
+      <TabPop
         icon={<LuPlus />}
         label="Text formatting"
         iconOnly={iconOnly}
