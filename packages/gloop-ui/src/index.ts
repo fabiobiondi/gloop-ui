@@ -13,6 +13,13 @@ export type {
 export { default as Dialog } from './components/Dialog'
 export type { DialogProps, DialogAction } from './components/Dialog'
 
+export { default as Modal } from './components/Modal'
+export type { ModalProps, ModalAction, ModalSize } from './components/Modal'
+export { default as ModalProvider } from './components/ModalProvider'
+export type { ModalProviderProps } from './components/ModalProvider'
+export { useModal } from './components/modal-context'
+export type { ModalApi, ModalHandle, ModalOptions } from './components/modal-context'
+
 export { default as ExpandButton } from './components/ExpandButton'
 export type { ExpandButtonProps } from './components/ExpandButton'
 

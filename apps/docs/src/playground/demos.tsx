@@ -17,6 +17,7 @@ import {
 } from 'gloop-ui'
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo, { DialogFormDemo } from './DialogDemo'
+import ModalDemo, { LOREM, ModalCustomFooterDemo, ModalProgrammaticDemo } from './ModalDemo'
 import { ControlledSliderDemo } from './SliderDemo'
 import { GloopLoadingPlayground } from './GloopLoadingDemo'
 import { ProgressBarAutoDemo, ProgressBarPlayground } from './ProgressBarDemo'
@@ -53,6 +54,7 @@ import {
   TrashIcon,
   UserIcon,
   VideoIcon,
+  XIcon,
 } from './icons'
 
 export type Demo = {
@@ -935,6 +937,154 @@ function invite() {
 >
   <p>Everything behind this dialog is tinted and blurred.</p>
 </Dialog>`,
+      },
+    ],
+  },
+  {
+    id: 'modal',
+    name: 'Modal',
+    group: 'overlays',
+    description:
+      'Full-size modal that oozes open as a soft blob: optional title with close button, scrollable content and a footer with buttons or custom JSX.',
+    demos: [
+      {
+        title: 'Title · scrollable content · actions',
+        description: 'The content adapts to the available height and scrolls; header and footer stay put.',
+        preview: (
+          <ModalDemo
+            trigger="Release notes"
+            title="What's new in 0.4"
+            body={LOREM}
+            actions={[
+              { label: 'Later' },
+              { label: 'Got it', icon: CheckIcon, color: 'var(--ui-accent)', autoFocus: true },
+            ]}
+          />
+        ),
+        code: `const [open, setOpen] = useState(false)
+
+<Modal
+  open={open}
+  onClose={() => setOpen(false)}
+  title="What's new in 0.4"
+  actions={[
+    { label: 'Later' },
+    { label: 'Got it', icon: CheckIcon, color: 'var(--ui-accent)', autoFocus: true },
+  ]}
+>
+  {longContent}
+</Modal>`,
+      },
+      {
+        title: 'Custom footer',
+        description:
+          'footer takes any JSX; with actions it sits on the left. An onClick that returns false keeps the modal open: Accept waits for the checkbox.',
+        preview: <ModalCustomFooterDemo />,
+        code: `<Modal
+  open={open}
+  onClose={() => setOpen(false)}
+  title="Terms of service"
+  footer={
+    <label>
+      <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> I agree
+    </label>
+  }
+  actions={[
+    { label: 'Decline', icon: XIcon },
+    { label: 'Accept', icon: CheckIcon, color: 'var(--ui-accent)', onClick: () => (agree ? undefined : false) },
+  ]}
+>
+  {terms}
+</Modal>`,
+      },
+      {
+        title: 'Programmatic · useModal()',
+        description:
+          'Inside a ModalProvider, useModal().open() shows a modal without state. handle.result resolves with the value of the button pressed (undefined on X, Escape or backdrop).',
+        preview: <ModalProgrammaticDemo />,
+        code: `// Once, near the root
+<ModalProvider>
+  <App />
+</ModalProvider>
+
+// Anywhere below
+const modal = useModal()
+
+async function confirmDelete() {
+  const ok = await modal.open<boolean>({
+    title: 'Delete 3 files?',
+    size: 'sm',
+    content: <p>They will be moved to the trash.</p>,
+    actions: [
+      { label: 'Cancel', value: false },
+      { label: 'Delete', icon: TrashIcon, color: '#e11d48', value: true },
+    ],
+  }).result
+  if (ok) deleteFiles()
+}
+
+// The handle closes it from your own code
+const handle = modal.open({ title: 'Uploading…', content: <ProgressBar indeterminate /> })
+await upload()
+handle.close()`,
+      },
+      {
+        title: 'Custom title · no close button',
+        description: 'title also takes JSX. closeButton={false} hides the X; Escape and the backdrop still close it.',
+        preview: (
+          <ModalDemo
+            trigger="Custom title"
+            size="sm"
+            closeButton={false}
+            title={
+              <span className="md-row" style={{ justifyContent: 'flex-start', alignItems: 'center', gap: 10 }}>
+                <span style={{ display: 'grid', width: 22, height: 22 }}>{SparkleIcon}</span>
+                <strong style={{ fontSize: 18 }}>Pro tip</strong>
+              </span>
+            }
+            body={<p>Press Escape or click outside to close this modal.</p>}
+          />
+        ),
+        code: `<Modal
+  open={open}
+  onClose={() => setOpen(false)}
+  size="sm"
+  closeButton={false}
+  title={
+    <span className="title">
+      {SparkleIcon} <strong>Pro tip</strong>
+    </span>
+  }
+>
+  <p>Press Escape or click outside to close this modal.</p>
+</Modal>`,
+      },
+      {
+        title: 'Large · blurred backdrop',
+        preview: (
+          <ModalDemo
+            trigger="Large modal"
+            size="lg"
+            title="Project overview"
+            body={LOREM}
+            backdropColor="#312e81"
+            backdropOpacity={0.3}
+            backdropBlur={8}
+            actions={[{ label: 'Close', icon: XIcon }]}
+          />
+        ),
+        code: `<Modal
+  open={open}
+  onClose={() => setOpen(false)}
+  size="lg"
+  title="Project overview"
+  backdropColor="#312e81"
+  backdropOpacity={0.3}
+  backdropBlur={8}
+  actions={[{ label: 'Close', icon: XIcon }]}
+>
+  {content}
+</Modal>`,
       },
     ],
   },

@@ -33,10 +33,6 @@ export const upcoming: Guide[] = [
     'Switch',
     'Select',
   ]),
-  soon('modals', 'Modals', 'Full-size modals and sheets, beyond the compact Dialog.', [
-    'Bottom sheet on mobile',
-    'Scrollable content',
-  ]),
   soon('side-panel', 'SidePanel', 'A panel that oozes in from the edge of the screen.', [
     'Left or right',
     'Drag to close',

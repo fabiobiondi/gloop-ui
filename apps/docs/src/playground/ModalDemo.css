@@ -1,0 +1,33 @@
+/* Demo del Modal */
+.md-stack {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.md-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.md-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--pg-muted);
+}
+
+.md-form {
+  display: grid;
+  /* spazio per la linguetta della label di Input che sale sopra il campo */
+  padding-top: 12px;
+}
+
+.md-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}

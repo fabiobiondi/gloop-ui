@@ -1,0 +1,240 @@
+.modal-layer {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  /* Fondo della scheda: --ui-surface, così input e pulsanti (--ui-bg) si staccano */
+  --modal-surface: var(--ui-surface, color-mix(in srgb, var(--ui-bg), var(--ui-fg) 6%));
+  --modal-divider: color-mix(in srgb, var(--ui-fg) 10%, transparent);
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(
+    in srgb,
+    var(--modal-backdrop-color, #000) calc(var(--modal-backdrop-opacity, 0.45) * 100%),
+    transparent
+  );
+  backdrop-filter: blur(var(--modal-backdrop-blur, 0px));
+}
+
+/* Header e footer restano fermi, il corpo si adatta all'altezza disponibile e scorre */
+.modal {
+  position: relative;
+  /* Il blob del fondo (z-index -1) resta dentro la scheda, sotto il contenuto */
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  width: 560px;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 28px;
+  color: var(--ui-fg);
+  outline: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: -2px;
+  }
+
+  &[data-size='sm'] {
+    width: 400px;
+  }
+
+  &[data-size='lg'] {
+    width: 800px;
+  }
+
+  &[data-size='full'] {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* Fondo liquido: forma della scheda e gocce passano dal filtro goo, il contenuto no */
+.modal__blob {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 28px;
+
+  /* Da ferma, senza filtro goo: la stessa ombra di GooFilter, come box-shadow */
+  &[data-settled] {
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
+  }
+}
+
+/* Niente box-shadow esterno: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+.modal__blob-shape {
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  background: var(--modal-surface);
+  /* Bordo interno sottile: stacca la scheda dal fondo anche in tema scuro */
+  box-shadow: inset 0 0 0 1px var(--modal-divider);
+}
+
+/* Grande quanto la scheda: le sue traslazioni in % portano la goccia dal centro al bordo */
+.modal__drop-track {
+  position: absolute;
+  inset: 0;
+  /* cqmin = lato corto della scheda: le gocce si rimpiccioliscono nei modal piccoli */
+  container-type: size;
+}
+
+/*
+ * La goccia resta sempre dentro il contorno finale della scheda: in un modal basso
+ * spunterebbe sopra e sotto come un blob staccato. Diametro al massimo il 40% del lato
+ * corto, centro ad almeno mezzo diametro dai bordi.
+ */
+.modal__drop {
+  --s: min(var(--drop-size), 40cqmin);
+  position: absolute;
+  left: clamp(calc(var(--s) / 2), var(--drop-x), calc(100% - var(--s) / 2));
+  top: clamp(calc(var(--s) / 2), var(--drop-y), calc(100% - var(--s) / 2));
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: var(--modal-surface);
+  translate: -50% -50%;
+}
+
+.modal__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 16px 16px 16px 24px;
+  border-bottom: 1px solid transparent;
+  transition: border-color calc(200ms / var(--ui-motion-speed, 1)) ease;
+
+  [data-scroll-top] > & {
+    border-bottom-color: var(--modal-divider);
+  }
+}
+
+.modal__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.modal__title-custom {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  cursor: pointer;
+
+  & svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 2px;
+  }
+}
+
+.modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* Lo scroll arrivato in fondo non passa alla pagina sotto */
+  overscroll-behavior: contain;
+  font-size: 14px;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--ui-fg) 80%, transparent);
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: -2px;
+  }
+
+  /* Senza footer la barra di scorrimento segue l'angolo arrotondato */
+  [data-no-footer] > & {
+    border-radius: 0 0 28px 28px;
+  }
+}
+
+.modal__content {
+  padding: 0 24px 24px;
+
+  & > :first-child {
+    margin-top: 0;
+  }
+
+  & > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* Senza header il contenuto non deve toccare il bordo arrotondato */
+  [data-no-header] > .modal__body > & {
+    padding-top: 24px;
+  }
+}
+
+.modal__footer {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid transparent;
+  transition: border-color calc(200ms / var(--ui-motion-speed, 1)) ease;
+
+  [data-scroll-bottom] > & {
+    border-top-color: var(--modal-divider);
+  }
+
+  &[data-align='start'] {
+    justify-content: flex-start;
+  }
+
+  &[data-align='center'] {
+    justify-content: center;
+  }
+
+  &[data-align='end'] {
+    justify-content: flex-end;
+  }
+}
+
+/* JSX libero e pulsanti insieme: il JSX a sinistra, i pulsanti a destra */
+.modal__footer-custom {
+  min-width: 0;
+
+  &:not(:only-child) {
+    flex: 1;
+  }
+}
+
+.modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
