@@ -1,7 +1,6 @@
 import { useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import {
   AnimatePresence,
-  MotionConfig,
   motion,
   stagger,
   type Transition,
@@ -12,6 +11,7 @@ import { GooFilter } from './goo'
 import { BoundaryContext } from './floating/boundary-context'
 import { resolveDirection, type TabMenuPlacement } from './tab-placement'
 import type { TabMenuDirection } from './tab-drop'
+import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
 import './TabMenuMotion.css'
 import './TabMenu.css'
@@ -20,6 +20,14 @@ export type Tab = {
   icon: ReactNode
   label: string
 }
+
+/**
+ * slide: la barra esce dal "+" come una goccia e si allontana allargandosi.
+ * pop: prima la goccia raggiunge il posto della barra, poi la barra si apre dal centro
+ * verso i lati come un popup, con un leggero rimbalzo.
+ * bounce: si apre come pop, in larghezza con una curva back-out (supera la misura e ci torna)
+ */
+export type TabMenuAnimation = 'slide' | 'pop' | 'bounce'
 
 export type TabMenuProps = {
   icon: ReactNode
@@ -36,11 +44,24 @@ export type TabMenuProps = {
    * false: la goccia si stacca e la barra resta separata dal "+"
    */
   attached?: boolean
-}
+  /** Solo icone: i testi delle tab non si vedono, restano come nome accessibile */
+  iconOnly?: boolean
+  /**
+   * Spazio tra un'icona e la successiva, in px (default 50: tab larghe 68px).
+   * 0: icone attaccate. Sotto il default i testi non ci stanno più: meglio con iconOnly
+   */
+  tabGap?: number
+  /** Come si apre la barra (default 'slide') */
+  animation?: TabMenuAnimation
+} & MotionProps
 
 const spring: Transition = { type: 'spring', duration: 0.5, bounce: 0.3 }
 
 const TAB_WIDTH = 68
+const ICON_SIZE = 18
+const DEFAULT_TAB_GAP = TAB_WIDTH - ICON_SIZE
+// Pillola della tab scelta: mai più stretta di così, anche con le icone attaccate
+const PILL_MIN = 44
 const TRIGGER_SIZE = 52
 const DRIP_SIZE = 32
 
@@ -57,12 +78,26 @@ const AWAY: Record<TabMenuDirection, { axis: 'x' | 'y'; sign: 1 | -1 }> = {
 
 const along = (d: TabMenuDirection, value: number) => (AWAY[d].axis === 'y' ? { y: value } : { x: value })
 
+// time: adatta i tempi della cascata alla velocità (stagger è una funzione, m.t non la vede)
+type Time = (seconds: number) => number
+
+function barVariants(animation: TabMenuAnimation, d: TabMenuDirection, barWidth: number, time: Time): Variants {
+  if (animation === 'pop') return popBarVariants(barWidth, time)
+  if (animation === 'bounce') return bounceBarVariants(barWidth, time)
+  return slideBarVariants(d, time)
+}
+
+function dripVariants(animation: TabMenuAnimation, d: TabMenuDirection, attached: boolean): Variants {
+  // bounce: la goccia fa lo stesso percorso di pop
+  return animation === 'slide' ? slideDripVariants(d, attached) : popDripVariants(d, attached)
+}
+
 /*
- * La barra esce dal "+" come una goccia: parte stretta e schiacciata contro il
+ * slide. La barra esce dal "+" come una goccia: parte stretta e schiacciata contro il
  * trigger (attaccata a lui grazie al filtro goo), si allontana allargandosi e si stacca.
  * I tab entrano a cascata. In chiusura viene risucchiata, più in fretta.
  */
-function barVariants(d: TabMenuDirection): Variants {
+function slideBarVariants(d: TabMenuDirection, time: Time): Variants {
   // Da nascosta sta 52px più vicina al "+"
   const tucked = along(d, -AWAY[d].sign * 52)
   return {
@@ -75,7 +110,7 @@ function barVariants(d: TabMenuDirection): Variants {
       transition: {
         ...spring,
         opacity: { duration: 0.1 },
-        delayChildren: stagger(0.04, { startDelay: 0.06 }),
+        delayChildren: stagger(time(0.04), { startDelay: time(0.06) }),
       },
     },
     exit: {
@@ -94,11 +129,11 @@ function barVariants(d: TabMenuDirection): Variants {
 }
 
 /*
- * Il "collo" tra trigger e barra: va verso di lei, poi si assottiglia e si stacca.
+ * slide. Il "collo" tra trigger e barra: va verso di lei, poi si assottiglia e si stacca.
  * attached: si ferma a metà dei 16px di distacco, abbastanza larga da toccare entrambi
  * (24 = centro della goccia a 8px dal "+"; scala 0.7 = 22px, sborda ~3px per lato)
  */
-function dripVariants(d: TabMenuDirection, attached: boolean): Variants {
+function slideDripVariants(d: TabMenuDirection, attached: boolean): Variants {
   const { axis, sign } = AWAY[d]
   const path = attached ? [0, sign * 28, sign * 24] : [0, sign * 28, sign * 44]
   return {
@@ -107,6 +142,100 @@ function dripVariants(d: TabMenuDirection, attached: boolean): Variants {
       ...(axis === 'y' ? { y: path } : { x: path }),
       scale: attached ? [0.6, 1, 0.7] : [0.6, 1, 0.2],
       transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
+    },
+  }
+}
+
+// pop. La barra parte mentre la goccia è ancora in viaggio (la sua curva copre quasi tutto il
+// percorso nei primi ~80ms): le due animazioni si sovrappongono e il filtro goo le fonde
+// in un unico movimento, senza pause tra goccia e barra
+const POP_DELAY = 0.06
+
+/*
+ * pop. La barra non si sposta: nasce già al suo posto, grande come il "+" (un cerchio),
+ * e si apre dal centro verso i lati come un popup, superando di poco la misura e
+ * tornando indietro (rimbalzo). I tab entrano a cascata dal centro.
+ * In chiusura si richiude verso il centro, senza rimbalzo.
+ */
+function popBarVariants(barWidth: number, time: Time): Variants {
+  // Da chiusa è larga quanto il "+"
+  const pill = Math.min(1, TRIGGER_SIZE / barWidth)
+  return {
+    hidden: { opacity: 0, scaleX: pill, scaleY: 0.7 },
+    visible: {
+      opacity: 1,
+      scaleX: 1,
+      scaleY: 1,
+      transition: {
+        scaleX: { type: 'spring', duration: 0.55, bounce: 0.45, delay: POP_DELAY },
+        scaleY: { type: 'spring', duration: 0.45, bounce: 0.25, delay: POP_DELAY },
+        opacity: { duration: 0.05, delay: POP_DELAY },
+        delayChildren: stagger(time(0.04), { startDelay: time(POP_DELAY + 0.08), from: 'center' }),
+      },
+    },
+    exit: {
+      opacity: 0,
+      scaleX: pill,
+      scaleY: 0.7,
+      transition: {
+        type: 'spring',
+        stiffness: 600,
+        damping: 45,
+        opacity: { duration: 0.1, delay: 0.1 },
+      },
+    },
+  }
+}
+
+/*
+ * bounce. Si apre come pop, solo in larghezza, con una curva back-out più marcata del
+ * solito (1.8 invece di 1.56): parte decisa, supera bene la sua misura e ci torna.
+ * In altezza e in posizione non si muove.
+ */
+function bounceBarVariants(barWidth: number, time: Time): Variants {
+  const pill = Math.min(1, TRIGGER_SIZE / barWidth)
+  return {
+    hidden: { opacity: 0, scaleX: pill, scaleY: 0.7 },
+    visible: {
+      opacity: 1,
+      scaleX: 1,
+      scaleY: 1,
+      transition: {
+        scaleX: { duration: 0.45, delay: POP_DELAY, ease: [0.34, 1.8, 0.64, 1] },
+        scaleY: { type: 'spring', duration: 0.45, bounce: 0.25, delay: POP_DELAY },
+        opacity: { duration: 0.05, delay: POP_DELAY },
+        delayChildren: stagger(time(0.04), { startDelay: time(POP_DELAY + 0.08), from: 'center' }),
+      },
+    },
+    exit: {
+      opacity: 0,
+      scaleX: pill,
+      scaleY: 0.7,
+      transition: {
+        type: 'spring',
+        stiffness: 600,
+        damping: 45,
+        opacity: { duration: 0.1, delay: 0.1 },
+      },
+    },
+  }
+}
+
+/*
+ * pop. Il "collo" parte per primo, più in fretta che in slide, e si gonfia mentre
+ * attraversa lo spazio, così si vede che lega la "×" alla barra.
+ * attached: si ferma a metà del distacco come in slide; staccata: finisce dentro la barra, assorbita.
+ * In chiusura aspetta che la barra si richiuda, poi torna nella "×".
+ */
+function popDripVariants(d: TabMenuDirection, attached: boolean): Variants {
+  const { axis, sign } = AWAY[d]
+  const path = attached ? [0, sign * 30, sign * 24] : [0, sign * 30, sign * 44]
+  return {
+    closed: { x: 0, y: 0, scale: 0.6, transition: { duration: 0.25, delay: 0.1, ease: [0.23, 1, 0.32, 1] } },
+    open: {
+      ...(axis === 'y' ? { y: path } : { x: path }),
+      scale: attached ? [0.6, 1.15, 0.7] : [0.6, 1.15, 0.2],
+      transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1] },
     },
   }
 }
@@ -128,12 +257,28 @@ const BAR_STYLE: Record<TabMenuDirection, object> = {
   right: { y: '-50%', originX: 0, originY: 0.5 },
 }
 
+// pop e bounce: si apre sempre dal suo centro, anche di fianco al "+"
+const barStyle = (animation: TabMenuAnimation, d: TabMenuDirection) =>
+  animation === 'slide' ? BAR_STYLE[d] : { ...BAR_STYLE[d], originX: 0.5 }
+
 const tabVariants: Variants = {
   hidden: { opacity: 0, scale: 0.8, y: 6, filter: 'blur(4px)' },
   visible: { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', transition: spring },
 }
 
-function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = true }: TabMenuProps) {
+function TabMenu({
+  icon,
+  label,
+  tabs,
+  direction: placement = 'top',
+  attached = true,
+  iconOnly = false,
+  tabGap = DEFAULT_TAB_GAP,
+  animation = 'slide',
+  ...motionProps
+}: TabMenuProps) {
+  const m = useGloopMotion(motionProps)
+  const staggerTime = (seconds: number) => m.t({ delay: seconds }).delay ?? 0
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
@@ -143,9 +288,20 @@ function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = t
   const [autoSide, setAutoSide] = useState<TabMenuDirection>('top')
   const direction = placement === 'auto' ? autoSide : placement
   const boundaryRef = useContext(BoundaryContext)
+  // Ogni tab è larga un'icona più tabGap: tra due icone resta proprio tabGap
+  const tabWidth = ICON_SIZE + Math.max(0, tabGap)
+  // Tab strette: la barra prende un margine, così le icone ai lati non finiscono nella curva
+  const barPadding = Math.max(0, (TRIGGER_SIZE - tabWidth) / 2)
+  const barWidth = tabs.length * tabWidth + 2 * barPadding
+  // Pillola centrata sulla tab, anche quando è più larga di lei
+  const pillLength = Math.max(tabWidth, PILL_MIN)
+  const pillOffset = barPadding - (pillLength - tabWidth) / 2
   const chooseSide = () => {
+    // Ingombro della barra espresso in tab da TAB_WIDTH
     if (placement === 'auto')
-      setAutoSide(resolveDirection('auto', triggerRef.current, boundaryRef?.current, tabs.length, 'detached'))
+      setAutoSide(
+        resolveDirection('auto', triggerRef.current, boundaryRef?.current, barWidth / TAB_WIDTH, 'detached'),
+      )
   }
   const barId = useId()
   const filterId = useId()
@@ -172,21 +328,22 @@ function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = t
   }, [open])
 
   return (
-    <MotionConfig transition={spring} reducedMotion="user">
+    <MotionScope m={m} props={motionProps} transition={spring}>
       {/* Filtro goo su trigger, goccia e barra: si fondono come liquido */}
       <div
+        {...m.rootProps}
         ref={rootRef}
         className="tab-menu"
         data-direction={direction}
-        style={{ filter: `url(#${CSS.escape(filterId)})` }}
+        style={{ ...m.rootProps.style, filter: `url(#${CSS.escape(filterId)})` }}
       >
         {/* Area ampia: la barra sta fuori dal riquadro del trigger, su qualsiasi lato */}
         <GooFilter
           id={filterId}
           region={{
-            x: -(tabs.length * TAB_WIDTH) - 60,
+            x: -barWidth - 60,
             y: -160,
-            width: 2 * tabs.length * TAB_WIDTH + TRIGGER_SIZE + 120,
+            width: 2 * barWidth + TRIGGER_SIZE + 120,
             height: 2 * 160 + TRIGGER_SIZE,
           }}
         />
@@ -194,7 +351,7 @@ function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = t
           className="goo-drop"
           aria-hidden="true"
           style={{ ...DRIP_START[direction], width: DRIP_SIZE, height: DRIP_SIZE }}
-          variants={dripVariants(direction, attached)}
+          variants={m.v(dripVariants(animation, direction, attached))}
           initial={false}
           animate={open ? 'open' : 'closed'}
         />
@@ -204,15 +361,18 @@ function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = t
               id={barId}
               role="tablist"
               className="tab-menu__bar"
-              style={BAR_STYLE[direction]}
-              variants={barVariants(direction)}
+              style={{ ...barStyle(animation, direction), paddingInline: barPadding }}
+              variants={m.v(barVariants(animation, direction, barWidth, staggerTime))}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
-              <AnimatePresence initial={false}>
-                {active !== null && <GooPill index={active} step={68} />}
-              </AnimatePresence>
+              {/* Contenitore spostato di pillOffset: la pillola si allinea alle tab, oltre il margine della barra */}
+              <span className="tab-menu__pill" style={{ left: pillOffset, right: -pillOffset }}>
+                <AnimatePresence initial={false}>
+                  {active !== null && <GooPill index={active} step={tabWidth} length={pillLength} />}
+                </AnimatePresence>
+              </span>
               {tabs.map((tab, i) => (
                 <motion.button
                   key={tab.label}
@@ -220,7 +380,9 @@ function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = t
                   role="tab"
                   className="tab-menu-motion__tab"
                   aria-selected={active === i}
-                  variants={tabVariants}
+                  aria-label={iconOnly ? tab.label : undefined}
+                  style={tabWidth === TAB_WIDTH ? undefined : { width: tabWidth }}
+                  variants={m.v(tabVariants)}
                   whileTap={{ scale: 0.95 }}
                   // Scelta fatta: si chiude subito, con la sua animazione di uscita
                   onClick={() => {
@@ -232,7 +394,7 @@ function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = t
                   <span className="tab-menu-motion__tab-icon" aria-hidden="true">
                     {tab.icon}
                   </span>
-                  <span className="tab-menu-motion__tab-label">{tab.label}</span>
+                  {!iconOnly && <span className="tab-menu-motion__tab-label">{tab.label}</span>}
                 </motion.button>
               ))}
             </motion.div>
@@ -265,7 +427,7 @@ function TabMenu({ icon, label, tabs, direction: placement = 'top', attached = t
           </motion.span>
         </motion.button>
       </div>
-    </MotionConfig>
+    </MotionScope>
   )
 }
 

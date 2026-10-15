@@ -37,6 +37,14 @@
   border-radius: 26px;
 }
 
+/* Area della pillola: alta come la barra, spostata dal componente per allinearsi alle tab */
+.tab-menu__pill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
 /*
  * direction: la barra sta a 16px dal "+" sul lato scelto, centrata sull'altro asse.
  * Oltre ~12px il filtro goo non le fonde: da ferme barra e trigger restano staccati.

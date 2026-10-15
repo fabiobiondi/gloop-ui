@@ -22,6 +22,7 @@ import ModalDemo, { LOREM, ModalCustomFooterDemo, ModalProgrammaticDemo } from '
 import { ControlledSliderDemo } from './SliderDemo'
 import { GloopLoadingPlayground } from './GloopLoadingDemo'
 import { ProgressBarAutoDemo, ProgressBarPlayground } from './ProgressBarDemo'
+import { TextEditorDemo } from './TextEditorDemo'
 import { AutoPlacementDemo, DirectionDemo } from './DirectionDemo'
 import {
   CardMenuPopover,
@@ -1410,6 +1411,49 @@ handle.close()`,
 />`,
       },
       {
+        title: 'Animations',
+        description:
+          'animation sets how the bar opens. slide (default): the bar leaves the "+" like a drop, growing as it moves away. pop: the drop reaches out from the "×" first, then the bar pops open from its center toward the sides with a slight bounce. bounce: opens like pop, with a back-out ease on its width: it overshoots its size, then settles.',
+        stage: { minHeight: 240, align: 'end' },
+        preview: (
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 170 }}>
+            {(['slide', 'pop', 'bounce'] as const).map((animation) => (
+              <TabMenu
+                key={animation}
+                icon={PlusIcon}
+                label={`Open menu (${animation})`}
+                animation={animation}
+                tabs={[
+                  { icon: HomeIcon, label: 'Home' },
+                  { icon: SearchIcon, label: 'Search' },
+                  { icon: UserIcon, label: 'Profile' },
+                ]}
+              />
+            ))}
+          </div>
+        ),
+        code: `<TabMenu
+  icon={PlusIcon}
+  label="Open menu"
+  animation="slide" // default
+  tabs={tabs}
+/>
+
+<TabMenu
+  icon={PlusIcon}
+  label="Open menu"
+  animation="pop"
+  tabs={tabs}
+/>
+
+<TabMenu
+  icon={PlusIcon}
+  label="Open menu"
+  animation="bounce"
+  tabs={tabs}
+/>`,
+      },
+      {
         title: 'Direction',
         description:
           'The bar always stays a row: top / bottom above or below the "+", left / right beside it. Default: top.',
@@ -1472,6 +1516,37 @@ handle.close()`,
     ]}
   />
 </FloatingBoundary>`,
+      },
+      {
+        title: 'Text editor',
+        description: 'The classic formatting toolbar of a WYSIWYG editor, with icons from react-icons. iconOnly hides the tab labels, tabGap sets the space between icons, down to 0.',
+        stage: { minHeight: 340, align: 'end' },
+        preview: <TextEditorDemo />,
+        code: `import { TabMenu } from 'gloop-ui'
+import {
+  LuBold,
+  LuItalic,
+  LuLink,
+  LuList,
+  LuPlus,
+  LuStrikethrough,
+  LuUnderline,
+} from 'react-icons/lu'
+
+<TabMenu
+  icon={<LuPlus />}
+  label="Text formatting"
+  iconOnly // only the icons, labels stay for screen readers
+  tabGap={12} // px between icons, default 50 (0: icons side by side)
+  tabs={[
+    { icon: <LuBold />, label: 'Bold' },
+    { icon: <LuItalic />, label: 'Italic' },
+    { icon: <LuUnderline />, label: 'Underline' },
+    { icon: <LuStrikethrough />, label: 'Strike' },
+    { icon: <LuList />, label: 'List' },
+    { icon: <LuLink />, label: 'Link' },
+  ]}
+/>`,
       },
     ],
   },

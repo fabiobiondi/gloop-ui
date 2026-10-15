@@ -54,6 +54,19 @@ describe('TabMenu direction', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(3)
   })
 
+  it.each(directions.flatMap((d) => (['pop', 'bounce'] as const).map((a) => [a, d] as const)))(
+    'TabMenu %s %s opens its bar',
+    async (animation, direction) => {
+      const user = userEvent.setup()
+      const { container } = render(
+        <TabMenu icon={icon} label="Menu" tabs={tabs} direction={direction} animation={animation} />,
+      )
+      expect(container.querySelector('.tab-menu')?.getAttribute('data-direction')).toBe(direction)
+      await user.click(screen.getByRole('button', { name: 'Menu' }))
+      expect(screen.getAllByRole('tab')).toHaveLength(3)
+    },
+  )
+
   it.each(directions)('TabMenuMotion %s opens its tabs', async (direction) => {
     const user = userEvent.setup()
     const { container } = render(<TabMenuMotion icon={icon} label="Menu" tabs={tabs} direction={direction} />)

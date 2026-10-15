@@ -41,6 +41,8 @@ describe('render', () => {
     ['Slider', () => <Slider label="Volume" marks />],
     ['TabBar', () => <TabBar tabs={tabs} />],
     ['TabMenu', () => <TabMenu icon={icon} label="Menu" tabs={tabs} />],
+    ['TabMenu pop', () => <TabMenu icon={icon} label="Menu" tabs={tabs} animation="pop" />],
+    ['TabMenu bounce', () => <TabMenu icon={icon} label="Menu" tabs={tabs} animation="bounce" />],
     ['TabMenuMotion', () => <TabMenuMotion icon={icon} label="Menu" tabs={tabs} />],
     ['Toast', () => <Toast open={false} onClose={() => {}} />],
     [

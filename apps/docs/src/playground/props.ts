@@ -161,6 +161,9 @@ const componentProps: Record<string, PropDoc[]> = {
   ],
   'tab-menu': [...tabMenuProps, direction('top', 'Side of the "+" where the bar appears. The bar is always a row: above, below or beside the "+". auto: on open, the first side with room (top, bottom, right, left) inside the nearest FloatingBoundary or the viewport.'),
     attached('While open, a liquid neck keeps the bar joined to the "+". false: the drop breaks away and the bar floats on its own.'),
+    { name: 'iconOnly', type: 'boolean', default: 'false', description: 'Tabs show only their icon; the label is only announced to screen readers.' },
+    { name: 'tabGap', type: 'number', default: '50', description: 'Space between one icon and the next, in px. 0: icons side by side. Below the default the labels no longer fit: pair it with iconOnly.' },
+    { name: 'animation', type: "'slide' | 'pop' | 'bounce'", default: "'slide'", description: 'How the bar opens. slide: it leaves the "+" like a drop, growing as it moves away. pop: the drop reaches out first, then the bar pops open from its center with a slight bounce. bounce: opens like pop, with a back-out ease on its width: it overshoots its size, then settles.' },
   ],
   'tab-menu-motion': [
     ...tabMenuProps,
