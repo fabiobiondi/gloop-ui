@@ -9,7 +9,8 @@
     0 12px 32px -8px rgb(0 0 0 / 0.3),
     0 4px 8px -4px rgb(0 0 0 / 0.12);
 
-  & .goo-pill__blob {
+  /* Solo la pillola del tab scelto: quella di rollover resta nel colore del testo */
+  & .tab-bar__pill .goo-pill__blob {
     background: var(--ui-accent);
   }
 
@@ -32,6 +33,24 @@
   /* Contenitore della pillola (position: absolute) */
   position: relative;
   display: inline-flex;
+}
+
+/* ---------- Verticale: tab in colonna ---------- */
+
+.tab-bar[data-orientation='vertical'] {
+  flex-direction: column;
+}
+
+.tab-bar[data-orientation='vertical'][data-position='fixed'] {
+  bottom: auto;
+  top: 50%;
+  left: max(16px, env(safe-area-inset-left));
+  translate: 0 -50%;
+}
+
+.tab-bar[data-orientation='vertical'][data-layout='inline'] .tab-menu-motion__tab {
+  /* Tutti larghi come il più largo, contenuto allineato a sinistra */
+  justify-content: flex-start;
 }
 
 /* ---------- Layout inline: icona, label e value in riga, larghezza dal contenuto ---------- */

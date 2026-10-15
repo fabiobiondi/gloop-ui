@@ -12,7 +12,6 @@ import {
   TabBar,
   TabMenu,
   TabMenuMotion,
-  TabMenuSubmenu,
   Tooltip,
 } from 'gloop-ui'
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
@@ -1554,7 +1553,7 @@ import {
     id: 'tab-menu-motion',
     name: 'TabMenuMotion',
     group: 'menus',
-    description: 'The "+" itself morphs into the tab bar.',
+    description: 'The "+" itself morphs into the tab bar; tabs with items open a sub-menu panel.',
     demos: [
       {
         title: 'Default',
@@ -1643,20 +1642,12 @@ import {
   />
 </FloatingBoundary>`,
       },
-    ],
-  },
-  {
-    id: 'tab-menu-submenu',
-    name: 'TabMenuSubmenu',
-    group: 'menus',
-    description: 'Morphing tab bar where each tab can open a panel of items above it.',
-    demos: [
       {
         title: 'With sub-menus',
         description: 'Open the tab bar, then pick an icon to see its sub-menu.',
         stage: { minHeight: 340, align: 'end' },
         preview: (
-          <TabMenuSubmenu
+          <TabMenuMotion
             icon={PlusIcon}
             label="Open menu"
             tabs={[
@@ -1666,7 +1657,7 @@ import {
             ]}
           />
         ),
-        code: `<TabMenuSubmenu
+        code: `<TabMenuMotion
   icon={PlusIcon}
   label="Open menu"
   tabs={[
@@ -1681,7 +1672,7 @@ import {
         description: 'Sub-menu items can be plain strings or { label, icon } objects: the icon is optional.',
         stage: { minHeight: 340, align: 'end' },
         preview: (
-          <TabMenuSubmenu
+          <TabMenuMotion
             icon={PlusIcon}
             label="Open menu"
             tabs={[
@@ -1707,7 +1698,7 @@ import {
             ]}
           />
         ),
-        code: `<TabMenuSubmenu
+        code: `<TabMenuMotion
   icon={PlusIcon}
   label="Open menu"
   tabs={[
@@ -1738,7 +1729,7 @@ import {
         description: 'By default a liquid neck keeps the sub-menu joined to its tab. With attached={false} there is no drop: the sub-menu appears on its own, without melting into the tab.',
         stage: { minHeight: 340, align: 'end' },
         preview: (
-          <TabMenuSubmenu
+          <TabMenuMotion
             icon={PlusIcon}
             label="Open menu"
             attached={false}
@@ -1749,7 +1740,7 @@ import {
             ]}
           />
         ),
-        code: `<TabMenuSubmenu
+        code: `<TabMenuMotion
   icon={PlusIcon}
   label="Open menu"
   attached={false}
@@ -1761,14 +1752,14 @@ import {
 />`,
       },
       {
-        title: 'Direction',
+        title: 'Sub-menus: direction',
         description:
           'left / right: horizontal bar with sub-menus above it. top / bottom: a column, and each sub-menu opens to the right of its tab. Default: left.',
         stage: { minHeight: 460 },
         preview: (
           <DirectionDemo initial="left">
             {(direction) => (
-              <TabMenuSubmenu
+              <TabMenuMotion
                 icon={PlusIcon}
                 label="Open menu"
                 direction={direction}
@@ -1781,7 +1772,7 @@ import {
             )}
           </DirectionDemo>
         ),
-        code: `<TabMenuSubmenu
+        code: `<TabMenuMotion
   icon={PlusIcon}
   label="Open menu"
   direction="left" // 'top' | 'bottom' | 'left' | 'right'
@@ -1793,13 +1784,13 @@ import {
 />`,
       },
       {
-        title: 'Auto placement',
+        title: 'Sub-menus: auto placement',
         description:
           'direction="auto" picks the side of the bar on open. Sub-menus flip by themselves, with or without auto: below the bar when there is no room above (top corners), to the left of a column when there is no room on the right. They follow scroll and resize while open.',
         stage: { minHeight: 480 },
         preview: (
           <AutoPlacementDemo>
-            <TabMenuSubmenu
+            <TabMenuMotion
               icon={PlusIcon}
               label="Open menu"
               direction="auto"
@@ -1812,7 +1803,7 @@ import {
           </AutoPlacementDemo>
         ),
         code: `<FloatingBoundary className="area">
-  <TabMenuSubmenu
+  <TabMenuMotion
     icon={PlusIcon}
     label="Open menu"
     direction="auto"
@@ -2185,6 +2176,59 @@ import {
         ),
         code: `<ExpandButton drip icon={HeartIcon} label="Added" activeColor="#e11d48" />
 <ExpandButton drip variant="action" label="Subscribe" activeColor="#2563eb" />`,
+/>`,
+      },
+      {
+        title: 'Vertical',
+        description:
+          'orientation="vertical" stacks the tabs in a column and the pill slides up and down. Works with both layouts; fixed bars are pinned to the left edge.',
+        stage: { minHeight: 280 },
+        preview: (
+          <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <TabBar
+              orientation="vertical"
+              position="static"
+              enterFrom={false}
+              tabs={[
+                { icon: HomeIcon, label: 'Home' },
+                { icon: SearchIcon, label: 'Search' },
+                { icon: HeartIcon, label: 'Saved' },
+                { icon: UserIcon, label: 'Profile' },
+              ]}
+            />
+            <TabBar
+              orientation="vertical"
+              layout="inline"
+              position="static"
+              enterFrom={false}
+              tabs={[
+                { icon: HomeIcon, label: 'Home', value: 3 },
+                { icon: FolderIcon, label: 'Projects', value: 3 },
+                { icon: LinkIcon, label: 'Links', value: 2 },
+              ]}
+            />
+          </div>
+        ),
+        code: `<TabBar
+  orientation="vertical"
+  position="static"
+  tabs={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    { icon: HeartIcon, label: 'Saved' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>
+
+<TabBar
+  orientation="vertical"
+  layout="inline"
+  position="static"
+  tabs={[
+    { icon: HomeIcon, label: 'Home', value: 3 },
+    { icon: FolderIcon, label: 'Projects', value: 3 },
+    { icon: LinkIcon, label: 'Links', value: 2 },
+  ]}
       },
       {
         title: 'Drip on hover',

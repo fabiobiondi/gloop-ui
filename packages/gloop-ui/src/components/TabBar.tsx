@@ -1,5 +1,5 @@
+import { AnimatePresence, motion, type Transition } from 'motion/react'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { motion, type Transition } from 'motion/react'
 import GooPill from './GooPill'
 import { MotionScope, useGloopMotion, type MotionProps } from './motion'
 import './theme.css'
@@ -18,11 +18,13 @@ export type TabBarProps = {
   /** Nome della navigazione per i lettori di schermo */
   label?: string
   onChange?: (index: number) => void
-  /** Lato da cui la barra entra al caricamento; false la mostra senza animazione */
+  /** Lato da cui la barra entra al caricamento (default: bottom, left in verticale); false la mostra senza animazione */
   enterFrom?: TabBarEnter | false
+  /** horizontal: tab in riga. vertical: tab in colonna (fixed: sul lato sinistro dello schermo) */
+  orientation?: 'horizontal' | 'vertical'
   /** stacked: icona sopra la label, tab di larghezza fissa. inline: icona, label e value in riga */
   layout?: 'stacked' | 'inline'
-  /** fixed: fissa in basso allo schermo. static: nel flusso della pagina (header, toolbar) */
+  /** fixed: fissa in basso allo schermo (a sinistra in verticale). static: nel flusso della pagina (header, toolbar) */
   position?: 'fixed' | 'static'
 } & MotionProps
 
@@ -47,31 +49,54 @@ function TabBar({
   tabs,
   label = 'Main',
   onChange,
-  enterFrom = 'bottom',
+  orientation = 'horizontal',
+  enterFrom = orientation === 'vertical' ? 'left' : 'bottom',
   layout = 'stacked',
   position = 'fixed',
   ...motionProps
 }: TabBarProps) {
   const m = useGloopMotion(motionProps)
   const [active, setActive] = useState(0)
+  // Tab sotto il cursore: una seconda pillola liquida, tenue, lo segue (come in TabMenuMotion)
+  const [hovered, setHovered] = useState<number | null>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const [pill, setPill] = useState<{ offset: number; width: number } | null>(null)
+  const vertical = orientation === 'vertical'
+  // Posizione e lunghezza di ogni tab lungo l'asse, misurate dal DOM
+  const [rects, setRects] = useState<{ offset: number; length: number }[]>([])
 
   // Prima del paint: la pillola nasce già sul tab, senza scivolare da 0
   useLayoutEffect(() => {
     const measure = () => {
-      const tab = tabRefs.current[active]
-      if (!tab) return
-      const next = { offset: tab.offsetLeft, width: tab.offsetWidth }
+      const next = tabRefs.current
+        .slice(0, tabs.length)
+        .map((tab) =>
+          vertical
+            ? { offset: tab?.offsetTop ?? 0, length: tab?.offsetHeight ?? 0 }
+            : { offset: tab?.offsetLeft ?? 0, length: tab?.offsetWidth ?? 0 },
+        )
       // Stesse misure: niente render (il ResizeObserver scatta anche all'avvio)
-      setPill((prev) => (prev?.offset === next.offset && prev.width === next.width ? prev : next))
+      setRects((prev) =>
+        prev.length === next.length &&
+        prev.every((r, i) => r.offset === next[i].offset && r.length === next[i].length)
+          ? prev
+          : next,
+      )
     }
     measure()
     // Font caricati in ritardo, label o value che cambiano: i tab cambiano larghezza
     const observer = new ResizeObserver(measure)
     for (const tab of tabRefs.current) if (tab) observer.observe(tab)
     return () => observer.disconnect()
-  }, [active, tabs, layout])
+  }, [tabs, layout, vertical])
+
+  const pillProps = (i: number) => ({
+    // step 1: l'indice passato alla pillola è già la distanza in px
+    index: rects[i].offset,
+    step: 1,
+    length: rects[i].length,
+    axis: vertical ? ('y' as const) : ('x' as const),
+    radius: layout === 'inline' ? 16 : 22,
+  })
 
   return (
     <MotionScope m={m} props={motionProps} transition={spring}>
@@ -81,19 +106,16 @@ function TabBar({
         className="tab-bar"
         data-layout={layout}
         data-position={position}
+        data-orientation={orientation}
+        onPointerLeave={() => setHovered(null)}
         initial={enterFrom ? { ...enterOffset[enterFrom], opacity: 0 } : false}
         animate={{ x: 0, y: 0, opacity: 1, transition: m.t({ ...spring, delay: 0.2 }) }}
       >
-        {/* step 1: l'indice passato alla pillola è già la distanza in px */}
-        {pill && (
-          <GooPill
-            index={pill.offset}
-            step={1}
-            length={pill.width}
-            radius={layout === 'inline' ? 16 : 22}
-            opacity={0.3}
-          />
-        )}
+        {rects[active] && <GooPill {...pillProps(active)} className="tab-bar__pill" opacity={0.3} />}
+        {/* Rollover: stessa pillola tenue di TabMenuMotion, nel colore del testo */}
+        <AnimatePresence>
+          {hovered !== null && rects[hovered] && <GooPill key="hover" {...pillProps(hovered)} opacity={0.08} />}
+        </AnimatePresence>
         {tabs.map((tab, i) => (
           <motion.button
             key={tab.label}
@@ -104,6 +126,10 @@ function TabBar({
             className="tab-menu-motion__tab"
             aria-current={active === i ? 'page' : undefined}
             whileTap={{ scale: 0.95 }}
+            // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
+            onPointerEnter={(e) => e.pointerType !== 'touch' && setHovered(i)}
+            onFocus={() => setHovered(i)}
+            onBlur={() => setHovered(null)}
             onClick={() => {
               setActive(i)
               onChange?.(i)

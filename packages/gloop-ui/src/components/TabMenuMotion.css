@@ -14,7 +14,7 @@
 }
 
 /*
- * direction (TabMenuMotion, TabMenuSubmenu): nel DOM i tab vengono sempre prima del "+",
+ * direction (TabMenuMotion): nel DOM i tab vengono sempre prima del "+",
  * la posizione la decide l'ordine flex. In colonna il primo tab è il più vicino al "+".
  */
 .tab-menu-motion[data-direction='right'] {
@@ -161,4 +161,53 @@
   inset: 4px 12px;
   border-radius: 50%;
   background: var(--ui-bg);
+}
+
+/* ---------- Sottomenu (tab con items) ---------- */
+
+/* Il pannello è largo quanto la barra aperta e sta sopra di essa */
+.tab-menu-motion__panel {
+  position: absolute;
+  /* Oltre ~12px il filtro goo non le fonde: da ferme barra e pannello restano staccati */
+  bottom: calc(100% + 14px);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  padding: 6px;
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+}
+
+/*
+ * Lato del pannello (data-panel, scelto da TabMenuMotion.tsx in base allo spazio):
+ * in riga sopra o sotto la barra; in colonna a destra o a sinistra, all'altezza del tab
+ * (top e width arrivano dallo style)
+ */
+.tab-menu-motion-wrap[data-panel='bottom'] .tab-menu-motion__panel {
+  top: calc(100% + 14px);
+  bottom: auto;
+}
+
+.tab-menu-motion-wrap:is([data-panel='left'], [data-panel='right']) .tab-menu-motion__panel {
+  bottom: auto;
+  right: auto;
+}
+
+.tab-menu-motion-wrap[data-panel='right'] .tab-menu-motion__panel {
+  left: calc(100% + 14px);
+}
+
+.tab-menu-motion-wrap[data-panel='left'] .tab-menu-motion__panel {
+  left: auto;
+  right: calc(100% + 14px);
+}
+
+.tab-menu-motion__list-wrap {
+  position: relative;
+}
+
+/* Con sottomenu i tab sono bottoni, non role="tab": lo stato attivo è aria-pressed */
+.tab-menu-motion-wrap .tab-menu-motion__tab[aria-pressed='true'] {
+  color: var(--ui-fg);
 }

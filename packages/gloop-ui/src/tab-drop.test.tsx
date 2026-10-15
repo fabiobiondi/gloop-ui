@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { TabMenu, TabMenuMotion, TabMenuSubmenu, type TabMenuDirection } from './index'
+import { TabMenu, TabMenuMotion, type TabMenuDirection } from './index'
 import { tabDrop, visualIndex } from './components/tab-drop'
 
 const icon = <svg aria-hidden="true" />
@@ -75,10 +75,10 @@ describe('TabMenu direction', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(3)
   })
 
-  it('TabMenuSubmenu in a column opens the sub-menu next to the tab', async () => {
+  it('TabMenuMotion with sub-menus in a column opens the sub-menu next to the tab', async () => {
     const user = userEvent.setup()
     render(
-      <TabMenuSubmenu
+      <TabMenuMotion
         icon={icon}
         label="Menu"
         direction="bottom"
@@ -98,7 +98,7 @@ describe('TabMenu direction', () => {
       <>
         <TabMenu icon={icon} label="A" tabs={tabs} />
         <TabMenuMotion icon={icon} label="B" tabs={tabs} />
-        <TabMenuSubmenu icon={icon} label="C" tabs={tabs} />
+        <TabMenuMotion icon={icon} label="C" tabs={tabs} />
       </>,
     )
     expect(container.querySelector('.tab-menu')?.getAttribute('data-direction')).toBe('top')

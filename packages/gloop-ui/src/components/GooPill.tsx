@@ -26,6 +26,8 @@ export type GooPillProps = {
   opacity?: number
   /** Ritardo della comparsa, in secondi */
   delay?: number
+  /** Classe aggiunta al contenitore, es. per colorare le gocce */
+  className?: string
 } & MotionProps
 
 const headSpring = { stiffness: 520, damping: 34 }
@@ -46,6 +48,7 @@ function GooPill({
   radius = 22,
   opacity = 0.16,
   delay = 0,
+  className,
   ...motionProps
 }: GooPillProps) {
   const filterId = useId()
@@ -90,7 +93,7 @@ function GooPill({
     <MotionScope m={m} props={motionProps}>
     <motion.div
       {...m.rootProps}
-      className="goo-pill"
+      className={className ? `goo-pill ${className}` : 'goo-pill'}
       aria-hidden="true"
       style={{ ...m.rootProps.style, filter: reduceMotion ? undefined : `url(#${CSS.escape(filterId)})` }}
       initial={{ opacity: 0 }}

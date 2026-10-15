@@ -44,7 +44,7 @@ export function pickSide<S extends string>(order: S[], footprint: (side: S) => B
 /*
  * Ingombro della barra aperta attorno al "+" (trigger), per ogni lato.
  * - 'detached' (TabMenu): una riga di tab a `gap` px dal "+", centrata sull'altro asse
- * - 'morph' (TabMenuMotion, TabMenuSubmenu): la barra comprende il "+" e cresce da lì;
+ * - 'morph' (TabMenuMotion): la barra comprende il "+" e cresce da lì;
  *   in colonna è larga un tab e centrata sul "+"
  */
 export function barFootprint(

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { TabMenu, TabMenuMotion, TabMenuSubmenu } from './index'
+import { TabMenu, TabMenuMotion } from './index'
 import { barFootprint, overflow, pickSide, MORPH_ORDER, DETACHED_ORDER } from './components/tab-placement'
 
 const icon = <svg aria-hidden="true" />
@@ -75,13 +75,13 @@ describe('direction="auto"', () => {
     expect(container.querySelector('.tab-menu-motion')?.getAttribute('data-direction')).toBe('left')
   })
 
-  it('TabMenuSubmenu flips the sub-menu below the bar when there is no room above', async () => {
+  it('TabMenuMotion with sub-menus flips the sub-menu below the bar when there is no room above', async () => {
     const user = userEvent.setup()
     const { container } = render(
-      <TabMenuSubmenu icon={icon} label="Menu" tabs={tabs.map((t) => ({ ...t, items: ['A', 'B', 'C'] }))} />,
+      <TabMenuMotion icon={icon} label="Menu" tabs={tabs.map((t) => ({ ...t, items: ['A', 'B', 'C'] }))} />,
     )
     await user.click(screen.getByRole('button', { name: 'Menu' }))
     await user.click(screen.getByRole('button', { name: /Search/ }))
-    expect(container.querySelector('.tab-menu-submenu')?.getAttribute('data-panel')).toBe('bottom')
+    expect(container.querySelector('.tab-menu-motion-wrap')?.getAttribute('data-panel')).toBe('bottom')
   })
 })

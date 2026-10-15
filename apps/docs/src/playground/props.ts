@@ -166,22 +166,19 @@ const componentProps: Record<string, PropDoc[]> = {
     { name: 'animation', type: "'slide' | 'pop' | 'bounce'", default: "'slide'", description: 'How the bar opens. slide: it leaves the "+" like a drop, growing as it moves away. pop: the drop reaches out first, then the bar pops open from its center with a slight bounce. bounce: opens like pop, with a back-out ease on its width: it overshoots its size, then settles.' },
   ],
   'tab-menu-motion': [
-    ...tabMenuProps,
-    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar; top / bottom: a column, first tab next to the "+". auto: on open, the first side with room (left, right, top, bottom).'),
-  ],
-  'tab-menu-submenu': [
     ...tabMenuProps.slice(0, 2),
-    { name: 'tabs', type: '{ icon: ReactNode; label: string; items?: (string | { label: string; icon?: ReactNode })[] }[]', required: true, description: 'Tabs that drop out of the trigger; items opens a sub-menu. Each item is a string or { label, icon? } to show an optional icon.' },
-    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar, sub-menus above (below if there is no room); top / bottom: a column, sub-menus to the right of the tab (left if there is no room). auto: on open, the first side with room (left, right, top, bottom).'),
-    attached('A liquid neck keeps the open sub-menu joined to its tab. false: no drop between them, the sub-menu appears on its own without melting into the tab.'),
+    { name: 'tabs', type: '{ icon: ReactNode; label: string; items?: (string | { label: string; icon?: ReactNode })[] }[]', required: true, description: 'Tabs that drop out of the trigger. A tab without items closes the bar when picked; with items it opens a sub-menu. Each item is a string or { label, icon? } to show an optional icon.' },
+    direction('left', 'Side of the "+" the bar grows from. left / right: horizontal bar, sub-menus above (below if there is no room); top / bottom: a column, first tab next to the "+", sub-menus to the right of the tab (left if there is no room). auto: on open, the first side with room (left, right, top, bottom).'),
+    attached('Only with sub-menus: a liquid neck keeps the open sub-menu joined to its tab. false: no drop between them, the sub-menu appears on its own without melting into the tab.'),
   ],
   'tab-bar': [
     { name: 'tabs', type: '{ icon: ReactNode; label: string; value?: ReactNode }[]', required: true, description: 'Tabs of the bar. value: a counter or badge next to the label (inline) or on the icon (stacked).' },
     { name: 'label', type: 'string', default: "'Main'", description: 'Accessible name of the navigation.' },
     { name: 'onChange', type: '(index: number) => void', description: 'Called with the index of the selected tab.' },
-    { name: 'enterFrom', type: "'bottom' | 'top' | 'left' | 'right' | false", default: "'bottom'", description: 'Side the bar slides in from on mount. false: no entrance animation.' },
+    { name: 'orientation', type: "'horizontal' | 'vertical'", default: "'horizontal'", description: 'horizontal: tabs in a row. vertical: tabs in a column; with position="fixed" the bar is pinned to the left edge of the viewport.' },
+    { name: 'enterFrom', type: "'bottom' | 'top' | 'left' | 'right' | false", default: "'bottom' ('left' when vertical)", description: 'Side the bar slides in from on mount. false: no entrance animation.' },
     { name: 'layout', type: "'stacked' | 'inline'", default: "'stacked'", description: 'stacked: icon above the label, fixed-width tabs. inline: icon, label and value on one row, each tab as wide as its content.' },
-    { name: 'position', type: "'fixed' | 'static'", default: "'fixed'", description: 'fixed: pinned to the bottom of the viewport. static: in the page flow, e.g. inside a header.' },
+    { name: 'position', type: "'fixed' | 'static'", default: "'fixed'", description: 'fixed: pinned to the bottom of the viewport (left edge when vertical). static: in the page flow, e.g. inside a header.' },
   ],
   'gloop-loading': [
     { name: 'title', type: 'ReactNode', description: 'Text under the blob, e.g. "Loading". Announced by screen readers (role="status").' },

@@ -61,14 +61,11 @@ export type { TabMenuDirection } from './components/tab-drop'
 export type { TabMenuPlacement } from './components/tab-placement'
 
 export { default as TabMenuMotion } from './components/TabMenuMotion'
-export type { TabMenuMotionProps, Tab as TabMenuMotionTab } from './components/TabMenuMotion'
-
-export { default as TabMenuSubmenu } from './components/TabMenuSubmenu'
 export type {
-  TabMenuSubmenuProps,
-  Tab as TabMenuSubmenuTab,
-  SubmenuItem as TabMenuSubmenuItem,
-} from './components/TabMenuSubmenu'
+  TabMenuMotionProps,
+  Tab as TabMenuMotionTab,
+  SubmenuItem as TabMenuMotionItem,
+} from './components/TabMenuMotion'
 
 export { default as ShapeEditor } from './components/shape-toolbar/ShapeEditor'
 export type { ShapeEditorProps } from './components/shape-toolbar/ShapeEditor'
