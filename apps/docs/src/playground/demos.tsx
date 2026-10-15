@@ -17,6 +17,7 @@ import {
 } from 'gloop-ui'
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo, { DialogFormDemo } from './DialogDemo'
+import ToastDemo from './ToastDemo'
 import ModalDemo, { LOREM, ModalCustomFooterDemo, ModalProgrammaticDemo } from './ModalDemo'
 import { ControlledSliderDemo } from './SliderDemo'
 import { GloopLoadingPlayground } from './GloopLoadingDemo'
@@ -1085,6 +1086,71 @@ handle.close()`,
 >
   {content}
 </Modal>`,
+      },
+    ],
+  },
+  {
+    id: 'toast',
+    name: 'Toast',
+    group: 'overlays',
+    status: 'experimental',
+    description:
+      'Notification that drips from the edge of the screen as a liquid drop and swells into a pill. Closes by itself; hovering pauses the timer.',
+    demos: [
+      {
+        title: 'From the top',
+        description: 'The drop detaches from the top edge, stretches down and swells. Click again to close it early.',
+        preview: (
+          <ToastDemo trigger="Show toast" title="Saved" icon={CheckIcon}>
+            Your changes are live.
+          </ToastDemo>
+        ),
+        code: `const [open, setOpen] = useState(false)
+
+<Toast open={open} onClose={() => setOpen(false)} title="Saved" icon={CheckIcon}>
+  Your changes are live.
+</Toast>`,
+      },
+      {
+        title: 'From the bottom · persistent',
+        description: 'duration={Infinity} keeps it open until the X is pressed.',
+        preview: (
+          <ToastDemo trigger="Show toast" position="bottom" duration={Infinity} icon={AlertIcon}>
+            Connection lost. Retrying…
+          </ToastDemo>
+        ),
+        code: `<Toast
+  open={open}
+  onClose={() => setOpen(false)}
+  position="bottom"
+  duration={Infinity}
+  icon={AlertIcon}
+>
+  Connection lost. Retrying…
+</Toast>`,
+      },
+      {
+        title: 'Aligned to the end · no X',
+        preview: (
+          <ToastDemo trigger="Show toast" align="end" closeButton={false} duration={2500}>
+            Link copied
+          </ToastDemo>
+        ),
+        code: `<Toast open={open} onClose={() => setOpen(false)} align="end" closeButton={false} duration={2500}>
+  Link copied
+</Toast>`,
+      },
+      {
+        title: 'Slow motion',
+        description: 'speed={0.2}: the edge swells, the drop drips down with a liquid neck, then swells into the pill.',
+        preview: (
+          <ToastDemo trigger="Show toast" speed={0.2} duration={Infinity} title="Slow motion" icon={SparkleIcon}>
+            Watch the drop detach from the edge.
+          </ToastDemo>
+        ),
+        code: `<Toast open={open} onClose={() => setOpen(false)} speed={0.2} duration={Infinity} title="Slow motion">
+  Watch the drop detach from the edge.
+</Toast>`,
       },
     ],
   },

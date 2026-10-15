@@ -73,6 +73,8 @@ export type {
 export { default as ShapeEditor } from './components/shape-toolbar/ShapeEditor'
 export type { ShapeEditorProps } from './components/shape-toolbar/ShapeEditor'
 
+export { default as Toast } from './components/Toast'
+export type { ToastProps, ToastPosition } from './components/Toast'
 
 export { default as Tooltip } from './components/Tooltip'
 export type { TooltipProps } from './components/Tooltip'

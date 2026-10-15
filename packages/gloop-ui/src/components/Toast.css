@@ -1,0 +1,158 @@
+/* Sempre montato (regione live): non intercetta il puntatore, solo il toast sì */
+.toast-layer {
+  position: fixed;
+  z-index: 120;
+  inset-inline: 0;
+  display: flex;
+  justify-content: center;
+  padding: var(--toast-offset) 16px;
+  pointer-events: none;
+  /* Spazio dal bordo e goccia: devono coincidere con OFFSET e DROP in Toast.tsx */
+  --toast-offset: 16px;
+  --toast-drop: 28px;
+  --toast-source: 48px;
+  --toast-surface: var(--ui-surface, color-mix(in srgb, var(--ui-bg), var(--ui-fg) 6%));
+  --toast-divider: color-mix(in srgb, var(--ui-fg) 10%, transparent);
+
+  &[data-position='top'] {
+    top: 0;
+  }
+
+  &[data-position='bottom'] {
+    bottom: 0;
+  }
+
+  &[data-align='start'] {
+    justify-content: flex-start;
+  }
+
+  &[data-align='end'] {
+    justify-content: flex-end;
+  }
+}
+
+.toast {
+  position: relative;
+  /* Il fondo liquido (z-index -1) resta sotto il contenuto */
+  isolation: isolate;
+  max-width: min(420px, 100%);
+  color: var(--ui-fg);
+  pointer-events: auto;
+}
+
+/* Fondo liquido: bordo, goccia e pillola passano dal filtro goo, il contenuto no */
+.toast__goo {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Niente box-shadow esterno sugli elementi filtrati: l'ombra la aggiunge GooFilter */
+.toast__shape {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 22px;
+  background: var(--toast-surface);
+  box-shadow: inset 0 0 0 1px var(--toast-divider);
+}
+
+.toast__drop,
+.toast__source {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--toast-surface);
+}
+
+.toast__drop {
+  top: calc(50% - var(--toast-drop) / 2);
+  left: calc(50% - var(--toast-drop) / 2);
+  width: var(--toast-drop);
+  height: var(--toast-drop);
+}
+
+/* Mezza goccia centrata sul bordo dello schermo: metà resta fuori dalla vista */
+.toast__source {
+  left: calc(50% - var(--toast-source) / 2);
+  width: var(--toast-source);
+  height: var(--toast-source);
+}
+
+[data-position='top'] .toast__source {
+  top: calc(-1 * var(--toast-offset) - var(--toast-source) / 2);
+}
+
+[data-position='bottom'] .toast__source {
+  bottom: calc(-1 * var(--toast-offset) - var(--toast-source) / 2);
+}
+
+.toast__content {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+  padding: 8px 8px 8px 20px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.toast__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--ui-accent);
+
+  & svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.toast__text {
+  flex: 1;
+  min-width: 0;
+  padding-block: 6px;
+  overflow-wrap: anywhere;
+}
+
+.toast__title {
+  font-weight: 600;
+}
+
+.toast__message {
+  opacity: 0.8;
+
+  .toast__title + & {
+    margin-top: 2px;
+  }
+}
+
+/* Senza X il testo ha lo stesso respiro a destra */
+.toast__content:not(:has(.toast__close)) {
+  padding-right: 20px;
+}
+
+.toast__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  cursor: pointer;
+
+  & svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 2px;
+  }
+}

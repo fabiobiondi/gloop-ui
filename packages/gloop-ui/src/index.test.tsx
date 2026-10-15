@@ -18,6 +18,7 @@ import {
   TabMenu,
   TabMenuMotion,
   TabMenuSubmenu,
+  Toast,
 } from './index'
 
 const icon = <svg aria-hidden="true" />
@@ -41,6 +42,7 @@ describe('render', () => {
     ['TabBar', () => <TabBar tabs={tabs} />],
     ['TabMenu', () => <TabMenu icon={icon} label="Menu" tabs={tabs} />],
     ['TabMenuMotion', () => <TabMenuMotion icon={icon} label="Menu" tabs={tabs} />],
+    ['Toast', () => <Toast open={false} onClose={() => {}} />],
     [
       'TabMenuSubmenu',
       () => <TabMenuSubmenu icon={icon} label="Menu" tabs={tabs.map((t) => ({ ...t, items: ['A', 'B'] }))} />,
@@ -633,4 +635,114 @@ describe('TabMenuSubmenu', () => {
     expect(screen.getByRole('menuitem', { name: 'Saved' }).contains(screen.getByTestId('item-icon'))).toBe(true)
   })
 
+})
+
+describe('Toast', () => {
+  it('keeps the live region mounted and shows the message only when open', () => {
+    const { rerender } = render(<Toast open={false} onClose={() => {}}>Saved</Toast>)
+    expect(screen.getByRole('status')).toBeTruthy()
+    expect(screen.queryByText('Saved')).toBeNull()
+    rerender(
+      <Toast open onClose={() => {}} title="Done">
+        Saved
+      </Toast>,
+    )
+    expect(screen.getByRole('status').textContent).toContain('Saved')
+    expect(screen.getByText('Done')).toBeTruthy()
+  })
+
+  it('closes itself after duration', () => {
+    vi.useFakeTimers()
+    try {
+      const onClose = vi.fn()
+      render(
+        <Toast open onClose={onClose} duration={1000}>
+          Saved
+        </Toast>,
+      )
+      vi.advanceTimersByTime(999)
+      expect(onClose).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(1)
+      expect(onClose).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stays open with duration={Infinity}', () => {
+    vi.useFakeTimers()
+    try {
+      const onClose = vi.fn()
+      render(
+        <Toast open onClose={onClose} duration={Infinity}>
+          Saved
+        </Toast>,
+      )
+      vi.advanceTimersByTime(60_000)
+      expect(onClose).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('pauses the timer while hovered and resumes with the remaining time', () => {
+    vi.useFakeTimers()
+    try {
+      const onClose = vi.fn()
+      render(
+        <Toast open onClose={onClose} duration={1000}>
+          Saved
+        </Toast>,
+      )
+      vi.advanceTimersByTime(600)
+      const toast = document.querySelector<HTMLElement>('.toast')!
+      fireEvent.pointerEnter(toast)
+      vi.advanceTimersByTime(5000)
+      expect(onClose).not.toHaveBeenCalled()
+      fireEvent.pointerLeave(toast)
+      vi.advanceTimersByTime(399)
+      expect(onClose).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(1)
+      expect(onClose).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('closes from the X, which can be hidden', () => {
+    const onClose = vi.fn()
+    const { rerender } = render(
+      <Toast open onClose={onClose} duration={Infinity}>
+        Saved
+      </Toast>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onClose).toHaveBeenCalledOnce()
+    rerender(
+      <Toast open onClose={onClose} duration={Infinity} closeButton={false}>
+        Saved
+      </Toast>,
+    )
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull()
+  })
+
+  it('drops the goo with reduced motion', () => {
+    render(
+      <Toast open onClose={() => {}} reducedMotion="always">
+        Saved
+      </Toast>,
+    )
+    expect(document.querySelector('.toast__goo')).toBeNull()
+    expect(document.querySelector('.toast__shape')).not.toBeNull()
+  })
+
+  it('renders the liquid blob with full motion', () => {
+    render(
+      <Toast open onClose={() => {}} reducedMotion="never">
+        Saved
+      </Toast>,
+    )
+    expect(document.querySelector('.toast__goo')).not.toBeNull()
+    expect(document.querySelector('.toast__drop')).not.toBeNull()
+  })
 })
