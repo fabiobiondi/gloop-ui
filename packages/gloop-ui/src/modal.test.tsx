@@ -63,6 +63,19 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
+  it('renders with enter="drop" and still closes', async () => {
+    const onClose = vi.fn()
+    render(
+      <Modal open onClose={onClose} enter="drop" title="Drop">
+        Hi
+      </Modal>,
+    )
+    expect(screen.getByRole('dialog', { name: 'Drop' })).toBeTruthy()
+    expect(document.querySelector('.modal__fly-body')).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
   it('only the topmost modal reacts to Escape', async () => {
     const outer = vi.fn()
     const inner = vi.fn()

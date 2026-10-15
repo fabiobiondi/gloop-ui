@@ -24,6 +24,13 @@ export type ModalAction = {
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'full'
 
+/**
+ * swell: una goccia che si gonfia al centro.
+ * drop: una goccia vola dal pulsante che ha aperto il modal, si spiaccica e si allarga come
+ * gelatina; in chiusura torna volando al pulsante.
+ */
+export type ModalEnter = 'swell' | 'drop'
+
 export type ModalProps = {
   open: boolean
   onClose: () => void
@@ -45,6 +52,13 @@ export type ModalProps = {
   footer?: ReactNode
   /** Larghezza: sm 400px, md 560px, lg 800px, full tutto lo schermo (default 'md') */
   size?: ModalSize
+  /** Animazione di apertura (default 'swell') */
+  enter?: ModalEnter
+  /**
+   * Quanto la scheda trema come gelatina all'apertura, da 0 a 1 (default 0.5).
+   * 0: si gonfia senza rimbalzi e i lati restano fermi. 1: rimbalzi ampi e lati che ondeggiano.
+   */
+  jelly?: number
   /** Clic sullo sfondo chiude il modal (default true) */
   closeOnBackdrop?: boolean
   /** Escape chiude il modal (default true) */
@@ -60,28 +74,60 @@ export type ModalProps = {
   className?: string
 } & MotionProps
 
-// La scheda si gonfia come una goccia e si assesta, le gocce satellite colano più lente
-const swell: Transition = {
-  type: 'spring',
-  stiffness: 380,
-  damping: 24,
-  mass: 0.9,
-}
 const drip: Transition = { type: 'spring', stiffness: 300, damping: 18 }
 
-// Gocce satellite: posizione finale (% della scheda) e diametro in px.
-// In apertura partono dal centro e si fondono nei bordi, in chiusura vengono risucchiate
-type Drop = { x: number; y: number; size: number }
-const DROPS: Drop[] = [
-  { x: 8, y: 18, size: 72 },
-  { x: 92, y: 26, size: 64 },
-  { x: 50, y: 4, size: 60 },
-  { x: 16, y: 88, size: 66 },
-  { x: 86, y: 84, size: 76 },
-  { x: 54, y: 97, size: 52 },
-]
-// Raggio enorme: la scheda nasce come un'ellisse e si squadra mentre si gonfia
-const ROUND = 600
+// Molle della gelatina: larghezza più rigida, altezza più morbida, così rimbalzano fuori fase
+// jelly regola lo smorzamento: 0 = smorzamento critico (nessun rimbalzo), 1 = le molle qui sotto
+const JELLY_X = { stiffness: 300, damping: 13, mass: 0.9 }
+const JELLY_Y = { stiffness: 210, damping: 10, mass: 0.9 }
+function jellySpring({ stiffness, damping, mass }: typeof JELLY_X, jelly: number, delay = 0): Transition {
+  const critical = 2 * Math.sqrt(stiffness * mass)
+  const amount = Math.min(1, Math.max(0, jelly))
+  return { type: 'spring', stiffness, mass, delay, damping: critical - amount * (critical - damping) }
+}
+
+// Rigonfiamenti al centro dei lati: quanto escono (px) nei vari momenti, e quando
+const BULGE = [0, 14, -3, 6, 0]
+const BULGE_TIMES = [0, 0.28, 0.55, 0.78, 1]
+// Prima i lati lunghi (alto e basso), poi quelli corti, appena sfasati
+const SIDES = [
+  { side: 'top', delay: 0.1 },
+  { side: 'bottom', delay: 0.12 },
+  { side: 'left', delay: 0.16 },
+  { side: 'right', delay: 0.18 },
+] as const
+
+// enter="drop": diametro della goccia in volo e durata del volo (s)
+const FLY_SIZE = 56
+// Volo a velocità quasi costante: la durata cresce con la distanza dal centro (entro dei limiti),
+// e più la goccia arriva da lontano più va forte, quindi si allunga di più
+type Point = { x: number; y: number }
+const flightTime = (dist: number) => Math.min(0.38, Math.max(0.1, 0.05 + dist / 3000))
+const flightStretch = (dist: number) => 1.3 + Math.min(dist / 900, 1) * 0.7
+// Senza pulsante di partenza la goccia cade dall'alto, da sopra la finestra
+const fallFrom = () => ({ x: 0, y: -(innerHeight / 2 + 80) })
+// Ultimo punto toccato dal puntatore: da lì parte la goccia di enter="drop"
+// (in Safari il pulsante cliccato non prende il focus, quindi activeElement non basta)
+let lastPointer = { x: 0, y: 0, time: -Infinity }
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      lastPointer = { x: e.clientX, y: e.clientY, time: performance.now() }
+    },
+    { capture: true, passive: true },
+  )
+}
+
+/** Centro dell'elemento che ha aperto il modal: punto del clic recente o elemento col focus */
+function openerPoint(): Point | null {
+  if (performance.now() - lastPointer.time < 1000) return { x: lastPointer.x, y: lastPointer.y }
+  const el = document.activeElement
+  if (!el || el === document.body) return null
+  const r = el.getBoundingClientRect()
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+}
+
 const RADIUS = 28
 
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -108,22 +154,85 @@ const CloseIcon = (
   </svg>
 )
 
+/** Lati che ondeggiano (prop jelly): nessuno con jelly a 0 */
+const jellySides = (jelly: number) => (jelly > 0 ? SIDES : [])
+
+/*
+ * Rigonfiamenti al centro dei lati, dentro la forma (crescono con lei): escono dal lato
+ * e rientrano, sempre meno; il goo li fonde con la scheda e il lato ondeggia come gelatina.
+ */
+function JellySides({
+  m,
+  sides,
+  jelly,
+  delay = 0,
+  onDone,
+}: {
+  m: GloopMotion
+  sides: ReturnType<typeof jellySides>
+  jelly: number
+  /** Ritardo in più, ad esempio il volo della goccia con enter="drop" */
+  delay?: number
+  onDone: () => void
+}) {
+  return sides.map(({ side, delay: sideDelay }) => {
+    const vertical = side === 'top' || side === 'bottom'
+    const sign = side === 'top' || side === 'left' ? -1 : 1
+    const path = BULGE.map((out) => out * sign * Math.min(1, jelly))
+    return (
+      <motion.span
+        key={side}
+        className="modal__bulge"
+        data-side={side}
+        onAnimationComplete={onDone}
+        initial={{ x: 0, y: 0, opacity: 1 }}
+        animate={{
+          x: vertical ? 0 : path,
+          y: vertical ? path : 0,
+          // Alla fine sparisce: da fermo coprirebbe il bordo sottile della scheda
+          opacity: [1, 1, 1, 1, 0],
+          transition: m.t({ duration: 0.85, delay: delay + sideDelay, times: BULGE_TIMES, ease: 'easeInOut' }),
+        }}
+        exit={{ opacity: 0, transition: { duration: 0 } }}
+      />
+    )
+  })
+}
+
 /*
  * Il fondo della scheda è un blob in un filtro goo, separato dal contenuto (che resta
- * nitido e non passa dal filtro). Apertura: un'ellisse piccola si gonfia con un rimbalzo
- * e si squadra, le gocce schizzano dal centro verso i bordi e ci si fondono dentro.
- * Chiusura: lo stesso movimento al contrario, senza gocce: la scheda si gonfia appena,
- * si arrotonda in una goccia e si sgonfia fino a sparire.
+ * nitido e non passa dal filtro). Apertura: una pillola piccola si gonfia come gelatina,
+ * con larghezza e altezza che rimbalzano fuori fase, e si squadra nello stesso tempo
+ * (angoli sulla stessa molla della scala). Intanto i lati ondeggiano: un rigonfiamento
+ * al centro di ciascuno esce e rientra un paio di volte, fuso dal goo con la scheda.
+ * Chiusura: lo stesso movimento al contrario: la scheda si gonfia appena, si arrotonda
+ * in una goccia e si sgonfia fino a sparire.
  */
-function ModalBlob({ m }: { m: GloopMotion }) {
+function ModalBlob({ m, jelly }: { m: GloopMotion; jelly: number }) {
+  // Con jelly a 0 i lati restano fermi
+  const sides = jellySides(jelly)
+  const ref = useRef<HTMLDivElement>(null)
   const filterId = useId()
   // Il filtro goo serve solo mentre la forma si muove: da ferma la scheda è un rettangolo
   // e il filtro su un'area così grande costerebbe a ogni repaint (anche durante lo scroll)
   const [settled, setSettled] = useState(false)
   const isPresent = useIsPresent()
   const gooey = !settled || !isPresent
+  // Scala e lati finiscono in momenti diversi: il filtro si toglie quando hanno finito tutti
+  const pending = useRef(1 + sides.length)
+  const done = () => {
+    if (--pending.current === 0 && isPresent) setSettled(true)
+  }
+  // Dimensioni della scheda: la pillola iniziale ha il raggio pari a metà del lato corto
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null)
+  useLayoutEffect(() => {
+    if (m.reduced) return
+    const r = ref.current!.getBoundingClientRect()
+    pending.current = 1 + sides.length
+    setSize({ w: r.width, h: r.height })
+  }, [m.reduced, sides.length])
 
-  // Movimento ridotto: niente goo né gocce, il fondo compare in dissolvenza
+  // Movimento ridotto: niente goo né rimbalzi, il fondo compare in dissolvenza
   if (m.reduced) {
     return (
       <motion.div
@@ -138,8 +247,12 @@ function ModalBlob({ m }: { m: GloopMotion }) {
     )
   }
 
+  if (!size) return <div ref={ref} className="modal__blob" aria-hidden="true" />
+  const pill = Math.min(size.w, size.h) / 2
+
   return (
     <div
+      ref={ref}
       className="modal__blob"
       aria-hidden="true"
       data-settled={!gooey || undefined}
@@ -148,17 +261,19 @@ function ModalBlob({ m }: { m: GloopMotion }) {
       <GooFilter id={filterId} blur={14} color="var(--modal-surface)" />
       <motion.div
         className="modal__blob-shape"
-        onAnimationComplete={() => isPresent && setSettled(true)}
-        initial={{ scaleX: 0.16, scaleY: 0.2, borderRadius: ROUND, opacity: 0 }}
+        onAnimationComplete={done}
+        initial={{ scaleX: 0.16, scaleY: 0.2, borderRadius: pill, opacity: 0 }}
         animate={{
           scaleX: 1,
           scaleY: 1,
           borderRadius: RADIUS,
           opacity: 1,
           transition: m.t({
-            ...swell,
-            // Si squadra quando è quasi gonfia: resta una goccia più a lungo
-            borderRadius: { duration: 0.5, ease: [0.5, 0, 0.2, 1] },
+            // Gelatina: molle diverse per larghezza e altezza, oscillano fuori fase
+            scaleX: jellySpring(JELLY_X, jelly),
+            scaleY: jellySpring(JELLY_Y, jelly),
+            // Angoli insieme alla scala, senza rimbalzo (sotto RADIUS diventerebbero spigoli)
+            borderRadius: { type: 'spring', stiffness: 300, damping: 32 },
             opacity: { duration: 0.08 },
           }),
         }}
@@ -167,7 +282,7 @@ function ModalBlob({ m }: { m: GloopMotion }) {
         exit={{
           scaleX: [1, 1.03, 0.16],
           scaleY: [1, 1.04, 0.2],
-          borderRadius: [RADIUS, RADIUS, ROUND],
+          borderRadius: [RADIUS, RADIUS, pill],
           opacity: [1, 1, 0],
           transition: m.t({
             duration: 0.42,
@@ -178,51 +293,162 @@ function ModalBlob({ m }: { m: GloopMotion }) {
             opacity: { duration: 0.42, delay: 0.04, times: [0, 0.82, 1] },
           }),
         }}
-      />
-      {DROPS.map((drop, i) => {
-        // La traccia è grande quanto la scheda: le percentuali di x/y sono quelle della scheda
-        const fromCenter = { x: `${50 - drop.x}%`, y: `${50 - drop.y}%` }
-        return (
+      >
+        <JellySides m={m} sides={sides} jelly={jelly} onDone={done} />
+      </motion.div>
+    </div>
+  )
+}
+
+/*
+ * enter="drop": una goccia parte dal pulsante che ha aperto il modal (o cade dall'alto se
+ * non c'è), vola verso il centro allungata dalla velocità, all'impatto si schiaccia e
+ * la scheda si allarga dalla goccia come una gelatina (larghezza e altezza rimbalzano
+ * fuori fase, i lati ondeggiano come in swell).
+ * Chiusura: la scheda si sgonfia nella goccia, che torna volando al pulsante.
+ */
+function DropBlob({ m, origin, jelly }: { m: GloopMotion; origin: Point | null; jelly: number }) {
+  const sides = jellySides(jelly)
+  const ref = useRef<HTMLDivElement>(null)
+  const filterId = useId()
+  const [settled, setSettled] = useState(false)
+  const isPresent = useIsPresent()
+  const gooey = !settled || !isPresent
+  // Scala e lati finiscono in momenti diversi: il filtro si toglie quando hanno finito tutti
+  const pending = useRef(1 + sides.length)
+  const done = () => {
+    if (--pending.current === 0 && isPresent) setSettled(true)
+  }
+  const [geo, setGeo] = useState<{
+    from: { x: number; y: number }
+    w: number
+    h: number
+    region: { x: number; y: number; width: number; height: number }
+  } | null>(null)
+
+  // Prima del primo frame: posizione della scheda e del pulsante (il focus non si è ancora spostato)
+  useLayoutEffect(() => {
+    const r = ref.current!.getBoundingClientRect()
+    const cx = r.left + r.width / 2
+    const cy = r.top + r.height / 2
+    pending.current = 1 + sides.length
+    setGeo({
+      from: origin ? { x: origin.x - cx, y: origin.y - cy } : fallFrom(),
+      w: r.width,
+      h: r.height,
+      // Il filtro copre tutta la finestra: la goccia vola anche fuori dalla scheda
+      region: { x: -r.left - 40, y: -r.top - 40, width: innerWidth + 80, height: innerHeight + 80 },
+    })
+    // origin resta lo stesso per tutta l'apertura: in pratica si misura una volta sola
+  }, [origin, sides.length])
+
+  if (!geo) return <div ref={ref} className="modal__blob" aria-hidden="true" />
+
+  const { from, w, h } = geo
+  const dist = Math.hypot(from.x, from.y)
+  const fly = flightTime(dist)
+  const stretch = flightStretch(dist)
+  // Più si allunga, più si assottiglia (il volume resta circa lo stesso)
+  const thin = 1.3 / stretch
+  // Direzione del volo (dal pulsante al centro): la goccia si allunga lungo questa
+  const angle = (Math.atan2(-from.y, -from.x) * 180) / Math.PI
+  // La scheda parte (e torna) grande quanto la goccia, tonda
+  const sx = FLY_SIZE / w
+  const sy = FLY_SIZE / h
+  const round = Math.max(w, h) / 2
+  const flyIn = fly + 0.2
+  const impact = fly / flyIn
+  // Chiusura: sgonfiamento (come swell), poi il volo di ritorno
+  const deflate = 0.46
+  const flyOut = deflate + fly * 1.3
+  const leave = deflate / flyOut
+
+  return (
+    <div
+      ref={ref}
+      className="modal__blob"
+      aria-hidden="true"
+      data-settled={!gooey || undefined}
+      style={gooey ? { filter: `url(#${CSS.escape(filterId)})` } : undefined}
+    >
+      <GooFilter id={filterId} blur={14} color="var(--modal-surface)" region={geo.region} />
+      <motion.div
+        className="modal__blob-shape"
+        onAnimationComplete={done}
+        initial={{ scaleX: sx, scaleY: sy, borderRadius: round, opacity: 0 }}
+        animate={{
+          scaleX: 1,
+          scaleY: 1,
+          borderRadius: RADIUS,
+          opacity: 1,
+          // Gelatina: larghezza e altezza con molle diverse, oscillano fuori fase
+          transition: m.t({
+            scaleX: jellySpring(JELLY_X, jelly, fly),
+            scaleY: jellySpring(JELLY_Y, jelly, fly + 0.03),
+            borderRadius: { duration: 0.55, delay: fly + 0.05, ease: [0.5, 0, 0.2, 1] },
+            opacity: { duration: 0.01, delay: fly },
+          }),
+        }}
+        exit={{
+          scaleX: [1, 1.03, sx],
+          scaleY: [1, 1.04, sy],
+          borderRadius: [RADIUS, RADIUS, round],
+          opacity: [1, 1, 0],
+          transition: m.t({
+            duration: 0.42,
+            delay: 0.04,
+            times: [0, 0.22, 1],
+            ease: ['easeOut', [0.55, 0, 0.75, 0.2]],
+            borderRadius: { duration: 0.42, delay: 0.04, times: [0, 0.3, 1], ease: ['linear', [0.4, 0, 0.6, 1]] },
+            opacity: { duration: 0.42, delay: 0.04, times: [0, 0.96, 1] },
+          }),
+        }}
+      >
+        {/* Dopo l'impatto i lati ondeggiano come nella gelatina di swell */}
+        <JellySides m={m} sides={sides} jelly={jelly} delay={fly - 0.02} onDone={done} />
+      </motion.div>
+
+      {/* La goccia in volo: fuori lo spostamento, dentro la rotazione e lo stiramento */}
+      <motion.span
+        className="modal__fly modal__fly--carrier"
+        style={{ '--drop-size': `${FLY_SIZE}px` } as CSSProperties}
+        initial={{ x: from.x, y: from.y }}
+        // Parte subito veloce e arriva ancora lanciata: l'impatto si sente
+        animate={{ x: 0, y: 0, transition: m.t({ duration: fly, ease: [0.3, 0.2, 0.7, 1] }) }}
+        exit={{
+          x: [0, 0, from.x],
+          y: [0, 0, from.y],
+          transition: m.t({ duration: flyOut, times: [0, leave, 1], ease: ['linear', [0.3, 0, 0.6, 1]] }),
+        }}
+      >
+        {/*
+          Rotazione su un elemento a parte: Motion scrive scaleX(...) rotate(...) nello stesso
+          transform, cioè ruota e poi stira lungo l'asse dello schermo (sempre in orizzontale).
+          Così invece lo stiramento avviene lungo la direzione del volo.
+        */}
+        <span className="modal__fly-rotor" style={{ transform: `rotate(${angle}deg)` }}>
           <motion.span
-            key={i}
-            className="modal__drop-track"
-            initial={fromCenter}
+            className="modal__fly-body"
+            // Si allunga subito (velocità), resta tesa in volo, all'impatto si schiaccia e si scioglie
+            initial={{ scaleX: 0.6, scaleY: 0.6 }}
             animate={{
-              x: '0%',
-              y: '0%',
+              scaleX: [0.6, stretch, stretch, 0.55, 0],
+              scaleY: [0.6, thin, thin, 1.5, 0],
               transition: m.t({
-                duration: 0.55,
-                delay: i * 0.02,
-                ease: [0.2, 0.9, 0.3, 1],
+                duration: flyIn,
+                times: [0, impact * 0.3, impact * 0.85, impact, 1],
+                ease: ['easeOut', 'linear', 'easeOut', 'easeIn'],
               }),
             }}
-          >
-            <motion.span
-              className="modal__drop"
-              // Dimensione e posizione le calcola il CSS: restano dentro la scheda anche se è piccola
-              style={
-                {
-                  '--drop-x': `${drop.x}%`,
-                  '--drop-y': `${drop.y}%`,
-                  '--drop-size': `${drop.size}px`,
-                } as CSSProperties
-              }
-              // Gonfie a metà strada, poi si sciolgono nel bordo
-              initial={{ scale: 0.3 }}
-              animate={{
-                scale: [0.3, 1, 0],
-                transition: m.t({
-                  duration: 0.7,
-                  delay: i * 0.02,
-                  times: [0, 0.55, 1],
-                }),
-              }}
-              // In chiusura le gocce non si vedono: si sgonfia solo la scheda
-              exit={{ scale: 0, transition: { duration: 0 } }}
-            />
-          </motion.span>
-        )
-      })}
+            exit={{
+              scaleX: [0, 0, 1, stretch * 0.95, 0.5],
+              scaleY: [0, 0, 1, thin, 0.5],
+              transition: m.t({ duration: flyOut, times: [0, leave - 0.04, leave, (leave + 1) / 2, 1] }),
+            }}
+          />
+        </span>
+      </motion.span>
+
     </div>
   )
 }
@@ -248,6 +474,8 @@ function Modal({
   actionsAlign = 'end',
   footer,
   size = 'md',
+  enter = 'swell',
+  jelly = 0.5,
   closeOnBackdrop = true,
   closeOnEscape = true,
   afterClose,
@@ -266,6 +494,16 @@ function Modal({
   const titleId = useId()
   // onClose arriva spesso inline (nuova a ogni render): l'effetto sotto la legge da qui,
   // altrimenti ripartirebbe a ogni tasto premuto in un input e il focus salterebbe via
+  // enter="drop": il punto da cui parte la goccia, letto una volta quando il modal si apre
+  // (prima che il focus si sposti). Serve anche a ritardare il contenuto fino all'impatto
+  // (stato aggiornato durante il render, il pattern di React per derivare da un cambio di prop)
+  const [wasOpen, setWasOpen] = useState(false)
+  const [origin, setOrigin] = useState<Point | null>(null)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open && enter === 'drop' && typeof document !== 'undefined') setOrigin(openerPoint())
+  }
+
   const latest = useRef({ onClose, closeOnEscape })
   useEffect(() => {
     latest.current = { onClose, closeOnEscape }
@@ -358,6 +596,14 @@ function Modal({
   } as CSSProperties
 
   // Il contenuto arriva quando la goccia ha quasi preso forma
+  const lag =
+    enter === 'drop' && open
+      ? flightTime(
+          origin
+            ? Math.hypot(origin.x - innerWidth / 2, origin.y - innerHeight / 2)
+            : Math.hypot(fallFrom().x, fallFrom().y),
+        ) + 0.12
+      : 0
   const reveal = (delay: number) => ({
     initial: { opacity: 0, y: 6, filter: 'blur(4px)' },
     animate: {
@@ -366,7 +612,7 @@ function Modal({
       filter: 'blur(0px)',
       transition: m.t({
         duration: 0.25,
-        delay,
+        delay: delay + lag,
         ease: [0.23, 1, 0.32, 1] as const,
       }),
     },
@@ -408,7 +654,11 @@ function Modal({
                   data-no-header={!hasHeader || undefined}
                   data-no-footer={!hasFooter || undefined}
                 >
-                  <ModalBlob m={m} />
+                  {enter === 'drop' && !m.reduced ? (
+                    <DropBlob m={m} origin={origin} jelly={jelly} />
+                  ) : (
+                    <ModalBlob m={m} jelly={jelly} />
+                  )}
 
                   {hasHeader && (
                     <motion.header className="modal__header" {...reveal(0.2)}>
@@ -473,10 +723,10 @@ function Modal({
                                 opacity: 1,
                                 transition: m.t({
                                   ...drip,
-                                  delay: 0.24 + i * 0.05,
+                                  delay: lag + 0.24 + i * 0.05,
                                   opacity: {
                                     duration: 0.1,
-                                    delay: 0.24 + i * 0.05,
+                                    delay: lag + 0.24 + i * 0.05,
                                   },
                                 }),
                               }}

@@ -1,26 +1,39 @@
-/* Sempre montato (regione live): non intercetta il puntatore, solo il toast sì */
-.toast-layer {
+/*
+ * Pila condivisa dai Toast con lo stesso bordo e allineamento: quelli aperti insieme si
+ * mettono in fila invece di sovrapporsi. L'ordine (style.order) mette il più recente
+ * contro il bordo, da dove cola la goccia. Vuota non intercetta il puntatore.
+ */
+.toast-stack {
   position: fixed;
   z-index: 120;
   inset-inline: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   padding: var(--toast-offset) 16px;
   pointer-events: none;
   /* Spazio dal bordo e goccia: devono coincidere con OFFSET e DROP in Toast.tsx */
   --toast-offset: 16px;
   --toast-drop: 28px;
   --toast-source: 48px;
-  --toast-surface: var(--ui-surface, color-mix(in srgb, var(--ui-bg), var(--ui-fg) 6%));
-  --toast-divider: color-mix(in srgb, var(--ui-fg) 10%, transparent);
+  --toast-gap: 10px;
 
+  /* In alto il più recente (order più alto) sta in cima */
   &[data-position='top'] {
     top: 0;
+    flex-direction: column-reverse;
   }
 
   &[data-position='bottom'] {
     bottom: 0;
   }
+}
+
+/* Una per Toast, sempre montata (regione live). Chiusa è vuota e non occupa spazio */
+.toast-layer {
+  /* Per lo z-index (inline): l'ordine di disegno segue l'apertura, non il DOM */
+  position: relative;
+  display: flex;
+  justify-content: center;
 
   &[data-align='start'] {
     justify-content: flex-start;
@@ -36,8 +49,60 @@
   /* Il fondo liquido (z-index -1) resta sotto il contenuto */
   isolation: isolate;
   max-width: min(420px, 100%);
-  color: var(--ui-fg);
+  color: var(--toast-fg, var(--ui-fg));
   pointer-events: auto;
+  /*
+   * Dichiarate qui e non sul layer: il toast riceve i --ui-* del punto in cui è usato
+   * (useThemeVars), e le variabili derivate vanno calcolate dove ci sono
+   */
+  --toast-surface: var(--ui-surface, color-mix(in srgb, var(--ui-bg), var(--ui-fg) 6%));
+  --toast-divider: color-mix(in srgb, var(--ui-fg) 10%, transparent);
+  --toast-icon: var(--ui-accent);
+  --toast-close-bg: var(--ui-bg);
+
+  /*
+   * Varianti colorate: il colore riempie tutto il blob (bordo, goccia e pillola, anche nel
+   * filtro goo, che legge --toast-surface). Si cambiano dal tema con --ui-info, --ui-success,
+   * --ui-warning, --ui-error. Testo e icone in contrasto AA sul colore pieno.
+   */
+  &[data-variant='info'] {
+    --toast-color: var(--ui-info, #2563eb);
+  }
+
+  &[data-variant='success'] {
+    --toast-color: var(--ui-success, #15803d);
+  }
+
+  &[data-variant='warning'] {
+    --toast-color: var(--ui-warning, #f59e0b);
+  }
+
+  &[data-variant='error'] {
+    --toast-color: var(--ui-error, #dc2626);
+  }
+
+  /* Spazio tra toast impilati, dal lato lontano dal bordo */
+  [data-position='top'] > & {
+    margin-bottom: var(--toast-gap);
+  }
+
+  [data-position='bottom'] > & {
+    margin-top: var(--toast-gap);
+  }
+
+  /* Il colore custom (--toast-color inline) vale anche sopra una variante */
+  &:not([data-variant='default']),
+  &[data-custom-color] {
+    --toast-surface: var(--toast-color);
+    --toast-fg: #fff;
+    --toast-icon: currentColor;
+    --toast-close-bg: color-mix(in srgb, currentColor 18%, transparent);
+  }
+
+  /* Il warning è chiaro: testo scuro anche quando la regola sopra rimette il bianco */
+  &[data-variant='warning']:not([data-custom-color]) {
+    --toast-fg: #1c1917;
+  }
 }
 
 /* Fondo liquido: bordo, goccia e pillola passano dal filtro goo, il contenuto no */
@@ -101,7 +166,7 @@
   display: grid;
   flex: none;
   place-items: center;
-  color: var(--ui-accent);
+  color: var(--toast-icon);
 
   & svg {
     width: 20px;
@@ -142,8 +207,8 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  color: var(--ui-fg);
-  background: var(--ui-bg);
+  color: inherit;
+  background: var(--toast-close-bg);
   cursor: pointer;
 
   & svg {

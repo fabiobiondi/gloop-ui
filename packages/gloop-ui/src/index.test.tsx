@@ -743,6 +743,110 @@ describe('Toast', () => {
     expect(document.querySelector('.toast__shape')).not.toBeNull()
   })
 
+  it('fills the blob with the variant color and shows its default icon', () => {
+    render(
+      <Toast open onClose={() => {}} variant="success">
+        Saved
+      </Toast>,
+    )
+    const toast = document.querySelector<HTMLElement>('.toast')!
+    expect(toast.dataset.variant).toBe('success')
+    expect(toast.querySelector('.toast__icon svg')).not.toBeNull()
+    expect(screen.getByRole('status')).toBeTruthy()
+  })
+
+  it('announces errors assertively', () => {
+    render(
+      <Toast open onClose={() => {}} variant="error">
+        Upload failed
+      </Toast>,
+    )
+    const region = screen.getByRole('alert')
+    expect(region.getAttribute('aria-live')).toBe('assertive')
+    expect(region.textContent).toContain('Upload failed')
+  })
+
+  it('applies a custom color and hides the icon with icon={null}', () => {
+    render(
+      <Toast open onClose={() => {}} variant="info" color="#7c3aed" icon={null}>
+        Custom
+      </Toast>,
+    )
+    const toast = document.querySelector<HTMLElement>('.toast')!
+    expect(toast.style.getPropertyValue('--toast-color')).toBe('#7c3aed')
+    expect(toast.hasAttribute('data-custom-color')).toBe(true)
+    expect(toast.querySelector('.toast__icon')).toBeNull()
+  })
+
+  it('stacks toasts open at the same time, the newest against the edge', () => {
+    const { rerender } = render(
+      <>
+        <Toast open onClose={() => {}}>
+          First
+        </Toast>
+        <Toast open={false} onClose={() => {}}>
+          Second
+        </Toast>
+      </>,
+    )
+    rerender(
+      <>
+        <Toast open onClose={() => {}}>
+          First
+        </Toast>
+        <Toast open onClose={() => {}}>
+          Second
+        </Toast>
+      </>,
+    )
+    const stacks = document.querySelectorAll('.toast-stack[data-position="top"][data-align="center"]')
+    expect(stacks).toHaveLength(1)
+    const [first, second] = screen.getAllByRole('status')
+    expect(first.parentElement).toBe(stacks[0])
+    expect(second.parentElement).toBe(stacks[0])
+    // In alto la pila è column-reverse: order più alto = più vicino al bordo
+    expect(Number(second.style.order)).toBeGreaterThan(Number(first.style.order))
+  })
+
+  it('mounts a fresh toast on every opening, measured on the new content', () => {
+    const { rerender } = render(
+      <Toast open onClose={() => {}} variant="success">
+        Saved
+      </Toast>,
+    )
+    const first = document.querySelector('.toast')
+    rerender(
+      <Toast open={false} onClose={() => {}} variant="success">
+        Saved
+      </Toast>,
+    )
+    rerender(
+      <Toast open onClose={() => {}} variant="warning">
+        Storage almost full
+      </Toast>,
+    )
+    const toasts = document.querySelectorAll<HTMLElement>('.toast')
+    const latest = toasts[toasts.length - 1]
+    expect(latest).not.toBe(first)
+    expect(latest.dataset.variant).toBe('warning')
+    expect(latest.textContent).toContain('Storage almost full')
+  })
+
+  it('uses a separate stack per position', () => {
+    render(
+      <>
+        <Toast open onClose={() => {}}>
+          Top
+        </Toast>
+        <Toast open onClose={() => {}} position="bottom" align="end">
+          Bottom
+        </Toast>
+      </>,
+    )
+    expect(screen.getByText('Top').closest('.toast-stack')?.getAttribute('data-position')).toBe('top')
+    expect(screen.getByText('Bottom').closest('.toast-stack')?.getAttribute('data-align')).toBe('end')
+  })
+
   it('renders the liquid blob with full motion', () => {
     render(
       <Toast open onClose={() => {}} reducedMotion="never">

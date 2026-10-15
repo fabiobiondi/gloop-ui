@@ -14,7 +14,7 @@ export { default as Dialog } from './components/Dialog'
 export type { DialogProps, DialogAction } from './components/Dialog'
 
 export { default as Modal } from './components/Modal'
-export type { ModalProps, ModalAction, ModalSize } from './components/Modal'
+export type { ModalProps, ModalAction, ModalSize, ModalEnter } from './components/Modal'
 export { default as ModalProvider } from './components/ModalProvider'
 export type { ModalProviderProps } from './components/ModalProvider'
 export { useModal } from './components/modal-context'
@@ -71,7 +71,7 @@ export { default as ShapeEditor } from './components/shape-toolbar/ShapeEditor'
 export type { ShapeEditorProps } from './components/shape-toolbar/ShapeEditor'
 
 export { default as Toast } from './components/Toast'
-export type { ToastProps, ToastPosition } from './components/Toast'
+export type { ToastProps, ToastPosition, ToastVariant } from './components/Toast'
 
 export { default as Tooltip } from './components/Tooltip'
 export type { TooltipProps } from './components/Tooltip'

@@ -1,5 +1,18 @@
 # gloop-ui
 
+## 0.4.0
+
+### Minor Changes
+
+- 897df3a: Global motion settings. `GloopMotionProvider` sets the speed (`speed`), the character (`motion`: `'gloop' | 'smooth' | 'snappy'`), on/off (`animated`) and reduced-motion handling (`reducedMotion`: `'user' | 'always' | 'never'`) of every component inside it. Every component accepts the same props to override the provider. `speed` on `ProgressBar` and `GloopLoading` now scales all their animations, not only the loop.
+- d72ce0a: New `Modal`: a full-size modal that opens as a soft blob of jelly — the card swells with width and height bouncing out of phase while its sides wobble — and deflates back into a drop when it closes. Optional title (string or JSX) with close button, content that adapts to the available height and scrolls, and an optional footer with buttons (`actions`, ExpandButton) and/or custom JSX (`footer`). Sizes `sm | md | lg | full`; opening animation `enter` (`swell`, or `drop`: a drop flies out of the button that opened it, faster and more stretched the farther it comes from, squashes in the middle and spreads into the card, then flies back on close); how much it wobbles with `jelly` (0–1, default 0.5); `closeOnBackdrop`, `closeOnEscape`, `afterClose`, backdrop color/opacity/blur. Open it programmatically with `useModal().open(options)` inside a `ModalProvider`: the handle has `close(result)`, `update(options)` and a `result` promise that resolves with the `value` of the button pressed.
+- 2921dbd: TabBar: `orientation="vertical"` for a column of tabs (fixed bars pin to the left edge), and a liquid rollover pill that follows the cursor. TabMenuMotion gets the same rollover pill.
+- 192448b: `TabMenu`: new `animation` prop (`'slide' | 'pop' | 'bounce'`, default `'slide'`). With `'pop'` the liquid drop reaches out from the "×" first, then the bar pops open from its center toward the sides with a slight bounce, tabs cascading from the center. `'bounce'` opens like pop, with a back-out ease on its width: it overshoots its size, then settles.
+  
+  `TabMenu`: new `iconOnly` (tabs show only their icon, the label stays as accessible name) and `tabGap` (space between icons in px, default 50, down to 0) props.
+- 2921dbd: `TabMenuSubmenu` merged into `TabMenuMotion`: tabs accept optional `items` to open a sub-menu, plus the `attached` prop. Without `items` the bar stays a `tablist`. Switching between sub-menus, the liquid neck slides from one tab to the other instead of popping out and back in.
+- 78ea004: `Toast`: new toast that drips from the screen edge as a liquid drop and swells into a pill; auto-dismiss with pause on hover and focus, top/bottom positions, start/center/end alignment, `variant` (info, success, warning, error) and custom `color` that fill the whole blob, toasts open at the same time stack (newest against the edge, the others slide away), reduced-motion fallback.
+
 ## 0.3.0
 
 ### Minor Changes

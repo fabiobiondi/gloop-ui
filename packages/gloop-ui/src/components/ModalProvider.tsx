@@ -1,4 +1,4 @@
-import { useMemo, useReducer, useRef, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import Modal from './Modal'
 import { GloopMotionProvider, type MotionProps } from './motion'
 import { ModalContext, type ModalApi, type ModalHandle, type ModalOptions } from './modal-context'
@@ -20,7 +20,9 @@ export type ModalProviderProps = { children?: ReactNode } & MotionProps
 function ModalProvider({ children, ...motionProps }: ModalProviderProps) {
   const entries = useRef(new Map<number, Entry>())
   const nextId = useRef(0)
-  const [, rerender] = useReducer((n: number) => n + 1, 0)
+  // Le voci vivono nel ref (le leggono gli handle), il render usa una copia nello stato
+  const [list, setList] = useState<[number, Entry][]>([])
+  const rerender = () => setList([...entries.current])
 
   const api = useMemo<ModalApi>(() => {
     function open<T>(options: ModalOptions<T>): ModalHandle<T> {
@@ -65,7 +67,7 @@ function ModalProvider({ children, ...motionProps }: ModalProviderProps) {
     <ModalContext.Provider value={api}>
       {children}
       <GloopMotionProvider {...motionProps}>
-        {[...entries.current].map(([id, { options, open, handle }]) => {
+        {list.map(([id, { options, open, handle }]) => {
           const { content, footer, actions, afterClose, onClose: _onClose, ...props } = options
           return (
             <Modal

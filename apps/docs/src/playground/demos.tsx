@@ -16,7 +16,7 @@ import {
 } from 'gloop-ui'
 import { CircleMenuContextDemo, CircleMenuPanelsDemo } from './CircleMenuPanels'
 import DialogDemo, { DialogFormDemo } from './DialogDemo'
-import ToastDemo from './ToastDemo'
+import ToastDemo, { ToastVariantsDemo } from './ToastDemo'
 import ModalDemo, { LOREM, ModalCustomFooterDemo, ModalProgrammaticDemo } from './ModalDemo'
 import { ControlledSliderDemo } from './SliderDemo'
 import { GloopLoadingPlayground } from './GloopLoadingDemo'
@@ -977,6 +977,54 @@ function invite() {
 </Modal>`,
       },
       {
+        title: 'Entrance · swell vs drop',
+        description:
+          'enter="drop": a drop flies out of the button you clicked, splats in the middle and spreads into the card like jelly. On close it flies back to the button. Default is "swell".',
+        preview: (
+          <div className="md-row">
+            <ModalDemo
+              trigger="Swell"
+              size="sm"
+              title="Swell"
+              body={<p>One drop that swells into the card.</p>}
+              actions={[{ label: 'Close', icon: XIcon }]}
+            />
+            <ModalDemo
+              trigger="Drop · small"
+              size="sm"
+              enter="drop"
+              title="Drop"
+              body={<p>It came out of the button you clicked.</p>}
+              actions={[{ label: 'Close', icon: XIcon }]}
+            />
+            <ModalDemo
+              trigger="Drop · large"
+              enter="drop"
+              title="What's new in 0.4"
+              body={LOREM}
+              actions={[{ label: 'Close', icon: XIcon }]}
+            />
+          </div>
+        ),
+        code: `<Modal open={open} onClose={() => setOpen(false)} enter="drop" title="Drop">
+  <p>It came out of the button you clicked.</p>
+</Modal>`,
+      },
+      {
+        title: 'Jelly · 0, 0.5 (default), 1',
+        description: 'jelly sets how much the card wobbles when it opens: bounce of width and height, and wavy sides.',
+        preview: (
+          <div className="md-row">
+            <ModalDemo trigger="Jelly 0" size="sm" jelly={0} title="Jelly 0" body={<p>No bounce, still sides.</p>} />
+            <ModalDemo trigger="Jelly 0.5" size="sm" title="Jelly 0.5" body={<p>The default: a soft wobble.</p>} />
+            <ModalDemo trigger="Jelly 1" size="sm" jelly={1} title="Jelly 1" body={<p>Wide bounces, wavy sides.</p>} />
+          </div>
+        ),
+        code: `<Modal open={open} onClose={() => setOpen(false)} jelly={1} title="Jelly 1">
+  <p>Wide bounces, wavy sides.</p>
+</Modal>`,
+      },
+      {
         title: 'Custom footer',
         description:
           'footer takes any JSX; with actions it sits on the left. An onClick that returns false keeps the modal open: Accept waits for the checkbox.',
@@ -1110,6 +1158,32 @@ handle.close()`,
 <Toast open={open} onClose={() => setOpen(false)} title="Saved" icon={CheckIcon}>
   Your changes are live.
 </Toast>`,
+      },
+      {
+        title: 'Variants · custom color',
+        description:
+          'info, success, warning and error fill the whole liquid blob and bring their own icon (icon={null} removes it). color takes any CSS color and wins over variant. Errors are announced right away (role="alert").',
+        preview: <ToastVariantsDemo />,
+        code: `<Toast open={open} onClose={close} variant="success" title="Saved">
+  Your changes are live.
+</Toast>
+
+<Toast open={open} onClose={close} variant="error" title="Upload failed">
+  Check your connection and retry.
+</Toast>
+
+// Any CSS color
+<Toast open={open} onClose={close} color="#7c3aed" title="Custom color">
+  Any CSS color via color.
+</Toast>
+
+/* Theme the variant colors */
+:root {
+  --ui-info: #2563eb;
+  --ui-success: #15803d;
+  --ui-warning: #f59e0b;
+  --ui-error: #dc2626;
+}`,
       },
       {
         title: 'From the bottom · persistent',
@@ -2105,6 +2179,59 @@ import {
 />`,
       },
       {
+        title: 'Vertical',
+        description:
+          'orientation="vertical" stacks the tabs in a column and the pill slides up and down. Works with both layouts; fixed bars are pinned to the left edge.',
+        stage: { minHeight: 280 },
+        preview: (
+          <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+            <TabBar
+              orientation="vertical"
+              position="static"
+              enterFrom={false}
+              tabs={[
+                { icon: HomeIcon, label: 'Home' },
+                { icon: SearchIcon, label: 'Search' },
+                { icon: HeartIcon, label: 'Saved' },
+                { icon: UserIcon, label: 'Profile' },
+              ]}
+            />
+            <TabBar
+              orientation="vertical"
+              layout="inline"
+              position="static"
+              enterFrom={false}
+              tabs={[
+                { icon: HomeIcon, label: 'Home', value: 3 },
+                { icon: FolderIcon, label: 'Projects', value: 3 },
+                { icon: LinkIcon, label: 'Links', value: 2 },
+              ]}
+            />
+          </div>
+        ),
+        code: `<TabBar
+  orientation="vertical"
+  position="static"
+  tabs={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    { icon: HeartIcon, label: 'Saved' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>
+
+<TabBar
+  orientation="vertical"
+  layout="inline"
+  position="static"
+  tabs={[
+    { icon: HomeIcon, label: 'Home', value: 3 },
+    { icon: FolderIcon, label: 'Projects', value: 3 },
+    { icon: LinkIcon, label: 'Links', value: 2 },
+  ]}
+/>`,
+      },
+      {
         title: 'Values as badges',
         description: 'In the default stacked layout the value becomes a small badge next to the icon.',
         stage: { minHeight: 220, device: true },
@@ -2176,59 +2303,6 @@ import {
         ),
         code: `<ExpandButton drip icon={HeartIcon} label="Added" activeColor="#e11d48" />
 <ExpandButton drip variant="action" label="Subscribe" activeColor="#2563eb" />`,
-/>`,
-      },
-      {
-        title: 'Vertical',
-        description:
-          'orientation="vertical" stacks the tabs in a column and the pill slides up and down. Works with both layouts; fixed bars are pinned to the left edge.',
-        stage: { minHeight: 280 },
-        preview: (
-          <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-            <TabBar
-              orientation="vertical"
-              position="static"
-              enterFrom={false}
-              tabs={[
-                { icon: HomeIcon, label: 'Home' },
-                { icon: SearchIcon, label: 'Search' },
-                { icon: HeartIcon, label: 'Saved' },
-                { icon: UserIcon, label: 'Profile' },
-              ]}
-            />
-            <TabBar
-              orientation="vertical"
-              layout="inline"
-              position="static"
-              enterFrom={false}
-              tabs={[
-                { icon: HomeIcon, label: 'Home', value: 3 },
-                { icon: FolderIcon, label: 'Projects', value: 3 },
-                { icon: LinkIcon, label: 'Links', value: 2 },
-              ]}
-            />
-          </div>
-        ),
-        code: `<TabBar
-  orientation="vertical"
-  position="static"
-  tabs={[
-    { icon: HomeIcon, label: 'Home' },
-    { icon: SearchIcon, label: 'Search' },
-    { icon: HeartIcon, label: 'Saved' },
-    { icon: UserIcon, label: 'Profile' },
-  ]}
-/>
-
-<TabBar
-  orientation="vertical"
-  layout="inline"
-  position="static"
-  tabs={[
-    { icon: HomeIcon, label: 'Home', value: 3 },
-    { icon: FolderIcon, label: 'Projects', value: 3 },
-    { icon: LinkIcon, label: 'Links', value: 2 },
-  ]}
       },
       {
         title: 'Drip on hover',
