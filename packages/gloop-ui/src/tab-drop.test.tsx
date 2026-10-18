@@ -87,10 +87,10 @@ describe('TabPop direction', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Menu' }))
     await user.click(screen.getByRole('button', { name: /Search/ }))
-    const panel = screen.getByRole('menu')
-    // Sotto il "+" (52px) e dopo un tab (52px)
-    expect(panel.style.top).toBe('104px')
-    expect(panel.style.width).toBe('200px')
+    // Il wrap del pannello porta posizione e larghezza: sotto il "+" (52px) e dopo un tab (52px)
+    const wrap = screen.getByRole('menu').parentElement!
+    expect(wrap.style.translate).toBe('0 104px')
+    expect(wrap.style.width).toBe('200px')
   })
 
   it('defaults keep the previous layouts', () => {

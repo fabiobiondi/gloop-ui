@@ -17,10 +17,8 @@ export const isVertical = (d: TabPopDirection) => d === 'top' || d === 'bottom'
 export const visualIndex = (i: number, count: number, d: TabPopDirection) => (d === 'top' ? count - 1 - i : i)
 
 /*
- * Animazione dei tab nelle tabbar che nascono dal "+": ogni tab viaggia su una goccia
- * (.tab-fab__drop, dietro lo sfondo della barra). All'apertura schizza dal "+"
- * verso il suo posto, più veloce della barra che si allarga: fuori dalla barra la goccia
- * si vede e il filtro goo la lega al resto.
+ * Animazione dei tab nelle tabbar che nascono dal "+": all'apertura ogni tab parte dal
+ * "+" e scorre al suo posto insieme alla barra che si allunga.
  * La distanza punta al centro del "+" com'era da chiuso: all'apertura Motion disegna la
  * barra partendo dal riquadro di prima (il solo "+"), quindi il punto di partenza è
  * mezzo "+" dall'inizio della barra, qualunque sia il lato. Misurata dall'inizio del
@@ -58,19 +56,6 @@ export function tabDrop(i: number, count: number, direction: TabPopDirection = '
     },
     exit: { opacity: 0, transition: { duration: 0 } },
   }
-}
-
-/*
- * Area del filtro goo delle barre che nascono dal "+", in px rispetto all'angolo del contenitore.
- * Simmetrica attorno al "+": in chiusura il riquadro del contenitore si riduce subito al "+",
- * mentre la barra disegnata (animazione di layout) è ancora lunga e si restringe verso di lui.
- * Un'area in percentuale seguirebbe il riquadro e taglierebbe la barra dal lato in cui cresce.
- * extra: margine in più su ogni lato (ombra, gocce, pannelli dei sottomenu).
- */
-export function barFilterRegion(count: number, extra = 60) {
-  const x = count * TAB_WIDTH + extra
-  const y = count * TAB_HEIGHT + extra
-  return { x: -x, y: -y, width: 2 * x + TRIGGER_SIZE, height: 2 * y + TRIGGER_SIZE }
 }
 
 // Feedback di pressione per il contenuto dei tab (vedi whileTap="pressed")

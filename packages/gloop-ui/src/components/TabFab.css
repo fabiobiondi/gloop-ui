@@ -38,48 +38,169 @@
 }
 
 .tab-fab {
-  /* Sopra le gocce (che sono in position: absolute) */
+  /* Contenitore dei pezzi dello sfondo e delle ombre (in position: absolute) */
   position: relative;
   display: inline-flex;
   align-items: center;
   height: 52px;
   color: var(--ui-fg);
-  /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
 }
 
 /*
- * Lo sfondo della barra: cresce dal "+" fino alla misura della barra aperta
- * (--tab-fab-w/h, dallo style) e torna nel "+" alla chiusura. Il layout cambia subito,
- * come in Motion; solo lo sfondo si anima, senza stirare tab e bordi.
+ * Sfondo della barra, in tre pezzi animati solo con transform (sulla GPU): il cerchio dal
+ * lato del "+" (cap), il tratto centrale che si allunga con scale (mid) e la testa che
+ * scorre con translate (cap--far). Stessa molla per tratto e testa: la pillola resta
+ * sempre intera, qualunque sia la sua lunghezza. Il contenitore è grande come la barra
+ * aperta (--bar-len × --bar-thick, dallo style), ancorato al "+": il layout cambia subito
+ * all'apertura, il "+" resta fermo. Da chiusa è tutto sotto il "+" e sparisce.
  */
-.tab-fab::before {
-  content: '';
+.tab-fab__bg,
+.tab-fab__shadows {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: var(--tab-fab-w, 52px);
-  height: var(--tab-fab-h, 52px);
-  border-radius: inherit;
-  background: var(--ui-bg);
-  transition:
-    width calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
-    height calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+  pointer-events: none;
 }
 
-.tab-fab[data-direction='right']::before {
-  right: auto;
+.tab-fab:is([data-direction='left'], [data-direction='right']) :is(.tab-fab__bg, .tab-fab__shadows) {
+  top: 0;
+  width: var(--bar-len);
+  height: 52px;
+}
+
+.tab-fab:is([data-direction='top'], [data-direction='bottom']) :is(.tab-fab__bg, .tab-fab__shadows) {
+  left: 50%;
+  width: var(--bar-thick);
+  height: var(--bar-len);
+  margin-left: calc(var(--bar-thick) / -2);
+}
+
+.tab-fab[data-direction='left'] :is(.tab-fab__bg, .tab-fab__shadows) {
+  right: 0;
+}
+
+.tab-fab[data-direction='right'] :is(.tab-fab__bg, .tab-fab__shadows) {
   left: 0;
 }
 
-.tab-fab:is([data-direction='top'], [data-direction='bottom'])::before {
-  right: auto;
-  left: 50%;
-  translate: -50% 0;
+.tab-fab[data-direction='top'] :is(.tab-fab__bg, .tab-fab__shadows) {
+  bottom: 0;
 }
 
-.tab-fab[data-direction='top']::before {
-  top: auto;
+.tab-fab[data-direction='bottom'] :is(.tab-fab__bg, .tab-fab__shadows) {
+  top: 0;
+}
+
+.tab-fab__bg-mid,
+.tab-fab__bg-cap {
+  position: absolute;
+  background: var(--ui-bg);
+}
+
+/* Cerchi alle estremità: larghi quanto la barra, alti come il "+" (in colonna 68 × 52) */
+.tab-fab__bg-cap {
+  width: var(--bar-thick);
+  height: 52px;
+  border-radius: 26px;
+}
+
+.tab-fab[data-direction='left'] .tab-fab__bg-cap {
+  top: 0;
+  right: 0;
+}
+
+.tab-fab[data-direction='right'] .tab-fab__bg-cap {
+  top: 0;
+  left: 0;
+}
+
+.tab-fab[data-direction='top'] .tab-fab__bg-cap {
   bottom: 0;
+  left: 0;
+}
+
+.tab-fab[data-direction='bottom'] .tab-fab__bg-cap {
+  top: 0;
+  left: 0;
+}
+
+/* Tratto centrale: dal centro del "+" al centro della testa, a barra aperta */
+.tab-fab:is([data-direction='left'], [data-direction='right']) .tab-fab__bg-mid {
+  top: 0;
+  width: calc(var(--bar-len) - 52px);
+  height: 100%;
+}
+
+.tab-fab:is([data-direction='top'], [data-direction='bottom']) .tab-fab__bg-mid {
+  left: 0;
+  width: 100%;
+  height: calc(var(--bar-len) - 52px);
+}
+
+.tab-fab[data-direction='left'] .tab-fab__bg-mid {
+  right: 26px;
+  transform-origin: 100% 50%;
+}
+
+.tab-fab[data-direction='right'] .tab-fab__bg-mid {
+  left: 26px;
+  transform-origin: 0 50%;
+}
+
+.tab-fab[data-direction='top'] .tab-fab__bg-mid {
+  bottom: 26px;
+  transform-origin: 50% 100%;
+}
+
+.tab-fab[data-direction='bottom'] .tab-fab__bg-mid {
+  top: 26px;
+  transform-origin: 50% 0;
+}
+
+/*
+ * Ombre: sotto tutto (z-index -1, la radice isola i livelli), così non cadono sulla barra.
+ * Quella del "+" c'è sempre; quella della barra compare a barra aperta e ferma, e lascia
+ * il posto a lei
+ */
+.tab-fab__shadows {
+  z-index: -1;
+
+  &::before,
+  & .tab-fab__shadow-bar {
+    content: '';
+    position: absolute;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
+  }
+
+  /* Il "+": all'estremità del contenitore, centrato sull'altro asse */
+  &::before {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+  }
+
+  & .tab-fab__shadow-bar {
+    inset: 0;
+    border-radius: 26px;
+  }
+}
+
+.tab-fab[data-direction='left'] .tab-fab__shadows::before {
+  top: 0;
+  right: 0;
+}
+
+.tab-fab[data-direction='right'] .tab-fab__shadows::before {
+  top: 0;
+  left: 0;
+}
+
+.tab-fab[data-direction='top'] .tab-fab__shadows::before {
+  bottom: 0;
+  left: calc(50% - 26px);
+}
+
+.tab-fab[data-direction='bottom'] .tab-fab__shadows::before {
+  top: 0;
+  left: calc(50% - 26px);
 }
 
 .tab-fab__tabs {
@@ -171,7 +292,7 @@
 }
 
 .tab-fab__trigger {
-  /* Sopra lo sfondo della barra (::before, in position: absolute) */
+  /* Sopra lo sfondo della barra (in position: absolute) */
   position: relative;
   display: grid;
   flex: none;
@@ -182,7 +303,8 @@
   border: 0;
   border-radius: 999px;
   color: inherit;
-  background: none;
+  /* Il cerchio del "+" è suo: da chiusa la barra non c'è */
+  background: var(--ui-bg);
   cursor: pointer;
 
   &:focus-visible {
@@ -216,75 +338,120 @@
   z-index: 1;
 }
 
-/* ---------- Effetto goo di apertura (goo.tsx) ---------- */
+/* ---------- Radice ---------- */
 
 .tab-fab-wrap {
   position: relative;
   display: inline-flex;
+  /* Livelli propri: le ombre (z-index -1) restano sotto barra e pannello, non sotto la pagina */
+  isolation: isolate;
 }
 
+/* SVG dei filtri goo (goo.tsx) degli altri componenti: fuori dal flusso */
 .goo-filter {
   position: absolute;
   width: 0;
   height: 0;
 }
 
-.goo-drop {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--ui-bg);
-}
-
-/*
- * Goccia sotto ogni tab: z-index -1 la porta dietro lo sfondo della barra,
- * quindi si vede solo quando il tab è fuori dalla barra (apertura e chiusura)
- */
-.tab-fab__drop {
-  position: absolute;
-  z-index: -1;
-  inset: 4px 12px;
-  border-radius: 50%;
-  background: var(--ui-bg);
-}
-
 /* ---------- Sottomenu (tab con items) ---------- */
 
-/* Il pannello è largo quanto la barra aperta e sta sopra di essa */
-.tab-fab__panel {
+/*
+ * Pannello del sottomenu: fuori (panel-wrap) movimento e posizione, dentro (panel) fondo,
+ * ombra e contenuto che scorre (overflow: hidden). Così il collo, figlio del wrap, si
+ * muove col pannello senza essere tagliato. In riga largo quanto la barra, sopra di lei.
+ */
+.tab-fab__panel-wrap {
   position: absolute;
-  /* Oltre ~12px il filtro goo non le fonde: da ferme barra e pannello restano staccati */
   bottom: calc(100% + 14px);
   left: 0;
   right: 0;
+}
+
+.tab-fab__panel {
+  position: relative;
   overflow: hidden;
   padding: 6px;
+  border-radius: 20px;
   color: var(--ui-fg);
   background: var(--ui-bg);
-  /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
 }
 
 /*
  * Lato del pannello (data-panel, scelto da TabFab.tsx in base allo spazio):
  * in riga sopra o sotto la barra; in colonna a destra o a sinistra, all'altezza del tab
- * (top e width arrivano dallo style)
+ * (translate e width arrivano dallo style)
  */
-.tab-fab-wrap[data-panel='bottom'] .tab-fab__panel {
+.tab-fab-wrap[data-panel='bottom'] .tab-fab__panel-wrap {
   top: calc(100% + 14px);
   bottom: auto;
 }
 
-.tab-fab-wrap:is([data-panel='left'], [data-panel='right']) .tab-fab__panel {
+.tab-fab-wrap:is([data-panel='left'], [data-panel='right']) .tab-fab__panel-wrap {
+  top: 0;
   bottom: auto;
   right: auto;
 }
 
-.tab-fab-wrap[data-panel='right'] .tab-fab__panel {
+.tab-fab-wrap[data-panel='right'] .tab-fab__panel-wrap {
   left: calc(100% + 14px);
 }
 
-.tab-fab-wrap[data-panel='left'] .tab-fab__panel {
+.tab-fab-wrap[data-panel='left'] .tab-fab__panel-wrap {
   left: auto;
   right: calc(100% + 14px);
+}
+
+/*
+ * Collo liquido tra tab e pannello: riempie i 14px di distacco, con i fianchi scavati da
+ * due cerchi (radial-gradient) di raggio metà distacco, tangenti a barra e pannello.
+ * Entra di 6px in entrambi (il padding del pannello, la barra gli sta sopra). Sta sul
+ * bordo del pannello rivolto alla barra, a --neck-at (centro del tab, dallo style).
+ */
+.tab-fab__neck {
+  --neck-into: 6px;
+  --neck-width: 32px;
+  --neck-length: calc(14px + 2 * var(--neck-into));
+
+  position: absolute;
+  pointer-events: none;
+}
+
+.tab-fab-wrap:is([data-panel='top'], [data-panel='bottom']) .tab-fab__neck {
+  left: calc(var(--neck-width) / -2);
+  width: var(--neck-width);
+  height: var(--neck-length);
+  translate: var(--neck-at) 0;
+  background:
+    radial-gradient(circle 7px at 0 50%, #0000 6.5px, var(--ui-bg) 7px) left / 50.5% 100% no-repeat,
+    radial-gradient(circle 7px at 100% 50%, #0000 6.5px, var(--ui-bg) 7px) right / 50.5% 100% no-repeat;
+}
+
+.tab-fab-wrap:is([data-panel='left'], [data-panel='right']) .tab-fab__neck {
+  top: calc(var(--neck-width) / -2);
+  width: var(--neck-length);
+  height: var(--neck-width);
+  translate: 0 var(--neck-at);
+  background:
+    radial-gradient(circle 7px at 50% 0, #0000 6.5px, var(--ui-bg) 7px) top / 100% 50.5% no-repeat,
+    radial-gradient(circle 7px at 50% 100%, #0000 6.5px, var(--ui-bg) 7px) bottom / 100% 50.5% no-repeat;
+}
+
+.tab-fab-wrap[data-panel='top'] .tab-fab__neck {
+  top: calc(100% - var(--neck-into));
+}
+
+.tab-fab-wrap[data-panel='bottom'] .tab-fab__neck {
+  bottom: calc(100% - var(--neck-into));
+}
+
+.tab-fab-wrap[data-panel='right'] .tab-fab__neck {
+  right: calc(100% - var(--neck-into));
+}
+
+.tab-fab-wrap[data-panel='left'] .tab-fab__neck {
+  left: calc(100% - var(--neck-into));
 }
 
 .tab-fab__list-wrap {
@@ -299,17 +466,103 @@
 /* ---------- Animazioni di TabFab ---------- */
 
 /*
- * Ogni tab schizza dal "+" al suo posto sulla sua goccia (vedi tabDrop): parte da
- * --tab-from (dallo style), mezzo scalato e trasparente, con la molla drop e un ritardo
- * a cascata (--tab-delay, in secondi). A riposo translate e scale tornano none: un
- * transform sul bottone porterebbe la goccia (z-index -1) sopra lo sfondo della barra.
+ * Sfondo della barra: da chiusa il tratto centrale è a zero, la testa sotto il "+" e
+ * tutto trasparente (in colonna anche stretto come il "+"). Aprendo compare subito e
+ * cresce con la molla morph; chiudendo si ritira nel "+" e sparisce alla fine.
+ */
+.tab-fab__bg {
+  opacity: 0;
+  transition: opacity calc(80ms * var(--tween) / var(--speed)) ease calc(var(--tf-morph-ms) * 0.7 / var(--speed));
+}
+
+.tab-fab:is([data-direction='top'], [data-direction='bottom']) .tab-fab__bg {
+  scale: calc(52 / 68) 1;
+  transition:
+    opacity calc(80ms * var(--tween) / var(--speed)) ease calc(var(--tf-morph-ms) * 0.7 / var(--speed)),
+    scale calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+}
+
+.tab-fab-wrap[data-open] .tab-fab__bg {
+  opacity: 1;
+  scale: none;
+  transition:
+    opacity calc(60ms * var(--tween) / var(--speed)) ease,
+    scale calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+}
+
+.tab-fab__bg-mid,
+.tab-fab__bg-cap--far {
+  transition:
+    scale calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
+    translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+}
+
+.tab-fab:is([data-direction='left'], [data-direction='right']) .tab-fab__bg-mid {
+  scale: 0 1;
+}
+
+.tab-fab:is([data-direction='top'], [data-direction='bottom']) .tab-fab__bg-mid {
+  scale: 1 0;
+}
+
+.tab-fab-wrap[data-open] .tab-fab__bg-mid {
+  scale: none;
+}
+
+.tab-fab-wrap[data-open] .tab-fab[data-direction='left'] .tab-fab__bg-cap--far {
+  translate: calc(52px - var(--bar-len)) 0;
+}
+
+.tab-fab-wrap[data-open] .tab-fab[data-direction='right'] .tab-fab__bg-cap--far {
+  translate: calc(var(--bar-len) - 52px) 0;
+}
+
+.tab-fab-wrap[data-open] .tab-fab[data-direction='top'] .tab-fab__bg-cap--far {
+  translate: 0 calc(52px - var(--bar-len));
+}
+
+.tab-fab-wrap[data-open] .tab-fab[data-direction='bottom'] .tab-fab__bg-cap--far {
+  translate: 0 calc(var(--bar-len) - 52px);
+}
+
+/* Ombre: quella della barra arriva quando la barra è quasi ferma, e se ne va subito */
+.tab-fab__shadows {
+  &::before,
+  & .tab-fab__shadow-bar {
+    transition: opacity calc(80ms * var(--tween) / var(--speed)) ease;
+  }
+
+  & .tab-fab__shadow-bar {
+    opacity: 0;
+  }
+}
+
+.tab-fab-wrap[data-open] .tab-fab__shadows {
+  &::before,
+  & .tab-fab__shadow-bar {
+    transition: opacity calc(200ms * var(--tween) / var(--speed)) ease calc(var(--tf-morph-ms) * 0.6 / var(--speed));
+  }
+
+  &::before {
+    opacity: 0;
+  }
+
+  & .tab-fab__shadow-bar {
+    opacity: 1;
+  }
+}
+
+/*
+ * Ogni tab esce dal "+" e scorre al suo posto con la barra (stessa molla morph): parte da
+ * --tab-from (dallo style, vedi tabDrop), mezzo scalato e trasparente, con un ritardo a
+ * cascata (--tab-delay, in secondi). La scala ha la molla drop, con un piccolo rimbalzo.
  */
 .tab-fab .tab-fab__tab {
   --delay: calc(var(--tab-delay, 0s) * var(--tween) / var(--speed));
 
   transition:
     color calc(200ms / var(--speed)) ease,
-    translate calc(var(--tf-drop-ms) / var(--speed)) var(--tf-drop) var(--delay),
+    translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph) var(--delay),
     scale calc(var(--tf-drop-ms) / var(--speed)) var(--tf-drop) var(--delay),
     opacity calc(150ms * var(--tween) / var(--speed)) ease var(--delay);
 }
@@ -349,67 +602,34 @@
 }
 
 /*
- * Collo tra tab e sottomenu: esce dal tab, va un po' oltre (--neck-over) e torna a metà
- * dello spazio (--neck), gonfiandosi e poi assottigliandosi. Cambiando sottomenu scivola
- * da un tab all'altro (left in riga, top in colonna, dallo style) con la molla morph.
- * In uscita, se la barra resta aperta, rientra nel tab.
+ * Pannello del sottomenu (il wrap, col collo): nasce dal tab come una goccia, stretto e
+ * schiacciato e spostato di --panel-from (dallo style), e torna così in uscita. In
+ * colonna, cambiando tab, scivola al nuovo (translate); cambiando sottomenu l'altezza
+ * segue la molla (Web Animations, TabFab.tsx) e il collo scorre lungo il bordo.
  */
-.tab-fab-wrap > .goo-drop {
-  translate: var(--neck, 0 0);
-  scale: var(--neck-scale, 0.75);
-  animation: tab-fab-neck calc(450ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1);
-  transition:
-    left calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
-    top calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
-
-  &[data-closing] {
-    translate: 0 0;
-    scale: 0.4;
-    animation: none;
-    transition:
-      translate calc(120ms * var(--tween) / var(--speed)) ease-out,
-      scale calc(120ms * var(--tween) / var(--speed)) ease-out;
-  }
-}
-
-@keyframes tab-fab-neck {
-  0% {
-    translate: 0 0;
-    scale: 0.6;
-  }
-  50% {
-    translate: var(--neck-over, 0 0);
-    scale: 1;
-  }
-}
-
-/*
- * Pannello del sottomenu: nasce dal tab come una goccia, stretto e schiacciato
- * (--panel-from, dallo style, è lo spostamento iniziale), e torna così in uscita.
- * Cambiando sottomenu altezza (Web Animations, TabFab.tsx) e top seguono la molla.
- */
-.tab-fab__panel {
+.tab-fab__panel-wrap {
   transition:
     opacity calc(120ms * var(--tween) / var(--speed)) ease,
-    scale calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
-    translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
-    top calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+    transform calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
+    translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
 
   &[data-closing] {
     opacity: 0;
-    scale: 0.4 0.3;
-    translate: var(--panel-from, 0 0);
+    transform: translate(var(--panel-from, 0 0)) scale(0.4, 0.3);
     transition-duration: calc(120ms * var(--tween) / var(--speed));
     transition-timing-function: ease-out;
   }
 }
 
 @starting-style {
-  .tab-fab__panel {
+  .tab-fab__panel-wrap {
     opacity: 0;
-    scale: 0.4 0.3;
-    translate: var(--panel-from, 0 0);
+    transform: translate(var(--panel-from, 0 0)) scale(0.4, 0.3);
   }
+}
+
+.tab-fab__neck {
+  transition: translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
 }
 
 /*
@@ -443,20 +663,25 @@
 
 /* Movimento ridotto: niente spostamenti né scale animati, restano le dissolvenze */
 .tab-fab-wrap[data-motion='reduced'] {
-  & .tab-fab::before,
+  & .tab-fab__bg-mid,
+  & .tab-fab__bg-cap--far,
+  & .tab-fab__neck,
   & .tab-fab__trigger,
   & .tab-fab__trigger-icon,
-  & .tab-fab__tab-content,
-  & > .goo-drop {
+  & .tab-fab__tab-content {
     transition: none;
     animation: none;
+  }
+
+  & .tab-fab__bg {
+    transition-property: opacity;
   }
 
   & .tab-fab__tab {
     transition-property: color, opacity;
   }
 
-  & .tab-fab__panel {
+  & .tab-fab__panel-wrap {
     transition-property: opacity;
   }
 
