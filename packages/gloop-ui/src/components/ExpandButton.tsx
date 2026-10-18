@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { GooFilter } from './goo'
+import { GooFilter, useOffscreen } from './goo'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
 import { useGloopMotion } from './gloop-motion'
 import { usePresence } from './jelly'
@@ -169,6 +169,9 @@ function ExpandButton({
    * e si anima width con la molla del CSS. Movimento ridotto o spento: cambio istantaneo.
    */
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const wrapRef = useRef<HTMLSpanElement>(null)
+  // Le gocce colano all'infinito: fuori dallo schermo si fermano
+  const offscreen = useOffscreen(wrapRef, !!dripping)
   const width = useRef<number | null>(null)
   const morph = useRef<Animation | null>(null)
   // Posizione della label finché è visibile: in uscita esce dal flusso restando lì
@@ -201,8 +204,10 @@ function ExpandButton({
     <GloopMotionProvider {...pickMotionProps(motionProps)}>
       <span
         {...m.rootProps}
+        ref={wrapRef}
         className="expand-button-wrap"
         data-filled={filled || undefined}
+        data-offscreen={offscreen || undefined}
         style={{ ...m.rootProps.style, '--expand-surface': surface } as CSSProperties}
         // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
         onPointerEnter={(e) => e.pointerType !== 'touch' && setHovered(true)}

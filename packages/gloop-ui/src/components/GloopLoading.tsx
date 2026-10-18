@@ -1,4 +1,5 @@
-import { useId, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useOffscreen } from './goo'
 import type { MotionProps } from './motion-context'
 import { useGloopMotion } from './gloop-motion'
 import './theme.css'
@@ -37,14 +38,24 @@ function Blob({
   speed,
   intro,
   animated,
+  paused,
 }: {
   color: string | [string, string]
   speed: number
   intro: boolean
   /** false con movimento ridotto o animazioni spente: bolla ferma */
   animated: boolean
+  /** Fuori dallo schermo: le animazioni SMIL (infinite) si fermano */
+  paused: boolean
 }) {
   const id = useId()
+  const svgRef = useRef<SVGSVGElement>(null)
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg || typeof svg.pauseAnimations !== 'function') return
+    if (paused) svg.pauseAnimations()
+    else svg.unpauseAnimations()
+  }, [paused])
   const [from, to] = typeof color === 'string' ? [color, color] : color
   const introDur = intro ? INTRO / speed : 0
   const drip = `${DRIP / speed}s`
@@ -60,7 +71,7 @@ function Blob({
   const falling = animated && intro
 
   return (
-    <svg className="gloop-loading__blob" viewBox="0 0 100 120" aria-hidden="true">
+    <svg ref={svgRef} className="gloop-loading__blob" viewBox="0 0 100 120" aria-hidden="true">
       <defs>
         <linearGradient id={`${id}-g`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor={from} />
@@ -121,9 +132,12 @@ function GloopLoading({
   // Durate SMIL divise per m.speed; con movimento ridotto o spento niente <animate>: bolla statica
   const m = useGloopMotion(motionProps)
   const rate = m.speed
+  const rootRef = useRef<HTMLDivElement>(null)
+  const offscreen = useOffscreen(rootRef, !m.reduced)
   return (
     <div
       {...m.rootProps}
+      ref={rootRef}
       role="status"
       // Con un titolo il lettore di schermo annuncia il testo; senza, la label
       aria-label={title == null ? label : undefined}
@@ -131,7 +145,7 @@ function GloopLoading({
       style={{ ...m.rootProps.style, '--gloop-loading-size': `${size}px`, ...style } as CSSProperties}
     >
       {/* key: cambiando la velocità le animazioni SMIL ripartono con le nuove durate */}
-      <Blob key={`${rate}-${intro}-${m.state}`} color={color} speed={rate} intro={intro} animated={!m.reduced} />
+      <Blob key={`${rate}-${intro}-${m.state}`} color={color} speed={rate} intro={intro} animated={!m.reduced} paused={offscreen} />
       {title != null && <p className="gloop-loading__title">{title}</p>}
       {description != null && <p className="gloop-loading__description">{description}</p>}
     </div>

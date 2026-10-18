@@ -28,3 +28,9 @@
   transition: none !important;
   animation: none !important;
 }
+
+/* Fuori dallo schermo (useOffscreen): le animazioni infinite, che nessuno vede, si fermano */
+[data-offscreen],
+[data-offscreen] * {
+  animation-play-state: paused !important;
+}

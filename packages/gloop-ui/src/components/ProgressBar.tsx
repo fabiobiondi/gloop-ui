@@ -1,4 +1,5 @@
 import { useId, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useOffscreen } from './goo'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
 import { useGloopMotion } from './gloop-motion'
 import { tune, useFollow, type Spring } from './spring-follow'
@@ -105,6 +106,8 @@ function ProgressBar({
   const h = mode === 'inside' ? Math.max(thickness, INSIDE_MIN) : thickness
   const dripping = drip && !reduceMotion
   const complete = !indeterminate && percent >= 100
+  // Indeterminata e gocce girano all'infinito: fuori dallo schermo si fermano
+  const offscreen = useOffscreen(rootRef, (indeterminate || dripping) && !reduceMotion)
 
   /*
    * Testa e coda scrivono variabili CSS sulla radice a ogni frame, senza render di React.
@@ -152,6 +155,7 @@ function ProgressBar({
         {...m.rootProps}
         ref={rootRef}
         className={classes}
+        data-offscreen={offscreen || undefined}
         role="progressbar"
         aria-label={labelledBy ? undefined : label}
         aria-labelledby={labelledBy}

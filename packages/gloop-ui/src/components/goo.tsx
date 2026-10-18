@@ -27,6 +27,26 @@ export function useSettled(ref: RefObject<Element | null>, ready: boolean, key?:
   return ready && done !== null && Object.is(done.key, key)
 }
 
+/*
+ * true quando l'elemento è fuori dallo schermo (IntersectionObserver). Serve a fermare
+ * le animazioni infinite che nessuno vede: con data-offscreen sulla radice le animazioni
+ * CSS si mettono in pausa (theme.css); le SMIL le ferma il componente.
+ */
+export function useOffscreen(ref: RefObject<Element | null>, enabled = true) {
+  const [offscreen, setOffscreen] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!enabled || !el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([entry]) => setOffscreen(!entry.isIntersecting))
+    io.observe(el)
+    return () => {
+      io.disconnect()
+      setOffscreen(false)
+    }
+  }, [ref, enabled])
+  return offscreen
+}
+
 export type GooFilterProps = {
   id: string
   /** Più alto = gocce più "appiccicose" */
