@@ -10,7 +10,6 @@ import {
 } from 'react'
 import { GloopMotionProvider, pickMotionProps, type GloopMotionPreset, type MotionProps } from './motion-context'
 import { useGloopMotion } from './gloop-motion'
-import { useSettled } from './goo'
 import './theme.css'
 import './GooPill.css'
 
@@ -131,7 +130,10 @@ function stretchKeyframes(distance: number, k: number, d: number) {
  * Pillola "liquida": due gocce seguono l'elemento evidenziato con molle diverse.
  * La testa è rapida e si schiaccia in base alla velocità, la coda è lenta.
  * Un filtro SVG "goo" le fonde: in movimento si allungano come una goccia,
- * da ferme tornano un'unica pillola (e il filtro si toglie: useSettled).
+ * da ferme tornano un'unica pillola.
+ * Il filtro resta sempre acceso: dentro ci sono solo le gocce, da ferme non lo ricalcola
+ * nessuno, e accenderlo e spegnerlo a ogni spostamento su Safari/iOS lascia il tab bar
+ * tagliato finché la pagina non viene ridisegnata (es. con uno scroll).
  * Posizione e lunghezza sono transizioni CSS (molle in linear(), GooPill.css);
  * l'allungamento è un'animazione Web Animations calcolata a ogni spostamento.
  */
@@ -182,10 +184,6 @@ function GooPill({
     stretchRef.current = head.animate(keyframes, { duration: ms })
   }, [target, axis, m.state, m.speed, m.preset])
 
-  // Filtro goo solo mentre si sposta (dopo l'allungamento qui sopra): da ferme testa e
-  // coda coincidono, sono già un'unica pillola
-  const settled = useSettled(rootRef, !reduceMotion, `${target}:${size}`)
-
   const box = (): CSSProperties =>
     axis === 'x'
       ? { top: inset, bottom: inset, left: inset, width: size }
@@ -207,7 +205,7 @@ function GooPill({
             ...m.rootProps.style,
             '--gp-opacity': opacity,
             '--gp-delay': `${delay}s`,
-            filter: reduceMotion || settled ? undefined : `url(#${CSS.escape(filterId)})`,
+            filter: reduceMotion ? undefined : `url(#${CSS.escape(filterId)})`,
           } as CSSProperties
         }
       >
