@@ -18,7 +18,7 @@
 }
 
 .tab-pop__trigger {
-  /* Sopra il collo (in position: absolute) */
+  /* Sopra la barra e il suo collo (in position: absolute) */
   position: relative;
   display: grid;
   place-items: center;
@@ -52,7 +52,7 @@
 
 /*
  * direction: la barra sta a 16px dal "+" sul lato scelto, centrata sull'altro asse.
- * Il collo (.tab-pop__neck) riempie il distacco; staccata, la barra resta separata.
+ * Il collo (.tab-pop__bar::before) riempie il distacco; staccata, la barra resta separata.
  */
 .tab-pop[data-direction='top'] .tab-pop__bar {
   bottom: calc(100% + 16px);
@@ -126,31 +126,29 @@
 }
 
 /*
- * Il collo liquido tra "+" e barra, disegnato verso l'alto e ruotato sugli altri lati.
- * Un gambo dritto che entra di poco nel "+" (il cerchio fa da raccordo, il collo lì non
- * si allarga) e, contro il bordo piatto della barra, due raccordi concavi
- * (radial-gradient). Entra anche sotto la barra: se ne vede solo il tratto nel distacco.
- * Si anima solo con scale, nel suo verso: cresce dal "+" verso la barra; staccato
- * (attached={false}) poi si assottiglia fino a sparire. Chiudendo torna nel "+".
+ * Il collo liquido tra barra e "+": un ::before della barra, così si muove, scala e
+ * sfuma esattamente con lei, in apertura e in chiusura (rimbalzi compresi).
+ * Disegnato con la barra in alto e ruotato sugli altri lati: due raccordi concavi contro
+ * il bordo piatto della barra (radial-gradient) e un gambo dritto, lungo abbastanza da
+ * finire sempre sotto il "+" (sta sotto di lui), anche con la barra schiacciata di pop.
+ * Il cerchio fa da raccordo: vicino al "+" il collo non si allarga.
+ * Staccato (attached={false}): a barra arrivata si assottiglia fino a sparire.
  */
-.tab-pop__neck {
+.tab-pop__bar::before {
   --neck-stem: 20px;
   --neck-fillet: 8px;
-  /* Quanto entra sotto la barra e dentro il "+" */
+  /* Quanto entra sotto la barra e oltre il distacco di 16px, dentro il "+" */
   --neck-into-bar: 8px;
-  --neck-into-trigger: 4px;
-  --neck-ms: var(--tf-spring-ms);
-  --neck-ease: var(--tf-spring);
-  --neck-drop-ms: calc(600ms * var(--tween));
-  --neck-back-delay: 0ms;
+  --neck-into-trigger: 20px;
 
+  content: '';
   position: absolute;
   width: calc(var(--neck-stem) + 2 * var(--neck-fillet));
   height: calc(var(--neck-into-bar) + 16px + var(--neck-into-trigger));
-  /* Il fondo del collo (lato "+") sta sul punto --neck-x/--neck-y del "+" e ruota attorno a lui */
+  /* La cima del collo (lato barra) sta sul punto --neck-x/--neck-y e ruota attorno a lui */
   left: calc(var(--neck-x) - var(--neck-stem) / 2 - var(--neck-fillet));
-  top: calc(var(--neck-y) - var(--neck-into-bar) - 16px - var(--neck-into-trigger));
-  transform-origin: 50% 100%;
+  top: var(--neck-y);
+  transform-origin: 50% 0;
   pointer-events: none;
   background:
     linear-gradient(var(--ui-bg) 0 0) center / var(--neck-stem) 100% no-repeat,
@@ -158,69 +156,50 @@
       0 var(--neck-into-bar) / var(--neck-fillet) var(--neck-fillet) no-repeat,
     radial-gradient(circle var(--neck-fillet) at 100% 100%, #0000 calc(var(--neck-fillet) - 0.5px), var(--ui-bg) var(--neck-fillet))
       100% var(--neck-into-bar) / var(--neck-fillet) var(--neck-fillet) no-repeat;
-  scale: 0.5 0;
-  transition: scale calc(250ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1)
-    calc(var(--neck-back-delay) * var(--tween) / var(--speed));
 }
 
-/* Punto di partenza sul bordo del "+" (rientrato di --neck-into-trigger) e rotazione */
-.tab-pop[data-direction='top'] .tab-pop__neck {
-  --neck-x: 26px;
-  --neck-y: var(--neck-into-trigger);
+/* Punto sul bordo della barra rivolto verso il "+" (rientrato di --neck-into-bar) e rotazione */
+.tab-pop[data-direction='top'] .tab-pop__bar::before {
+  --neck-x: 50%;
+  --neck-y: calc(100% - var(--neck-into-bar));
 }
 
-.tab-pop[data-direction='bottom'] .tab-pop__neck {
-  --neck-x: 26px;
-  --neck-y: calc(52px - var(--neck-into-trigger));
+.tab-pop[data-direction='bottom'] .tab-pop__bar::before {
+  --neck-x: 50%;
+  --neck-y: var(--neck-into-bar);
 
   rotate: 180deg;
 }
 
-.tab-pop[data-direction='left'] .tab-pop__neck {
-  --neck-x: var(--neck-into-trigger);
-  --neck-y: 26px;
+.tab-pop[data-direction='left'] .tab-pop__bar::before {
+  --neck-x: calc(100% - var(--neck-into-bar));
+  --neck-y: 50%;
 
   rotate: -90deg;
 }
 
-.tab-pop[data-direction='right'] .tab-pop__neck {
-  --neck-x: calc(52px - var(--neck-into-trigger));
-  --neck-y: 26px;
+.tab-pop[data-direction='right'] .tab-pop__bar::before {
+  --neck-x: var(--neck-into-bar);
+  --neck-y: 50%;
 
   rotate: 90deg;
 }
 
-/* pop e bounce: cresce per primo e più in fretta; in chiusura aspetta che la barra si richiuda */
-.tab-pop:not([data-animation='slide']) .tab-pop__neck {
-  --neck-ms: calc(300ms * var(--tween));
-  --neck-ease: cubic-bezier(0.23, 1, 0.32, 1);
-  --neck-drop-ms: calc(450ms * var(--tween));
-  --neck-back-delay: 100ms;
-}
+/* Staccato: resta attaccato mentre la barra arriva, poi si assottiglia e sparisce */
+.tab-pop:not([data-attached]) .tab-pop__bar::before {
+  --neck-drop-ms: calc(600ms * var(--tween));
 
-.tab-pop[data-open] .tab-pop__neck {
-  scale: 1;
-  transition: none;
-  animation: tab-pop-neck-in calc(var(--neck-ms) / var(--speed)) var(--neck-ease);
-}
-
-.tab-pop[data-open]:not([data-attached]) .tab-pop__neck {
   scale: 0 1;
   animation: tab-pop-neck-drop calc(var(--neck-drop-ms) / var(--speed)) linear;
 }
 
-@keyframes tab-pop-neck-in {
-  from {
-    scale: 0.5 0;
-  }
+.tab-pop:not([data-attached]):not([data-animation='slide']) .tab-pop__bar::before {
+  --neck-drop-ms: calc(450ms * var(--tween));
 }
 
 @keyframes tab-pop-neck-drop {
-  0% {
-    scale: 0.5 0;
-    animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
-  }
-  50% {
+  0%,
+  40% {
     scale: 1;
     animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.4);
   }
@@ -332,7 +311,7 @@
 
 /* Movimento ridotto: niente spostamenti né scale animati, restano le dissolvenze */
 .tab-pop[data-motion='reduced'] {
-  & .tab-pop__neck,
+  & .tab-pop__bar::before,
   & .tab-pop__trigger,
   & .tab-fab__trigger-icon {
     transition: none;

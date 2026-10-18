@@ -125,7 +125,7 @@ const barOrigin = (animation: TabPopAnimation, d: TabPopDirection) =>
  * Animata solo in CSS (TabPop.css): collo, barra e tab in cascata. La barra resta
  * montata finché non è finita la sua uscita (usePresence/useExit).
  * Niente filtri SVG: su Safari/iOS si ricalcolano in software a ogni frame e l'apertura
- * scatta. Il collo liquido tra "+" e barra è un elemento CSS con i fianchi concavi;
+ * scatta. Il collo liquido tra "+" e barra è un ::before della barra con i fianchi concavi;
  * tutto si anima con transform e opacity, sulla GPU.
  */
 function TabPop({
@@ -204,8 +204,6 @@ function TabPop({
         data-open={open || undefined}
         data-attached={attached || undefined}
       >
-        {/* Collo tra "+" e barra: sotto entrambi, se ne vede solo il tratto nel distacco */}
-        <span className="tab-pop__neck" aria-hidden="true" />
         {bar.value && (
           <div
             ref={barRef}
