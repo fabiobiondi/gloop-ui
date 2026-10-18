@@ -473,30 +473,26 @@
     left: 0;
     width: min(300px, 85vw);
     height: auto;
+    /* Alto quanto lo schermo: con align-self: start (sidebar larga) Chrome e Safari recenti lo stringerebbero sul contenuto */
+    align-self: stretch;
     /* Non scorre: scorre .pg-sidebar__scroll. Su iOS un elemento che scorre e si muove con transform non risponde al dito */
     overflow: hidden;
     padding: 0;
     background: var(--pg-bg);
     transform: translateX(-100%);
-    /* display passa a none solo a fine transizione, così si vede anche la chiusura */
+    visibility: hidden;
     transition:
       transform 280ms cubic-bezier(0.32, 0.72, 0, 1),
-      display 280ms allow-discrete;
+      visibility 0s linear 280ms;
 
     /* Ombra solo da aperto: da chiuso si vedrebbe sul bordo sinistro */
     &[data-open] {
       transform: none;
+      visibility: visible;
       box-shadow: 0 0 40px rgb(0 0 0 / 0.25);
-
-      /* Appena mostrato parte da fuori schermo ed entra */
-      @starting-style {
-        transform: translateX(-100%);
-      }
-    }
-
-    /* Chiuso: display none, anche niente Tab sui link fuori schermo */
-    &:not([data-open]) {
-      display: none;
+      transition:
+        transform 280ms cubic-bezier(0.32, 0.72, 0, 1),
+        visibility 0s;
     }
   }
 
