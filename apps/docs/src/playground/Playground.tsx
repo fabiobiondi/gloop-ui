@@ -334,6 +334,7 @@ function NavGroup({
 // Schermi stretti: la sidebar diventa un menu a cassetto aperto dall'hamburger
 function useMobileMenu(pageId: string) {
   const [open, setOpen] = useState(false)
+  const narrow = useNarrow()
 
   // Scelta una pagina il menu si chiude (anche dal browser: indietro/avanti)
   useEffect(() => setOpen(false), [pageId])
@@ -356,13 +357,25 @@ function useMobileMenu(pageId: string) {
     }
   }, [open])
 
-  return [open, setOpen] as const
+  return [open, setOpen, narrow] as const
+}
+
+// true sotto i 761px, dove la sidebar è un cassetto
+function useNarrow() {
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 760px)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 760px)')
+    const onChange = () => setNarrow(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return narrow
 }
 
 function Playground() {
   const page = useHashPage()
   const [theme, setTheme] = useTheme()
-  const [menuOpen, setMenuOpen] = useMobileMenu(page.id)
+  const [menuOpen, setMenuOpen, narrow] = useMobileMenu(page.id)
 
   // Le variabili ereditate da tutti i componenti (vedi gloop-ui, theme.css)
   const themeVars = Object.fromEntries(
@@ -414,6 +427,8 @@ function Playground() {
         id="pg-sidebar"
         className="pg-sidebar"
         data-open={menuOpen || undefined}
+        // Cassetto chiuso: fuori schermo e inerte (niente Tab). Non visibility: hidden, che su iOS lascia il cassetto senza scroll
+        inert={narrow && !menuOpen}
         // Un link interno chiude il menu anche se porta alla pagina già aperta (l'hash non cambia)
         onClick={(e) => {
           if ((e.target as Element).closest('a[href^="#"]')) setMenuOpen(false)
