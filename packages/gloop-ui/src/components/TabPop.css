@@ -11,43 +11,14 @@
   background: var(--ui-bg);
 }
 
-/* Trigger e barra veri sono fuori dal filtro goo: l'ombra è un box-shadow normale */
+/* Niente filtri SVG (vedi TabPop.tsx): l'ombra è un box-shadow normale */
 .tab-pop__trigger,
-.tab-pop__bar:not(.tab-pop__bar--goo) {
+.tab-pop__bar {
   box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
 }
 
-/*
- * Livello goo, sotto trigger e barra veri: grande quanto il trigger, le sagome escono
- * dal riquadro come gli elementi veri (stesse regole di posizione e animazione)
- */
-.tab-pop__goo {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.tab-pop__goo-trigger {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: var(--ui-bg);
-  transition: scale calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
-}
-
-/* Segue il trigger quando viene premuto, o sbucherebbe da sotto */
-.tab-pop:has(.tab-pop__trigger:active) .tab-pop__goo-trigger {
-  scale: 0.92;
-}
-
-/* Sagoma della barra: senza tab, alta e larga come la barra vera */
-.tab-pop__bar--goo {
-  box-sizing: border-box;
-  height: 52px;
-}
-
 .tab-pop__trigger {
-  /* Sopra la goccia (in position: absolute) */
+  /* Sopra il collo (in position: absolute) */
   position: relative;
   display: grid;
   place-items: center;
@@ -58,7 +29,7 @@
   border-radius: 999px;
   cursor: pointer;
 
-  /* Contorno dentro il bottone: fuori, il filtro goo lo fonderebbe in un alone */
+  /* Contorno dentro il bottone */
   &:focus-visible {
     outline: 2px solid var(--ui-fg);
     outline-offset: -4px;
@@ -81,7 +52,7 @@
 
 /*
  * direction: la barra sta a 16px dal "+" sul lato scelto, centrata sull'altro asse.
- * Oltre ~12px il filtro goo non le fonde: da ferme barra e trigger restano staccati.
+ * Il collo (.tab-pop__neck) riempie il distacco; staccata, la barra resta separata.
  */
 .tab-pop[data-direction='top'] .tab-pop__bar {
   bottom: calc(100% + 16px);
@@ -155,44 +126,108 @@
 }
 
 /*
- * La goccia: da chiusa sta nel "+", rimpicciolita. Aprendo fa il suo percorso
- * (0 → --drip-mid → --drip-end, con la scala) e resta alla fine; chiudendo torna indietro
- * con una transizione che parte da dove si trova.
+ * Il collo liquido tra "+" e barra: un rettangolo con i fianchi scavati da due cerchi
+ * (radial-gradient) di raggio metà distacco, tangenti a barra e trigger. Entra di 8px
+ * sotto entrambi (sta sotto di loro), così se ne vede solo il tratto nel distacco.
+ * Si anima solo con scale: cresce dal "+" verso la barra; staccato (attached={false})
+ * poi si assottiglia fino a sparire. Chiudendo torna nel "+".
  */
-.tab-pop .goo-drop {
-  --drip-ms: 500ms;
-  --drip-back-delay: 0ms;
+.tab-pop__neck {
+  --neck-overlap: 8px;
+  --neck-length: calc(16px + 2 * var(--neck-overlap));
+  --neck-width: 34px;
+  --neck-ms: var(--tf-spring-ms);
+  --neck-ease: var(--tf-spring);
+  --neck-drop-ms: calc(600ms * var(--tween));
+  --neck-back-delay: 0ms;
 
-  translate: 0 0;
-  scale: 0.6;
-  transition:
-    translate calc(250ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1)
-      calc(var(--drip-back-delay) * var(--tween) / var(--speed)),
-    scale calc(250ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1)
-      calc(var(--drip-back-delay) * var(--tween) / var(--speed));
+  position: absolute;
+  pointer-events: none;
+  scale: var(--neck-closed);
+  transition: scale calc(250ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1)
+    calc(var(--neck-back-delay) * var(--tween) / var(--speed));
 }
 
-/* pop e bounce: parte prima e più in fretta; in chiusura aspetta che la barra si richiuda */
-.tab-pop:not([data-animation='slide']) .goo-drop {
-  --drip-ms: 300ms;
-  --drip-back-delay: 100ms;
+.tab-pop:is([data-direction='top'], [data-direction='bottom']) .tab-pop__neck {
+  --neck-closed: 0.5 0;
+  --neck-pinch: 0 1;
+
+  left: 50%;
+  width: var(--neck-width);
+  height: var(--neck-length);
+  margin-left: calc(var(--neck-width) / -2);
+  background:
+    radial-gradient(circle 8px at 0 50%, #0000 7.5px, var(--ui-bg) 8px) left / 50.5% 100% no-repeat,
+    radial-gradient(circle 8px at 100% 50%, #0000 7.5px, var(--ui-bg) 8px) right / 50.5% 100% no-repeat;
 }
 
-.tab-pop[data-open] .goo-drop {
-  translate: var(--drip-end);
-  scale: var(--drip-end-s);
+.tab-pop:is([data-direction='left'], [data-direction='right']) .tab-pop__neck {
+  --neck-closed: 0 0.5;
+  --neck-pinch: 1 0;
+
+  top: 50%;
+  width: var(--neck-length);
+  height: var(--neck-width);
+  margin-top: calc(var(--neck-width) / -2);
+  background:
+    radial-gradient(circle 8px at 50% 0, #0000 7.5px, var(--ui-bg) 8px) top / 100% 50.5% no-repeat,
+    radial-gradient(circle 8px at 50% 100%, #0000 7.5px, var(--ui-bg) 8px) bottom / 100% 50.5% no-repeat;
+}
+
+/* Ancorato al bordo del "+" rivolto verso la barra */
+.tab-pop[data-direction='top'] .tab-pop__neck {
+  bottom: calc(100% - var(--neck-overlap));
+  transform-origin: 50% 100%;
+}
+
+.tab-pop[data-direction='bottom'] .tab-pop__neck {
+  top: calc(100% - var(--neck-overlap));
+  transform-origin: 50% 0;
+}
+
+.tab-pop[data-direction='left'] .tab-pop__neck {
+  right: calc(100% - var(--neck-overlap));
+  transform-origin: 100% 50%;
+}
+
+.tab-pop[data-direction='right'] .tab-pop__neck {
+  left: calc(100% - var(--neck-overlap));
+  transform-origin: 0 50%;
+}
+
+/* pop e bounce: cresce per primo e più in fretta; in chiusura aspetta che la barra si richiuda */
+.tab-pop:not([data-animation='slide']) .tab-pop__neck {
+  --neck-ms: calc(300ms * var(--tween));
+  --neck-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --neck-drop-ms: calc(450ms * var(--tween));
+  --neck-back-delay: 100ms;
+}
+
+.tab-pop[data-open] .tab-pop__neck {
+  scale: 1;
   transition: none;
-  animation: tab-pop-drip calc(var(--drip-ms) * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1);
+  animation: tab-pop-neck-in calc(var(--neck-ms) / var(--speed)) var(--neck-ease);
 }
 
-@keyframes tab-pop-drip {
+.tab-pop[data-open]:not([data-attached]) .tab-pop__neck {
+  scale: var(--neck-pinch);
+  animation: tab-pop-neck-drop calc(var(--neck-drop-ms) / var(--speed)) linear;
+}
+
+@keyframes tab-pop-neck-in {
+  from {
+    scale: var(--neck-closed);
+  }
+}
+
+@keyframes tab-pop-neck-drop {
   0% {
-    translate: 0 0;
-    scale: 0.6;
+    scale: var(--neck-closed);
+    animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
   }
   50% {
-    translate: var(--drip-mid);
-    scale: var(--drip-mid-s);
+    scale: 1;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.4);
   }
 }
 
@@ -277,8 +312,7 @@
 /*
  * Tab a cascata (--tab-delay dallo style, in secondi): da trasparenti, un po' più piccoli
  * e più in basso. In uscita restano come sono. La pressione usa scale.
- * Niente blur: dentro il filtro goo ogni tab sfocata è un altro filtro da ricalcolare a
- * ogni frame, e su iOS l'apertura scatta
+ * Niente blur: un filtro animato per ogni tab, su iOS l'apertura scatta
  */
 .tab-pop__bar .tab-fab__tab {
   --tab-wait: calc(var(--tab-delay, 0s) * var(--tween) / var(--speed));
@@ -303,8 +337,7 @@
 
 /* Movimento ridotto: niente spostamenti né scale animati, restano le dissolvenze */
 .tab-pop[data-motion='reduced'] {
-  & .goo-drop,
-  & .tab-pop__goo-trigger,
+  & .tab-pop__neck,
   & .tab-pop__trigger,
   & .tab-fab__trigger-icon {
     transition: none;

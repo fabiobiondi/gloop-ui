@@ -1,6 +1,5 @@
 import { useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import GooPill, { useExit, usePresence } from './GooPill'
-import { GooFilter } from './goo'
 import { BoundaryContext } from './floating/boundary-context'
 import { resolveDirection, type TabPopPlacement } from './tab-placement'
 import type { TabPopDirection } from './tab-drop'
@@ -55,7 +54,6 @@ const DEFAULT_TAB_GAP = TAB_WIDTH - ICON_SIZE
 // Pillola della tab scelta: mai più stretta di così, anche con le icone attaccate
 const PILL_MIN = 44
 const TRIGGER_SIZE = 52
-const DRIP_SIZE = 32
 
 /*
  * Verso in cui la barra si allontana dal "+": asse e segno.
@@ -68,9 +66,6 @@ const AWAY: Record<TabPopDirection, { axis: 'x' | 'y'; sign: 1 | -1 }> = {
   right: { axis: 'x', sign: 1 },
 }
 
-// Spostamento lungo il verso della barra, come valore di translate
-const along = (d: TabPopDirection, value: number) => (AWAY[d].axis === 'y' ? `0px ${value}px` : `${value}px 0px`)
-
 // Spostamento della barra da nascosta, per asse (si somma alla centratura in TabPop.css)
 const tuck = (d: TabPopDirection, value: number) => ({
   '--bar-tuck-x': `${AWAY[d].axis === 'x' ? value : 0}px`,
@@ -82,7 +77,7 @@ const tuck = (d: TabPopDirection, value: number) => ({
  * che dipendono da lato, larghezza e attached, passate come variabili CSS.
  *
  * slide. La barra esce dal "+" come una goccia: parte stretta e schiacciata contro il
- * trigger (attaccata a lui grazie al filtro goo), si allontana allargandosi e si stacca.
+ * trigger (sovrapposta a lui), si allontana allargandosi e si stacca.
  * I tab entrano a cascata. In chiusura viene risucchiata, più in fretta.
  *
  * pop. La barra non si sposta: nasce già al suo posto, grande come il "+" (un cerchio),
@@ -104,43 +99,14 @@ function barVars(animation: TabPopAnimation, d: TabPopDirection, barWidth: numbe
   ) as CSSProperties
 }
 
-// pop. La barra parte mentre la goccia è ancora in viaggio (la sua curva copre quasi tutto il
-// percorso nei primi ~80ms): le due animazioni si sovrappongono e il filtro goo le fonde
-// in un unico movimento, senza pause tra goccia e barra
+// pop. La barra parte mentre il collo sta ancora crescendo verso di lei: i due movimenti
+// si sovrappongono, senza pause tra collo e barra
 const POP_DELAY = 0.06
 
 // Ritardo del tab i nella cascata, in secondi: slide dal primo, pop e bounce dal centro
 function tabDelay(animation: TabPopAnimation, i: number, count: number) {
   if (animation === 'slide') return 0.06 + i * 0.04
   return POP_DELAY + 0.08 + Math.abs(i - (count - 1) / 2) * 0.04
-}
-
-/*
- * Il "collo" tra trigger e barra: va verso di lei, poi si assottiglia e si stacca.
- * attached: si ferma a metà dei 16px di distacco, abbastanza larga da toccare entrambi
- * (24 = centro della goccia a 8px dal "+"; scala 0.7 = 22px, sborda ~3px per lato).
- * pop e bounce: parte per primo, più in fretta che in slide, e si gonfia mentre
- * attraversa lo spazio, così si vede che lega la "×" alla barra; staccata finisce
- * dentro la barra, assorbita. In chiusura aspetta che la barra si richiuda.
- */
-function dripVars(animation: TabPopAnimation, d: TabPopDirection, attached: boolean) {
-  const { sign } = AWAY[d]
-  const slide = animation === 'slide'
-  return {
-    '--drip-mid': along(d, sign * (slide ? 28 : 30)),
-    '--drip-end': along(d, sign * (attached ? 24 : 44)),
-    '--drip-mid-s': slide ? 1 : 1.15,
-    '--drip-end-s': attached ? 0.7 : 0.2,
-  } as CSSProperties
-}
-
-// La goccia parte dal bordo del "+" rivolto verso la barra
-const DRIP_MID = (TRIGGER_SIZE - DRIP_SIZE) / 2
-const DRIP_START: Record<TabPopDirection, { left: number; top: number }> = {
-  top: { left: DRIP_MID, top: 0 },
-  bottom: { left: DRIP_MID, top: TRIGGER_SIZE - DRIP_SIZE },
-  left: { left: 0, top: DRIP_MID },
-  right: { left: TRIGGER_SIZE - DRIP_SIZE, top: DRIP_MID },
 }
 
 // Ancorata dal lato del "+": cresce da lì (la centratura sull'altro asse è in TabPop.css)
@@ -155,38 +121,12 @@ const BAR_ORIGIN: Record<TabPopDirection, string> = {
 const barOrigin = (animation: TabPopAnimation, d: TabPopDirection) =>
   animation === 'slide' ? BAR_ORIGIN[d] : BAR_ORIGIN[d].replace(/^\S+/, '50%')
 
-// Distanza tra "+" e barra (vedi TabPop.css)
-const BAR_GAP = 16
-// Il filtro goo entra nella barra di tanto: i ponti liquidi stanno sempre prima
-const NECK_DEPTH = 24
-
 /*
- * Area del filtro goo, in px dall'angolo del "+": solo il collo, cioè dal centro del "+"
- * fino a poco dentro la barra, largo quanto basta per i ponti liquidi ai lati.
- * Il resto di barra e trigger è fuori dal filtro (sono gli elementi veri, sopra): il
- * filtro si ricalcola in software a ogni frame su Safari/iOS e il costo va con l'area.
- * Stretta anche perché su Safari/iOS un'area molto più grande del necessario fa
- * sparire tutto il componente
- */
-function neckRegion(d: TabPopDirection, barWidth: number) {
-  const mid = TRIGGER_SIZE / 2
-  const half = Math.max(mid + 40, barWidth * 0.15 + 30)
-  const reach = mid + BAR_GAP + NECK_DEPTH
-  const along = { start: AWAY[d].sign < 0 ? mid - reach : mid, size: reach }
-  const across = { start: mid - half, size: 2 * half }
-  return AWAY[d].axis === 'y'
-    ? { x: across.start, y: along.start, width: across.size, height: along.size }
-    : { x: along.start, y: across.start, width: along.size, height: across.size }
-}
-
-/*
- * Animata solo in CSS (TabPop.css): goccia, barra e tab in cascata. La barra resta
+ * Animata solo in CSS (TabPop.css): collo, barra e tab in cascata. La barra resta
  * montata finché non è finita la sua uscita (usePresence/useExit).
- *
- * Due livelli. Sotto, il goo: sagome piene di trigger, goccia e barra (senza contenuto),
- * con le stesse animazioni, filtrate solo nell'area del collo (neckRegion). Sopra,
- * trigger e barra veri, fuori dal filtro: animano solo transform e opacity, sulla GPU.
- * Le sagome coincidono con gli elementi veri, quindi del goo si vedono solo i ponti.
+ * Niente filtri SVG: su Safari/iOS si ricalcolano in software a ogni frame e l'apertura
+ * scatta. Il collo liquido tra "+" e barra è un elemento CSS con i fianchi concavi;
+ * tutto si anima con transform e opacity, sulla GPU.
  */
 function TabPop({
   icon,
@@ -226,18 +166,11 @@ function TabPop({
       )
   }
   const barId = useId()
-  const filterId = useId()
 
   // La barra resta durante l'uscita; la pillola si dissolve se la scelta si azzera
   const bar = usePresence(open ? true : null)
   useExit(barRef, bar.closing, bar.exited)
   const pill = usePresence(active)
-  // Stesso stile per la barra vera e la sua sagoma nel goo: si muovono insieme
-  const barStyle: CSSProperties = {
-    transformOrigin: barOrigin(animation, direction),
-    paddingInline: barPadding,
-    ...barVars(animation, direction, barWidth),
-  }
 
   useEffect(() => {
     if (!open) return
@@ -269,28 +202,10 @@ function TabPop({
         data-direction={direction}
         data-animation={animation}
         data-open={open || undefined}
+        data-attached={attached || undefined}
       >
-        {/* Goo: sagome di trigger, goccia e barra, fuse come liquido solo nel collo */}
-        <div className="tab-pop__goo" aria-hidden="true" style={{ filter: `url(#${CSS.escape(filterId)})` }}>
-          <GooFilter id={filterId} region={neckRegion(direction, barWidth)} shadow={false} />
-          <span className="tab-pop__goo-trigger" />
-          <span
-            className="goo-drop"
-            style={{
-              ...DRIP_START[direction],
-              width: DRIP_SIZE,
-              height: DRIP_SIZE,
-              ...dripVars(animation, direction, attached),
-            }}
-          />
-          {bar.value && (
-            <span
-              className="tab-pop__bar tab-pop__bar--goo"
-              data-closing={bar.closing || undefined}
-              style={{ ...barStyle, width: barWidth }}
-            />
-          )}
-        </div>
+        {/* Collo tra "+" e barra: sotto entrambi, se ne vede solo il tratto nel distacco */}
+        <span className="tab-pop__neck" aria-hidden="true" />
         {bar.value && (
           <div
             ref={barRef}
@@ -298,7 +213,11 @@ function TabPop({
             role="tablist"
             className="tab-pop__bar"
             data-closing={bar.closing || undefined}
-            style={barStyle}
+            style={{
+              transformOrigin: barOrigin(animation, direction),
+              paddingInline: barPadding,
+              ...barVars(animation, direction, barWidth),
+            }}
           >
             {/* Contenitore spostato di pillOffset: la pillola si allinea alle tab, oltre il margine della barra */}
             <span className="tab-pop__pill" style={{ left: pillOffset, right: -pillOffset }}>
