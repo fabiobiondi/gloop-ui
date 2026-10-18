@@ -47,6 +47,8 @@ export function useOffscreen(ref: RefObject<Element | null>, enabled = true) {
   return offscreen
 }
 
+export type GooRegion = { x: number; y: number; width: number; height: number }
+
 export type GooFilterProps = {
   id: string
   /** Più alto = gocce più "appiccicose" */
@@ -56,8 +58,10 @@ export type GooFilterProps = {
    * Serve quando i figli escono dall'elemento (es. una barra in position: absolute sopra).
    * Va messo dentro l'elemento filtrato: ne misura il riquadro per convertire l'area in frazioni.
    * Senza, l'area è il riquadro dell'elemento ±50% in larghezza e ±100% in altezza (per l'ombra).
+   * Può essere una funzione della misura dell'elemento (w, h), da definire fuori dal
+   * componente (stabile): si ricalcola a ogni cambio di misura.
    */
-  region?: { x: number; y: number; width: number; height: number }
+  region?: GooRegion | ((w: number, h: number) => GooRegion)
   /** Ombra sotto le forme già fuse */
   shadow?: boolean
   /** Colore della forma fusa (default --ui-bg) */
@@ -73,7 +77,9 @@ export type GooFilterProps = {
  */
 export function GooFilter({ id, blur = 8, region, shadow = true, color = 'var(--ui-bg)' }: GooFilterProps) {
   const filterRef = useRef<SVGFilterElement>(null)
-  const { x, y, width, height } = region ?? {}
+  // Area fissa: dipende dai quattro numeri, non dall'oggetto (nuovo a ogni render)
+  const sized = typeof region === 'function' ? region : undefined
+  const { x, y, width, height } = (typeof region === 'function' ? undefined : region) ?? {}
 
   /*
    * L'area in px diventa una frazione del riquadro dell'elemento filtrato (objectBoundingBox):
@@ -84,20 +90,21 @@ export function GooFilter({ id, blur = 8, region, shadow = true, color = 'var(--
   useLayoutEffect(() => {
     const filter = filterRef.current
     const el = filter?.closest('svg')?.parentElement
-    if (x === undefined || !filter || !el) return
+    if ((x === undefined && !sized) || !filter || !el) return
     const fit = () => {
       const w = el.offsetWidth || 1
       const h = el.offsetHeight || 1
-      filter.setAttribute('x', String(x / w))
-      filter.setAttribute('y', String(y! / h))
-      filter.setAttribute('width', String(width! / w))
-      filter.setAttribute('height', String(height! / h))
+      const r = sized ? sized(w, h) : { x: x!, y: y!, width: width!, height: height! }
+      filter.setAttribute('x', String(r.x / w))
+      filter.setAttribute('y', String(r.y / h))
+      filter.setAttribute('width', String(r.width / w))
+      filter.setAttribute('height', String(r.height / h))
     }
     fit()
     const ro = new ResizeObserver(fit)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [x, y, width, height])
+  }, [x, y, width, height, sized])
 
   // Con region gli attributi li scrive l'effetto
   const area = region ? {} : { x: '-50%', y: '-100%', width: '200%', height: '300%' }

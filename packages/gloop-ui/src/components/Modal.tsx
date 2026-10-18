@@ -162,6 +162,17 @@ function JellySides({ sides }: { sides: ReturnType<typeof jellySides> }) {
   return sides.map((side) => <span key={side} className="modal__bulge" data-side={side} />)
 }
 
+/*
+ * Area del filtro di swell: la scheda più il margine per il goo (blur 14), i rigonfiamenti
+ * dei lati, il rimbalzo della gelatina e l'ombra. Senza, il filtro coprirebbe 2×3 volte la
+ * scheda (e su Safari/iOS il costo va con l'area)
+ */
+const swellRegion = (w: number, h: number) => {
+  const mx = 60 + w * 0.12
+  const my = 60 + h * 0.12
+  return { x: -mx, y: -my, width: w + 2 * mx, height: h + 2 * my }
+}
+
 // Le due molle della gelatina, già campionate, come variabili per il CSS
 function jellyVars(m: GloopMotion, jelly: number) {
   const x = jellySpring(JELLY_X, jelly, m.preset)
@@ -209,7 +220,7 @@ function ModalBlob({ m, jelly, closing }: { m: GloopMotion; jelly: number; closi
       data-settled={!gooey || undefined}
       style={{ ...jellyVars(m, jelly), filter: gooey ? `url(#${CSS.escape(filterId)})` : undefined }}
     >
-      <GooFilter id={filterId} blur={14} color="var(--modal-surface)" />
+      <GooFilter id={filterId} blur={14} color="var(--modal-surface)" region={swellRegion} />
       <div className="modal__blob-shape">
         <JellySides sides={sides} />
       </div>
@@ -234,6 +245,22 @@ type Geo = {
  * prima del primo frame. La larghezza sulla proprietà scale e l'altezza su transform
  * (scaleY), così ognuna ha la sua molla.
  */
+/*
+ * Area del filtro di drop, in px dall'angolo della scheda: la scheda più il punto di partenza
+ * della goccia (la traiettoria è una retta), con il margine per la goccia stirata, il goo e
+ * l'ombra, tagliata alla finestra. Prima copriva tutta la finestra
+ */
+function flightRegion(r: DOMRect, from: Point) {
+  const M = FLY_SIZE + 60
+  const sx = r.width / 2 + from.x
+  const sy = r.height / 2 + from.y
+  const left = Math.max(Math.min(0, sx) - M, -r.left - 40)
+  const top = Math.max(Math.min(0, sy) - M, -r.top - 40)
+  const right = Math.min(Math.max(r.width, sx) + M, innerWidth - r.left + 40)
+  const bottom = Math.min(Math.max(r.height, sy) + M, innerHeight - r.top + 40)
+  return { x: left, y: top, width: right - left, height: bottom - top }
+}
+
 function DropBlob({ m, origin, jelly, closing }: { m: GloopMotion; origin: Point | null; jelly: number; closing: boolean }) {
   const sides = jellySides(jelly)
   const ref = useRef<HTMLDivElement>(null)
@@ -249,12 +276,12 @@ function DropBlob({ m, origin, jelly, closing }: { m: GloopMotion; origin: Point
     const r = ref.current!.getBoundingClientRect()
     const cx = r.left + r.width / 2
     const cy = r.top + r.height / 2
+    const from = origin ? { x: origin.x - cx, y: origin.y - cy } : fallFrom()
     setGeo({
-      from: origin ? { x: origin.x - cx, y: origin.y - cy } : fallFrom(),
+      from,
       w: r.width,
       h: r.height,
-      // Il filtro copre tutta la finestra: la goccia vola anche fuori dalla scheda
-      region: { x: -r.left - 40, y: -r.top - 40, width: innerWidth + 80, height: innerHeight + 80 },
+      region: flightRegion(r, from),
     })
     // origin resta lo stesso per tutta l'apertura: in pratica si misura una volta sola
   }, [origin])
