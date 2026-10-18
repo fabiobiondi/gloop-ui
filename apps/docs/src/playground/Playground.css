@@ -27,6 +27,11 @@
   border-right: 1px solid var(--pg-border);
 }
 
+/* Schermi larghi: contenitore trasparente, scorre l'aside (vedi il cassetto per gli schermi stretti) */
+.pg-sidebar__scroll {
+  display: contents;
+}
+
 .pg-sidebar__title {
   margin: 0 0 12px;
   padding: 0 12px;
@@ -466,8 +471,9 @@
     left: 0;
     width: min(300px, 85vw);
     height: auto;
-    padding-top: calc(24px + env(safe-area-inset-top));
-    overscroll-behavior: contain;
+    /* Non scorre: scorre .pg-sidebar__scroll. Su iOS un elemento che scorre e si muove con transform non risponde al dito */
+    overflow: hidden;
+    padding: 0;
     background: var(--pg-bg);
     transform: translateX(-100%);
     /* display passa a none solo a fine transizione, così si vede anche la chiusura */
@@ -486,14 +492,19 @@
       }
     }
 
-    /*
-     * Chiuso: display none (anche niente Tab). Su iOS un cassetto nascosto con
-     * visibility o inert, una volta aperto, non scorre col dito; con display none
-     * all'apertura viene ricreato e scorre
-     */
+    /* Chiuso: display none, anche niente Tab sui link fuori schermo */
     &:not([data-open]) {
       display: none;
     }
+  }
+
+  .pg-sidebar__scroll {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: calc(24px + env(safe-area-inset-top)) 16px 0;
   }
 
   .pg-main {

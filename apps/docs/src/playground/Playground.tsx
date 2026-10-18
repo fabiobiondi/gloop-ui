@@ -344,13 +344,21 @@ function useMobileMenu(pageId: string) {
     // Tornati su schermo largo il cassetto non esiste più: niente stato appeso
     const wide = window.matchMedia('(min-width: 761px)')
     const onWide = () => wide.matches && setOpen(false)
-    // La pagina sotto non scorre
-    const overflow = document.documentElement.style.overflow
-    document.documentElement.style.overflow = 'hidden'
+    /*
+     * La pagina sotto non scorre. Body fisso al punto di scroll: su iOS overflow: hidden
+     * non basta, il dito sul cassetto farebbe scorrere la pagina
+     */
+    const body = document.body.style
+    const saved = { position: body.position, top: body.top, left: body.left, right: body.right }
+    const y = window.scrollY
+    const hash = window.location.hash
+    Object.assign(body, { position: 'fixed', top: `${-y}px`, left: '0', right: '0' })
     document.addEventListener('keydown', onKeyDown)
     wide.addEventListener('change', onWide)
     return () => {
-      document.documentElement.style.overflow = overflow
+      Object.assign(body, saved)
+      // Stessa pagina: torna dov'era. Scelta un'altra pagina: dall'inizio
+      window.scrollTo({ top: window.location.hash === hash ? y : 0 })
       document.removeEventListener('keydown', onKeyDown)
       wide.removeEventListener('change', onWide)
     }
@@ -419,36 +427,39 @@ function Playground() {
           if ((e.target as Element).closest('a[href^="#"]')) setMenuOpen(false)
         }}
       >
-        <header className="pg-brand">
-          <a href="#what-is-gloop" className="pg-brand__name">
-            <GloopMark className="pg-brand__mark" />
-            gloop-ui
-          </a>
-          <a href="#changelog" className="pg-brand__version" title="Changelog">
-            v{version}
-          </a>
-        </header>
-        <div className="pg-brand__links">
-          <a href={REPO_URL} target="_blank" rel="noreferrer">
-            GitHub
-          </a>
-          <a href={NPM_URL} target="_blank" rel="noreferrer">
-            npm
-          </a>
+        {/* Da cassetto scorre questo, non l'aside che si muove con transform (su iOS non scorrerebbe) */}
+        <div className="pg-sidebar__scroll">
+          <header className="pg-brand">
+            <a href="#what-is-gloop" className="pg-brand__name">
+              <GloopMark className="pg-brand__mark" />
+              gloop-ui
+            </a>
+            <a href="#changelog" className="pg-brand__version" title="Changelog">
+              v{version}
+            </a>
+          </header>
+          <div className="pg-brand__links">
+            <a href={REPO_URL} target="_blank" rel="noreferrer">
+              GitHub
+            </a>
+            <a href={NPM_URL} target="_blank" rel="noreferrer">
+              npm
+            </a>
+          </div>
+
+          <NavGroup title="Guide" items={guides} current={page} />
+          <div className="pg-sidebar__gap" />
+          <hr className="pg-sidebar__divider" />
+          <p className="pg-sidebar__title">Components</p>
+          {COMPONENT_GROUPS.map((g) => (
+            <NavGroup key={g.title} title={g.title} items={g.items} current={page} sub />
+          ))}
+          <div className="pg-sidebar__gap" />
+          <hr className="pg-sidebar__divider" />
+          <NavGroup title="Coming soon" items={upcoming} current={page} />
+
+          <ThemePanel theme={theme} onChange={setTheme} />
         </div>
-
-        <NavGroup title="Guide" items={guides} current={page} />
-        <div className="pg-sidebar__gap" />
-        <hr className="pg-sidebar__divider" />
-        <p className="pg-sidebar__title">Components</p>
-        {COMPONENT_GROUPS.map((g) => (
-          <NavGroup key={g.title} title={g.title} items={g.items} current={page} sub />
-        ))}
-        <div className="pg-sidebar__gap" />
-        <hr className="pg-sidebar__divider" />
-        <NavGroup title="Coming soon" items={upcoming} current={page} />
-
-        <ThemePanel theme={theme} onChange={setTheme} />
       </aside>
 
       <main className="pg-main">
