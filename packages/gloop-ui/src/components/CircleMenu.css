@@ -1,6 +1,43 @@
+/*
+ * Animato solo in CSS: le molle sono campionate in easing linear() (simulazione
+ * fisica con stiffness/damping), una per preset; le durate si dividono per --ui-motion-speed.
+ */
 .circle-menu {
+  --cm-open: linear(0, 0.056, 0.19, 0.366, 0.551, 0.717, 0.868, 0.987, 1.07, 1.121, 1.145, 1.146, 1.133, 1.111, 1.084, 1.057, 1.032, 1.012, 0.996, 0.986, 0.98, 0.978, 0.979, 0.981, 0.985, 0.989, 0.993, 0.996, 0.999, 1.001, 1.002, 1.003, 1.003, 1.003, 1.003, 1.002, 1.001, 1.001, 1, 1, 1);
+  --cm-open-ms: 755ms;
+  --cm-close: linear(0, 0.029, 0.091, 0.182, 0.276, 0.382, 0.485, 0.573, 0.66, 0.73, 0.796, 0.851, 0.892, 0.928, 0.954, 0.976, 0.992, 1.003, 1.01, 1.015, 1.017, 1.018, 1.018, 1.017, 1.015, 1.014, 1.012, 1.01, 1.008, 1.007, 1.005, 1.004, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+  --cm-close-ms: 464ms;
+  --cm-hover: linear(0, 0.078, 0.261, 0.492, 0.735, 0.933, 1.08, 1.171, 1.21, 1.208, 1.177, 1.131, 1.078, 1.032, 0.996, 0.971, 0.958, 0.954, 0.959, 0.967, 0.978, 0.989, 0.998, 1.004, 1.008, 1.01, 1.009, 1.008, 1.006, 1.003, 1.001, 1, 0.999, 0.998, 0.998, 0.998, 0.999, 0.999, 1, 1, 1);
+  --cm-hover-ms: 805ms;
+  --cm-tail: linear(0, 0.023, 0.081, 0.16, 0.257, 0.353, 0.448, 0.539, 0.623, 0.698, 0.767, 0.823, 0.87, 0.909, 0.941, 0.965, 0.984, 0.999, 1.009, 1.016, 1.02, 1.022, 1.022, 1.022, 1.02, 1.019, 1.017, 1.014, 1.012, 1.01, 1.008, 1.007, 1.005, 1.004, 1.003, 1.002, 1.001, 1.001, 1, 1, 1);
+  --cm-tail-ms: 686ms;
+
   position: relative;
   flex: none;
+}
+
+/* smooth: molle smorzate in modo critico, nessun rimbalzo */
+.circle-menu[data-motion-preset='smooth'] {
+  --cm-open: linear(0, 0.026, 0.092, 0.171, 0.258, 0.345, 0.434, 0.511, 0.58, 0.642, 0.7, 0.747, 0.787, 0.822, 0.853, 0.878, 0.898, 0.916, 0.931, 0.943, 0.953, 0.961, 0.969, 0.974, 0.979, 0.983, 0.986, 0.988, 0.991, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 1);
+  --cm-open-ms: 530ms;
+  --cm-close: linear(0, 0.028, 0.092, 0.175, 0.265, 0.354, 0.44, 0.525, 0.595, 0.657, 0.712, 0.758, 0.798, 0.832, 0.861, 0.885, 0.905, 0.922, 0.936, 0.947, 0.957, 0.965, 0.972, 0.977, 0.981, 0.985, 0.987, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1);
+  --cm-close-ms: 483ms;
+  --cm-hover: var(--cm-close);
+  --cm-hover-ms: 483ms;
+  --cm-tail: linear(0, 0.023, 0.08, 0.152, 0.236, 0.318, 0.401, 0.476, 0.548, 0.609, 0.667, 0.715, 0.757, 0.796, 0.827, 0.855, 0.878, 0.899, 0.915, 0.929, 0.941, 0.951, 0.959, 0.966, 0.972, 0.977, 0.981, 0.984, 0.987, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.998, 1);
+  --cm-tail-ms: 698ms;
+}
+
+/* snappy: più rapido, rimbalzo dimezzato */
+.circle-menu[data-motion-preset='snappy'] {
+  --cm-open: linear(0, 0.029, 0.098, 0.19, 0.294, 0.39, 0.494, 0.59, 0.677, 0.753, 0.817, 0.87, 0.914, 0.944, 0.971, 0.991, 1.005, 1.014, 1.02, 1.023, 1.024, 1.023, 1.022, 1.02, 1.017, 1.015, 1.012, 1.01, 1.008, 1.006, 1.005, 1.003, 1.002, 1.001, 1.001, 1, 1, 1, 1, 0.999, 1);
+  --cm-open-ms: 395ms;
+  --cm-close: linear(0, 0.019, 0.063, 0.124, 0.195, 0.27, 0.346, 0.42, 0.491, 0.557, 0.617, 0.672, 0.721, 0.764, 0.802, 0.835, 0.864, 0.888, 0.909, 0.926, 0.941, 0.953, 0.963, 0.972, 0.978, 0.984, 0.988, 0.992, 0.994, 0.996, 0.998, 0.999, 1, 1.001, 1.001, 1.001, 1.001, 1.001, 1.001, 1.001, 1);
+  --cm-close-ms: 280ms;
+  --cm-hover: linear(0, 0.03, 0.092, 0.185, 0.293, 0.392, 0.5, 0.602, 0.684, 0.765, 0.833, 0.884, 0.93, 0.966, 0.99, 1.01, 1.023, 1.03, 1.035, 1.036, 1.035, 1.033, 1.03, 1.026, 1.022, 1.018, 1.015, 1.012, 1.009, 1.006, 1.004, 1.003, 1.001, 1, 1, 0.999, 0.999, 0.999, 0.999, 0.999, 1);
+  --cm-hover-ms: 347ms;
+  --cm-tail: linear(0, 0.018, 0.062, 0.128, 0.199, 0.274, 0.351, 0.425, 0.502, 0.568, 0.628, 0.682, 0.731, 0.777, 0.814, 0.846, 0.874, 0.897, 0.919, 0.935, 0.949, 0.96, 0.97, 0.978, 0.984, 0.988, 0.992, 0.995, 0.997, 0.999, 1, 1.001, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1);
+  --cm-tail-ms: 448ms;
 }
 
 .circle-menu__defs {
@@ -39,19 +76,42 @@
 }
 
 /*
- * Tutti partono dal bottone centrale (--origin-x/y, calcolati in CircleMenu.tsx:
- * con un arco non è al centro del riquadro). La posizione la danno x/y animati da Motion.
+ * Tutti partono dal bottone centrale (--origin-x/y, calcolati in CircleMenu.tsx).
+ * Posizione, scala e opacità arrivano come variabili (--x, --y, --s, --o): translate e
+ * scale sono proprietà separate, così ognuna ha la sua curva come in Motion.
  */
 .circle-menu__blob,
 .circle-menu__btn {
+  --speed: var(--ui-motion-speed, 1);
+  --move: var(--cm-close);
+  --move-ms: var(--cm-close-ms);
+
   position: absolute;
   top: var(--origin-y, 50%);
   left: var(--origin-x, 50%);
   border-radius: 50%;
+  translate: var(--x, 0) var(--y, 0);
+  scale: var(--s, 1);
+  transition:
+    translate calc(var(--move-ms) / var(--speed)) var(--move) calc(var(--delay, 0s) / var(--speed)),
+    scale calc(var(--cm-hover-ms) / var(--speed)) var(--cm-hover),
+    opacity calc(100ms / var(--speed)) ease-out;
+
+  &[data-phase='open'] {
+    --move: var(--cm-open);
+    --move-ms: var(--cm-open-ms);
+  }
 }
 
 .circle-menu__blob {
   background: var(--ui-bg);
+}
+
+/* La coda parte con la testa (stesso ritardo) ma con la molla lenta, anche sulla scala */
+.circle-menu__blob--tail {
+  transition:
+    translate calc(var(--cm-tail-ms) / var(--speed)) var(--cm-tail) calc(var(--delay, 0s) / var(--speed)),
+    scale calc(var(--cm-tail-ms) / var(--speed)) var(--cm-tail);
 }
 
 .circle-menu__btn {
@@ -62,6 +122,14 @@
   color: var(--ui-fg);
   background: none;
   cursor: pointer;
+  opacity: var(--o, 1);
+
+  &[data-phase='open'] {
+    transition-duration:
+      calc(var(--move-ms) / var(--speed)),
+      calc(var(--cm-hover-ms) / var(--speed)),
+      calc(200ms / var(--speed));
+  }
 
   & svg {
     width: 20px;
@@ -70,6 +138,10 @@
 
   &[data-hidden] {
     pointer-events: none;
+  }
+
+  &:active:not([data-hidden]) {
+    scale: calc(var(--s, 1) * 0.9);
   }
 
   &:focus-visible {
@@ -85,6 +157,39 @@
   & svg {
     width: 24px;
     height: 24px;
+    transition: rotate calc(var(--move-ms) / var(--speed)) var(--move);
+  }
+}
+
+/* Il "+" ruota e diventa una "×" */
+.circle-menu[data-open] .circle-menu__btn--center svg {
+  rotate: 135deg;
+}
+
+/*
+ * Il centro si "strizza" quando lancia fuori le icone, e sussulta quando le riassorbe.
+ * Cambiando nome all'animazione il browser la fa ripartire a ogni apertura e chiusura.
+ */
+.circle-menu[data-toggled] :is(.circle-menu__blob--center, .circle-menu__btn--center) {
+  animation: circle-menu-squeeze calc(300ms / var(--speed)) ease-in-out;
+}
+
+.circle-menu[data-toggled][data-open] :is(.circle-menu__blob--center, .circle-menu__btn--center) {
+  animation: circle-menu-squeeze-open calc(450ms / var(--speed)) ease-out;
+}
+
+@keyframes circle-menu-squeeze {
+  50% {
+    scale: 0.9;
+  }
+}
+
+@keyframes circle-menu-squeeze-open {
+  33% {
+    scale: 0.84;
+  }
+  66% {
+    scale: 1.08;
   }
 }
 
@@ -101,9 +206,34 @@
   width: 12px;
   height: 12px;
   color: color-mix(in srgb, var(--ui-fg) 85%, transparent);
+  transition:
+    opacity calc(var(--cm-hover-ms) / var(--speed)) var(--cm-hover),
+    scale calc(var(--cm-hover-ms) / var(--speed)) var(--cm-hover);
+
+  &[data-off] {
+    opacity: 0;
+    scale: 0.5;
+  }
 
   & svg {
     width: 10px;
     height: 10px;
   }
+}
+
+/* Movimento ridotto: niente spostamenti animati, restano solo le dissolvenze */
+.circle-menu[data-motion='reduced'] {
+  & .circle-menu__blob,
+  & .circle-menu__btn,
+  & .circle-menu__btn svg,
+  & .circle-menu__more {
+    transition-property: opacity;
+    animation: none;
+  }
+}
+
+/* animated={false}: i cambi di stato sono istantanei */
+.circle-menu[data-motion='off'] * {
+  transition: none !important;
+  animation: none !important;
 }

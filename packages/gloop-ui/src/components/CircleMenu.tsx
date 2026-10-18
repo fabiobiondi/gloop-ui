@@ -9,9 +9,9 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
-import { motion, type Variants } from 'motion/react'
 import Popover from './Popover'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useCssMotion } from './css-motion'
 import Tooltip from './Tooltip'
 import type { FloatingPlacement } from './floating/position'
 import './theme.css'
@@ -123,23 +123,13 @@ const SUB_GAP = 6
 /** Ampiezza massima dell'arco del sottomenu, in gradi: oltre, cresce la distanza */
 const SUB_MAX_ARC = 130
 
-// Apertura: molla elastica che "schizza" fuori. Chiusura: più rapida, poco rimbalzo.
-const openSpring = { type: 'spring', stiffness: 300, damping: 17, mass: 0.9 } as const
-const closeSpring = { type: 'spring', stiffness: 420, damping: 32 } as const
-const hoverSpring = { type: 'spring', stiffness: 420, damping: 18 } as const
 /*
- * Come nella GooPill della tabbar: ogni blob ha una "coda" che insegue la testa con una
- * molla più lenta. Il filtro goo le fonde: in movimento la goccia si allunga verso
- * il centro, da ferma la coda torna sotto la testa.
+ * Le molle sono easing linear() in CircleMenu.css (una curva per
+ * apertura, chiusura, hover e coda, per ogni preset). Qui restano solo i ritardi e la
+ * scala della coda: ogni blob ha una "coda" che insegue la testa con una molla più lenta,
+ * e il filtro goo le fonde; in movimento la goccia si allunga verso il centro.
  */
-const tailSpring = { type: 'spring', stiffness: 170, damping: 20 } as const
 const TAIL_SCALE = 0.8
-
-// Il centro si "strizza" quando lancia fuori le icone, e sussulta quando le riassorbe
-const centerVariants: Variants = {
-  closed: { scale: [1, 0.9, 1], transition: { duration: 0.3 } },
-  open: { scale: [1, 0.84, 1.08, 1], transition: { duration: 0.45, ease: 'easeOut' } },
-}
 
 // Angoli nel sistema dello schermo: 0 = destra, 90 = basso, 180 = sinistra, -90 = alto
 const DIRECTION_ANGLE: Record<CircleMenuDirection, number> = {
@@ -198,7 +188,7 @@ function CircleMenu({
   onOpenChange,
   ...motionProps
 }: CircleMenuProps) {
-  const m = useGloopMotion(motionProps)
+  const m = useCssMotion(motionProps)
   const [uncontrolled, setUncontrolled] = useState(defaultOpen)
   const open = openProp ?? uncontrolled
   // I listener su document leggono sempre l'ultima onOpenChange
@@ -385,25 +375,49 @@ function CircleMenu({
 
   /* ---------- Posizioni e transizioni (condivise dai due livelli) ---------- */
 
-  function itemState(i: number) {
+  /*
+   * Ogni elemento animato riceve solo variabili CSS: --x/--y (translate), --s (scale),
+   * --o (opacità) e --delay. data-phase sceglie la curva: open (molla elastica)
+   * o close (rapida, poco rimbalzo). Le transizioni CSS fanno il resto, e se lo stato
+   * cambia a metà ripartono dal valore corrente.
+   */
+  type Target = { x: number; y: number; s: number; o: number; delay: number; phase: 'open' | 'close' }
+
+  const vars = (t: Target, size: number, extra?: CSSProperties) =>
+    ({
+      width: size,
+      height: size,
+      marginLeft: -size / 2,
+      marginTop: -size / 2,
+      '--x': `${t.x}px`,
+      '--y': `${t.y}px`,
+      '--s': t.s,
+      '--o': t.o,
+      '--delay': `${t.delay}s`,
+      ...extra,
+    }) as CSSProperties
+
+  function itemState(i: number): Target {
     const p = polar(r, angleOf(i))
     const key = String(i)
-    const scale = !open
+    const s = !open
       ? 0.4
       : focused !== null && focused !== i
         ? 0.8 // con un sottomenu o un pannello aperto, le altre icone si fanno da parte
         : hovered === key
           ? 1.12
           : 1
-    const delay = open ? i * 0.035 : (n - 1 - i) * 0.02
-    const move = open ? { ...openSpring, delay } : { ...closeSpring, delay }
     return {
-      target: { x: open ? p.x : 0, y: open ? p.y : 0, scale },
-      transition: { x: move, y: move, scale: hoverSpring, opacity: { duration: open ? 0.2 : 0.1 } },
+      x: open ? p.x : 0,
+      y: open ? p.y : 0,
+      s,
+      o: open ? 1 : 0,
+      delay: open ? i * 0.035 : (n - 1 - i) * 0.02,
+      phase: open ? 'open' : 'close',
     }
   }
 
-  function childState(i: number, j: number, m: number) {
+  function childState(i: number, j: number, m: number): Target & { shown: boolean } {
     const parent = polar(r, angleOf(i))
     const { dist, step: subStep } = subArc(m)
     const offset = (j - (m - 1) / 2) * subStep
@@ -412,24 +426,15 @@ function CircleMenu({
     const key = `${i}-${j}`
     // Da nascosti, i figli stanno dentro il genitore (o dentro il centro se tutto è chiuso)
     const home = open ? parent : { x: 0, y: 0 }
-    const delay = shown ? j * 0.03 : 0
-    const move = shown ? { ...openSpring, delay } : closeSpring
     return {
       shown,
-      target: {
-        x: shown ? parent.x + p.x : home.x,
-        y: shown ? parent.y + p.y : home.y,
-        scale: shown ? (hovered === key ? 1.12 : 1) : 0.3,
-      },
-      transition: { x: move, y: move, scale: hoverSpring, opacity: { duration: shown ? 0.2 : 0.08 } },
+      x: shown ? parent.x + p.x : home.x,
+      y: shown ? parent.y + p.y : home.y,
+      s: shown ? (hovered === key ? 1.12 : 1) : 0.3,
+      o: shown ? 1 : 0,
+      delay: shown ? j * 0.03 : 0,
+      phase: shown ? 'open' : 'close',
     }
-  }
-
-
-  // La coda parte insieme alla testa (stesso ritardo) ma con la molla lenta
-  function tailTransition(t: { x: object }) {
-    const move = { ...tailSpring, delay: 'delay' in t.x ? (t.x.delay as number) : 0 }
-    return { x: move, y: move, scale: tailSpring }
   }
 
   const hoverProps = (key: string) => ({
@@ -439,10 +444,13 @@ function CircleMenu({
     onBlur: () => setHovered((h) => (h === key ? null : h)),
   })
 
-  const blobStyle = (s: number) => ({ width: s, height: s, marginLeft: -s / 2, marginTop: -s / 2 })
+  // Il "sussulto" del centro parte solo dopo il primo cambio, non al montaggio
+  const [toggled, setToggled] = useState(false)
+  const [firstOpen] = useState(open)
+  if (!toggled && open !== firstOpen) setToggled(true)
 
   return (
-    <MotionScope m={m} props={motionProps}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       <div
         {...m.rootProps}
         ref={rootRef}
@@ -452,6 +460,7 @@ function CircleMenu({
         }}
         data-overlay={reserveSpace ? undefined : true}
         data-open={open || undefined}
+        data-toggled={toggled || undefined}
         style={
           {
             ...m.rootProps.style,
@@ -504,22 +513,17 @@ function CircleMenu({
                 const c = childState(i, j, all.length)
                 return [
                   !reduceMotion && (
-                    <motion.span
+                    <span
                       key={`${i}-${j}-tail`}
-                      className="circle-menu__blob"
-                      style={blobStyle(CHILD_SIZE)}
-                      initial={false}
-                      animate={{ ...c.target, scale: c.shown ? TAIL_SCALE : 0.3 }}
-                      transition={m.t(tailTransition(c.transition))}
+                      className="circle-menu__blob circle-menu__blob--tail"
+                      style={vars({ ...c, s: c.shown ? TAIL_SCALE : 0.3 }, CHILD_SIZE)}
                     />
                   ),
-                  <motion.span
+                  <span
                     key={`${i}-${j}`}
                     className="circle-menu__blob"
-                    style={blobStyle(CHILD_SIZE)}
-                    initial={false}
-                    animate={c.target}
-                    transition={m.t(c.transition)}
+                    data-phase={c.phase}
+                    style={vars(c, CHILD_SIZE)}
                   />,
                 ]
               }),
@@ -528,64 +532,45 @@ function CircleMenu({
               const s = itemState(i)
               return [
                 !reduceMotion && (
-                  <motion.span
+                  <span
                     key={`${i}-tail`}
-                    className="circle-menu__blob"
-                    style={blobStyle(ITEM_SIZE)}
-                    initial={false}
-                    animate={{ ...s.target, scale: open ? TAIL_SCALE : 0.4 }}
-                    transition={m.t(tailTransition(s.transition))}
+                    className="circle-menu__blob circle-menu__blob--tail"
+                    style={vars({ ...s, s: open ? TAIL_SCALE : 0.4 }, ITEM_SIZE)}
                   />
                 ),
-                <motion.span
-                  key={i}
-                  className="circle-menu__blob"
-                  style={blobStyle(ITEM_SIZE)}
-                  initial={false}
-                  animate={s.target}
-                  transition={m.t(s.transition)}
-                />,
+                <span key={i} className="circle-menu__blob" data-phase={s.phase} style={vars(s, ITEM_SIZE)} />,
               ]
             })}
-            <motion.span
-              className="circle-menu__blob"
-              style={blobStyle(CENTER_SIZE)}
-              variants={m.v(centerVariants)}
-              initial={false}
-              animate={open ? 'open' : 'closed'}
+            <span
+              className="circle-menu__blob circle-menu__blob--center"
+              style={vars({ x: 0, y: 0, s: 1, o: 1, delay: 0, phase: 'open' }, CENTER_SIZE)}
             />
           </div>
 
           {/* ---------- Livello icone (interattivo) ---------- */}
           <div className="circle-menu__icons">
-            <motion.button
+            <button
               ref={triggerRef}
               type="button"
               className="circle-menu__btn circle-menu__btn--center"
-              style={blobStyle(CENTER_SIZE)}
+              style={vars({ x: 0, y: 0, s: 1, o: 1, delay: 0, phase: open ? 'open' : 'close' }, CENTER_SIZE)}
+              data-phase={open ? 'open' : 'close'}
               aria-label={open ? `Close ${label}` : `Open ${label}`}
               aria-expanded={open}
-              variants={m.v(centerVariants)}
-              initial={false}
-              animate={open ? 'open' : 'closed'}
-              whileTap={{ scale: 0.9 }}
               onClick={() => (open ? closeAll() : setOpen(true))}
             >
               {/* Il "+" ruota e diventa una "×" */}
-              <motion.svg
+              <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 aria-hidden="true"
-                initial={false}
-                animate={{ rotate: open ? 135 : 0 }}
-                transition={m.t(open ? openSpring : closeSpring)}
               >
                 <path d="M12 5v14M5 12h14" />
-              </motion.svg>
-            </motion.button>
+              </svg>
+            </button>
 
             {items.slice(0, n).map((item, i) => {
               const s = itemState(i)
@@ -597,21 +582,18 @@ function CircleMenu({
                 angleOf(i),
                 open,
                 sub !== null,
-                <motion.button
+                <button
                   key={i}
                   type="button"
                   className="circle-menu__btn"
-                  style={blobStyle(ITEM_SIZE)}
+                  style={vars(s, ITEM_SIZE)}
+                  data-phase={s.phase}
                   aria-label={item.label}
                   aria-hidden={!open}
                   tabIndex={open ? 0 : -1}
                   aria-haspopup={hasSub ? 'menu' : undefined}
                   aria-expanded={hasSub ? sub === i : undefined}
                   data-hidden={!open || undefined}
-                  initial={false}
-                  animate={{ ...s.target, opacity: open ? 1 : 0 }}
-                  transition={m.t(s.transition)}
-                  whileTap={{ scale: 0.9 }}
                   {...hoverProps(String(i))}
                   onClick={() => {
                     if (hasSub) {
@@ -634,24 +616,22 @@ function CircleMenu({
                     i figli, e rivolta verso di loro. Sparisce quando sono fuori.
                   */}
                   {hasSub && (
-                    <motion.span
+                    <span
                       className="circle-menu__more"
                       aria-hidden="true"
+                      data-off={sub === i || undefined}
                       style={{
                         left: ITEM_SIZE / 2 + polar(MORE_OFFSET, angleOf(i)).x - MORE_SIZE / 2,
                         top: ITEM_SIZE / 2 + polar(MORE_OFFSET, angleOf(i)).y - MORE_SIZE / 2,
-                        rotate: angleOf(i),
+                        rotate: `${angleOf(i)}deg`,
                       }}
-                      initial={false}
-                      animate={{ opacity: sub === i ? 0 : 1, scale: sub === i ? 0.5 : 1 }}
-                      transition={m.t(hoverSpring)}
                     >
                       <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M4.5 3 7.5 6l-3 3" />
                       </svg>
-                    </motion.span>
+                    </span>
                   )}
-                </motion.button>,
+                </button>,
               )
             })}
 
@@ -665,19 +645,16 @@ function CircleMenu({
                   angleOf(i) + (j - (all.length - 1) / 2) * subArc(all.length).step,
                   c.shown,
                   false,
-                  <motion.button
+                  <button
                     key={`${i}-${j}`}
                     type="button"
                     className="circle-menu__btn circle-menu__btn--child"
-                    style={blobStyle(CHILD_SIZE)}
+                    style={vars(c, CHILD_SIZE)}
+                    data-phase={c.phase}
                     aria-label={child.label}
                     aria-hidden={!c.shown}
                     tabIndex={c.shown ? 0 : -1}
                     data-hidden={!c.shown || undefined}
-                    initial={false}
-                    animate={{ ...c.target, opacity: c.shown ? 1 : 0 }}
-                    transition={m.t(c.transition)}
-                    whileTap={{ scale: 0.9 }}
                     {...hoverProps(`${i}-${j}`)}
                     // Scelta fatta: tutto rientra nel centro
                     onClick={() => {
@@ -687,14 +664,14 @@ function CircleMenu({
                     }}
                   >
                     {child.icon}
-                  </motion.button>,
+                  </button>,
                 )
               }),
             )}
           </div>
         </div>
       </div>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 

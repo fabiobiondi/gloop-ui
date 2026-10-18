@@ -1,15 +1,5 @@
 // API pubblica di gloop-ui: tutto ciò che non è esportato qui resta interno
 export { default as CircleMenu } from './components/CircleMenu'
-export { default as ArcMenu } from './components/ArcMenu'
-export type {
-  ArcMenuProps,
-  ArcMenuItem,
-  ArcMenuDirection,
-  ArcMenuTooltip,
-  ArcMenuPanel,
-  ArcMenuPanelApi,
-  ArcMenuPanelContent,
-} from './components/ArcMenu'
 export type {
   CircleMenuProps,
   CircleMenuItem,
