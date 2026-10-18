@@ -7,10 +7,10 @@ Soft, blobby, fluid React components with liquid "goo" animations.
 ## Install
 
 ```sh
-npm install gloop-ui motion
+npm install gloop-ui
 ```
 
-`react` and `react-dom` 19 and `motion` 14 are peer dependencies.
+`react` and `react-dom` 19 are peer dependencies. No animation library needed: everything is animated with CSS.
 
 ## Usage
 

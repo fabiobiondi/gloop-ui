@@ -98,3 +98,197 @@
     outline-offset: -4px;
   }
 }
+
+/* ---------- Animazioni ---------- */
+
+/*
+ * Solo CSS: le molle sono campionate in easing linear() (simulazione fisica con
+ * stiffness/damping), una per preset; le durate si dividono per --ui-motion-speed.
+ * Apertura con keyframe (fill backwards durante i ritardi); chiusura con transizioni,
+ * che partono dal valore corrente se si chiude a metà apertura.
+ */
+.dialog-layer {
+  --speed: var(--ui-motion-speed, 1);
+  --dialog-swell: linear(0, 0.04, 0.135, 0.264, 0.406, 0.549, 0.681, 0.805, 0.9, 0.974, 1.028, 1.065, 1.086, 1.095, 1.094, 1.088, 1.077, 1.063, 1.05, 1.036, 1.024, 1.014, 1.006, 1, 0.995, 0.993, 0.991, 0.991, 0.991, 0.992, 0.993, 0.995, 0.996, 0.997, 0.998, 0.999, 1, 1, 1.001, 1.001, 1);
+  --dialog-swell-ms: 563ms;
+  --dialog-drip: linear(0, 0.056, 0.182, 0.355, 0.54, 0.715, 0.859, 0.979, 1.064, 1.117, 1.141, 1.146, 1.134, 1.113, 1.087, 1.06, 1.035, 1.016, 0.999, 0.988, 0.982, 0.979, 0.979, 0.981, 0.984, 0.988, 0.992, 0.996, 0.998, 1.001, 1.002, 1.003, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1, 1);
+  --dialog-drip-ms: 789ms;
+  --dialog-suck: linear(0, 0.025, 0.084, 0.163, 0.252, 0.335, 0.424, 0.509, 0.586, 0.656, 0.717, 0.77, 0.815, 0.85, 0.882, 0.909, 0.93, 0.948, 0.961, 0.972, 0.981, 0.987, 0.992, 0.995, 0.998, 1, 1.001, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1);
+  --dialog-suck-ms: 395ms;
+}
+
+/* smooth: molle smorzate in modo critico, nessun rimbalzo */
+.dialog-layer[data-motion-preset='smooth'] {
+  --dialog-swell: linear(0, 0.028, 0.093, 0.175, 0.266, 0.356, 0.441, 0.52, 0.591, 0.654, 0.713, 0.759, 0.799, 0.833, 0.862, 0.886, 0.906, 0.922, 0.936, 0.948, 0.957, 0.965, 0.971, 0.977, 0.981, 0.984, 0.987, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1);
+  --dialog-swell-ms: 482ms;
+  --dialog-drip: linear(0, 0.027, 0.089, 0.17, 0.252, 0.341, 0.426, 0.505, 0.577, 0.64, 0.696, 0.741, 0.783, 0.819, 0.849, 0.875, 0.896, 0.913, 0.928, 0.941, 0.952, 0.96, 0.967, 0.973, 0.978, 0.982, 0.985, 0.988, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 1);
+  --dialog-drip-ms: 554ms;
+  --dialog-suck: linear(0, 0.029, 0.096, 0.181, 0.273, 0.364, 0.451, 0.537, 0.607, 0.669, 0.722, 0.768, 0.807, 0.84, 0.868, 0.891, 0.911, 0.927, 0.94, 0.951, 0.961, 0.968, 0.974, 0.979, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+  --dialog-suck-ms: 443ms;
+}
+
+/* snappy: più rapido, rimbalzo dimezzato */
+.dialog-layer[data-motion-preset='snappy'] {
+  --dialog-swell: linear(0, 0.03, 0.099, 0.192, 0.295, 0.411, 0.511, 0.603, 0.684, 0.755, 0.815, 0.864, 0.904, 0.936, 0.96, 0.98, 0.993, 1.002, 1.008, 1.012, 1.013, 1.014, 1.013, 1.013, 1.011, 1.01, 1.008, 1.007, 1.006, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1);
+  --dialog-swell-ms: 364ms;
+  --dialog-drip: linear(0, 0.026, 0.097, 0.184, 0.281, 0.393, 0.491, 0.583, 0.674, 0.746, 0.814, 0.866, 0.907, 0.944, 0.969, 0.989, 1.004, 1.013, 1.019, 1.022, 1.023, 1.023, 1.022, 1.02, 1.018, 1.015, 1.013, 1.01, 1.008, 1.006, 1.005, 1.003, 1.002, 1.002, 1.001, 1, 1, 1, 1, 0.999, 1);
+  --dialog-drip-ms: 414ms;
+  --dialog-suck: linear(0, 0.029, 0.085, 0.167, 0.248, 0.341, 0.421, 0.505, 0.573, 0.642, 0.696, 0.749, 0.789, 0.829, 0.858, 0.885, 0.906, 0.925, 0.939, 0.952, 0.962, 0.97, 0.977, 0.981, 0.986, 0.989, 0.992, 0.993, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1);
+  --dialog-suck-ms: 301ms;
+}
+
+.dialog-layer[data-state='open'] {
+  & .dialog-backdrop {
+    animation: dialog-fade calc(200ms / var(--speed)) linear;
+  }
+
+  /* Il badge parte dentro la scheda e si stacca verso l'alto */
+  & .dialog__badge {
+    animation: dialog-badge-in calc(var(--dialog-drip-ms) / var(--speed)) var(--dialog-drip) calc(80ms / var(--speed)) backwards;
+  }
+
+  & .dialog__badge-icon {
+    animation: dialog-icon-in calc(var(--dialog-drip-ms) / var(--speed)) var(--dialog-drip) calc(160ms / var(--speed)) backwards;
+  }
+
+  /* La scheda nasce piccola e schiacciata e si gonfia con un piccolo rimbalzo */
+  & .dialog {
+    animation:
+      dialog-swell calc(var(--dialog-swell-ms) / var(--speed)) var(--dialog-swell),
+      dialog-fade calc(100ms / var(--speed)) linear;
+  }
+
+  & .dialog > div {
+    animation: dialog-reveal calc(250ms / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1) calc(120ms / var(--speed)) backwards;
+  }
+
+  /* I pulsanti colano giù dal bordo della scheda, uno dopo l'altro */
+  & .dialog__actions > div {
+    animation: dialog-action-in calc(var(--dialog-drip-ms) / var(--speed)) var(--dialog-drip)
+      calc((100ms + var(--i, 0) * 50ms) / var(--speed)) backwards;
+  }
+}
+
+/* Chiusura: tutto viene risucchiato nella scheda, più in fretta */
+.dialog-layer[data-state='closing'] {
+  & .dialog-backdrop {
+    opacity: 0;
+    transition: opacity calc(150ms / var(--speed)) linear calc(50ms / var(--speed));
+  }
+
+  & .dialog__badge {
+    translate: 0 var(--dialog-badge-from);
+    scale: 0.4;
+    opacity: 0;
+    transition:
+      translate calc(var(--dialog-suck-ms) / var(--speed)) var(--dialog-suck),
+      scale calc(var(--dialog-suck-ms) / var(--speed)) var(--dialog-suck),
+      opacity calc(120ms / var(--speed)) linear calc(80ms / var(--speed));
+  }
+
+  & .dialog {
+    scale: 0.35 0.2;
+    opacity: 0;
+    transition:
+      scale calc(var(--dialog-suck-ms) / var(--speed)) var(--dialog-suck) calc(60ms / var(--speed)),
+      opacity calc(120ms / var(--speed)) linear calc(100ms / var(--speed));
+  }
+
+  & .dialog > div {
+    opacity: 0;
+    transition: opacity calc(80ms / var(--speed)) linear;
+  }
+
+  & .dialog__actions > div {
+    translate: 0 var(--dialog-action-from);
+    scale: 0.4;
+    opacity: 0;
+    transition:
+      translate calc(var(--dialog-suck-ms) / var(--speed)) var(--dialog-suck),
+      scale calc(var(--dialog-suck-ms) / var(--speed)) var(--dialog-suck),
+      opacity calc(120ms / var(--speed)) linear calc(80ms / var(--speed));
+  }
+}
+
+@keyframes dialog-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-badge-in {
+  from {
+    translate: 0 var(--dialog-badge-from);
+    scale: 0.4;
+  }
+}
+
+@keyframes dialog-icon-in {
+  from {
+    scale: 0.5;
+    rotate: -20deg;
+  }
+}
+
+@keyframes dialog-swell {
+  from {
+    scale: 0.35 0.2;
+  }
+}
+
+@keyframes dialog-reveal {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+    filter: blur(4px);
+  }
+}
+
+@keyframes dialog-action-in {
+  from {
+    translate: 0 var(--dialog-action-from);
+    scale: 0.4;
+  }
+}
+
+/* Movimento ridotto: niente spostamenti né scale, restano solo le dissolvenze */
+.dialog-layer[data-motion='reduced'] {
+  & .dialog__badge,
+  & .dialog__badge-icon,
+  & .dialog,
+  & .dialog > div,
+  & .dialog__actions > div {
+    translate: none !important;
+    scale: none !important;
+    rotate: none !important;
+  }
+
+  &[data-state='open'] {
+    & .dialog__badge,
+    & .dialog__badge-icon,
+    & .dialog__actions > div {
+      animation: none;
+    }
+
+    & .dialog {
+      animation: dialog-fade calc(100ms / var(--speed)) linear;
+    }
+
+    & .dialog > div {
+      animation-name: dialog-fade-blur;
+    }
+  }
+}
+
+@keyframes dialog-fade-blur {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+/* animated={false}: i cambi di stato sono istantanei */
+.dialog-layer[data-motion='off'] * {
+  transition: none !important;
+  animation: none !important;
+}

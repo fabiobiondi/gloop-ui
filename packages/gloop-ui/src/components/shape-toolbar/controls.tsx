@@ -1,29 +1,82 @@
-import { useState, type ReactNode } from 'react'
-import { AnimatePresence, motion, type Variants } from 'motion/react'
-import { PipetteIcon } from './icons'
-import { useGloopMotion } from '../motion'
-import { glide, itemVariants, useDismiss, useMountId } from './menu-shared'
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { PipetteIcon } from '../shape-toolbar/icons'
+import { useGloopMotion } from '../gloop-motion'
+import { afterAnimations, useDismiss, useMountId, useSharedLayout } from './menu-shared'
+
+/* ---------- Cambio di contenuto: il vecchio esce mentre il nuovo entra ---------- */
+
+type PopEntry<K> = { key: K; id: number; exiting: boolean; enter: boolean }
+
+/*
+ * Al posto di AnimatePresence mode="popLayout" initial={false}: a ogni cambio di value
+ * il contenuto vecchio resta montato fuori dal flusso (data-pop="exit", position absolute)
+ * finché la sua animazione di uscita non finisce, e il nuovo entra (data-pop="enter").
+ * Al montaggio nessuna animazione; con animated={false} il vecchio sparisce subito.
+ */
+export function PopLayout<K extends string | number>({
+  value,
+  className,
+  children,
+}: {
+  value: K
+  className?: string
+  children: (value: K) => ReactNode
+}) {
+  const { state } = useGloopMotion()
+  const [entries, setEntries] = useState<PopEntry<K>[]>(() => [{ key: value, id: 0, exiting: false, enter: false }])
+  const [prev, setPrev] = useState(value)
+  if (value !== prev) {
+    setPrev(value)
+    const id = Math.max(...entries.map((e) => e.id)) + 1
+    const exiting = state === 'off' ? [] : entries.filter((e) => e.key !== value).map((e) => ({ ...e, exiting: true }))
+    setEntries([...exiting, { key: value, id, exiting: false, enter: true }])
+  }
+
+  return entries.map((e) => (
+    <PopItem
+      key={e.id}
+      className={className}
+      exiting={e.exiting}
+      enter={e.enter}
+      onExited={() => setEntries((list) => list.filter((x) => x.id !== e.id))}
+    >
+      {children(e.key)}
+    </PopItem>
+  ))
+}
+
+function PopItem({
+  className,
+  exiting,
+  enter,
+  onExited,
+  children,
+}: {
+  className?: string
+  exiting: boolean
+  enter: boolean
+  onExited: () => void
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const onExitedRef = useRef(onExited)
+  useLayoutEffect(() => {
+    onExitedRef.current = onExited
+  })
+  useLayoutEffect(() => {
+    if (exiting) return afterAnimations(ref.current, () => onExitedRef.current())
+  }, [exiting])
+
+  return (
+    <span ref={ref} className={className} data-pop={exiting ? 'exit' : enter ? 'enter' : undefined}>
+      {children}
+    </span>
+  )
+}
 
 /* ---------- Valore numerico che scorre su/giù quando cambia ---------- */
 
-const valueVariants: Variants = {
-  enter: (dir: number) => ({ y: dir * 10, opacity: 0, filter: 'blur(2px)' }),
-  center: {
-    y: 0,
-    opacity: 1,
-    filter: 'blur(0px)',
-    transition: { type: 'spring', duration: 0.3, bounce: 0.2 },
-  },
-  exit: (dir: number) => ({
-    y: dir * -10,
-    opacity: 0,
-    filter: 'blur(2px)',
-    transition: { duration: 0.12 },
-  }),
-}
-
 export function AnimatedValue({ value }: { value: number }) {
-  const m = useGloopMotion()
   const [prev, setPrev] = useState(value)
   const [dir, setDir] = useState(1)
   if (value !== prev) {
@@ -32,19 +85,9 @@ export function AnimatedValue({ value }: { value: number }) {
   }
 
   return (
-    <span className="st-value">
-      <AnimatePresence mode="popLayout" initial={false} custom={dir}>
-        <motion.span
-          key={value}
-          custom={dir}
-          variants={m.v(valueVariants)}
-          initial="enter"
-          animate="center"
-          exit="exit"
-        >
-          {value}
-        </motion.span>
-      </AnimatePresence>
+    // --dir: verso dello scorrimento, vale sia per chi entra sia per chi esce
+    <span className="st-value" style={{ '--dir': dir } as CSSProperties}>
+      <PopLayout value={value}>{(v) => v}</PopLayout>
     </span>
   )
 }
@@ -87,7 +130,6 @@ type ColorPickerProps = {
 }
 
 export function ColorPicker({ value, onChange, allowNone = true }: ColorPickerProps) {
-  const m = useGloopMotion()
   const ringId = useMountId()
   const [text, setText] = useState(value)
   const [prev, setPrev] = useState(value)
@@ -102,7 +144,7 @@ export function ColorPicker({ value, onChange, allowNone = true }: ColorPickerPr
     <div className="st-colors">
       <div className="st-colors__grid">
         {colors.map((c) => (
-          <motion.button
+          <button
             key={c}
             type="button"
             className="st-swatch-btn"
@@ -110,22 +152,16 @@ export function ColorPicker({ value, onChange, allowNone = true }: ColorPickerPr
             aria-pressed={value === c}
             data-none={c === 'transparent' || undefined}
             style={{ background: c === 'transparent' ? undefined : c }}
-            variants={m.v(itemVariants)}
-            whileTap={{ scale: 0.9 }}
             onClick={() => onChange(c)}
           >
-            {value === c && (
-              <motion.span layoutId={ringId} className="st-ring" transition={m.t(glide)} />
-            )}
-          </motion.button>
+            {value === c && <Shared id={ringId} className="st-ring" curve="glide" />}
+          </button>
         ))}
         {EyeDropper && (
-          <motion.button
+          <button
             type="button"
             className="st-swatch-btn st-swatch-btn--tool"
             aria-label="Eyedropper"
-            variants={m.v(itemVariants)}
-            whileTap={{ scale: 0.9 }}
             onClick={() =>
               new EyeDropper()
                 .open()
@@ -134,16 +170,15 @@ export function ColorPicker({ value, onChange, allowNone = true }: ColorPickerPr
             }
           >
             <PipetteIcon />
-          </motion.button>
+          </button>
         )}
       </div>
-      <motion.input
+      <input
         className="st-hex"
         aria-label="Hex color"
         placeholder="#rrggbb"
         spellCheck={false}
         value={text === 'transparent' ? '' : text}
-        variants={m.v(itemVariants)}
         onChange={(e) => {
           setText(e.target.value)
           if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value)
@@ -162,27 +197,22 @@ type SwatchRowProps<T extends string> = {
 }
 
 export function SwatchRow<T extends string>({ options, value, onChange }: SwatchRowProps<T>) {
-  const m = useGloopMotion()
   const ringId = useMountId()
 
   return (
     <div className="st-row">
       {options.map((o) => (
-        <motion.button
+        <button
           key={o.value}
           type="button"
           className="st-option-tile"
           aria-label={o.label}
           aria-pressed={value === o.value}
-          variants={m.v(itemVariants)}
-          whileTap={{ scale: 0.92 }}
           onClick={() => onChange(o.value)}
         >
-          {value === o.value && (
-            <motion.span layoutId={ringId} className="st-ring" transition={m.t(glide)} />
-          )}
+          {value === o.value && <Shared id={ringId} className="st-ring" curve="glide" />}
           {o.render}
-        </motion.button>
+        </button>
       ))}
     </div>
   )
@@ -199,19 +229,17 @@ type OptionListProps = {
 
 export function OptionList({ options, value, onChange, render = (v) => v }: OptionListProps) {
   const dismiss = useDismiss()
-  const m = useGloopMotion()
   const hoverId = useMountId()
   const [hovered, setHovered] = useState<number | null>(null)
 
   return (
     <div className="st-options" onPointerLeave={() => setHovered(null)}>
       {options.map((o) => (
-        <motion.button
+        <button
           key={o}
           type="button"
           className="st-option"
           aria-pressed={value === o}
-          variants={m.v(itemVariants)}
           onPointerEnter={() => setHovered(o)}
           onFocus={() => setHovered(o)}
           onClick={() => {
@@ -219,16 +247,18 @@ export function OptionList({ options, value, onChange, render = (v) => v }: Opti
             dismiss()
           }}
         >
-          {hovered === o && (
-            <motion.span
-              layoutId={hoverId}
-              className="st-option__hover"
-              transition={m.t({ type: 'spring', duration: 0.25, bounce: 0 })}
-            />
-          )}
+          {hovered === o && <Shared id={hoverId} className="st-option__hover" curve="hover" />}
           <span className="st-option__content">{render(o)}</span>
-        </motion.button>
+        </button>
       ))}
     </div>
   )
+}
+
+/* ---------- Elemento condiviso (anello, pillola): scivola da un'opzione all'altra ---------- */
+
+function Shared({ id, className, curve }: { id: string; className: string; curve: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  useSharedLayout(id, ref, curve)
+  return <span ref={ref} className={className} />
 }

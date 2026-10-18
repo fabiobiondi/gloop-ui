@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'react'
 import type { GloopMotionPreset } from './motion-context'
 
 /*
- * Molle fisiche senza motion/react, per i componenti animati in CSS che devono inseguire
+ * Molle fisiche integrate a mano, per i componenti animati in CSS che devono inseguire
  * un valore che cambia di continuo (drag dello Slider, avanzamento della ProgressBar)
  */
 

@@ -1,7 +1,7 @@
-import { AnimatePresence, motion, type Transition } from 'motion/react'
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import GooPill from './GooPill'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import GooPill, { usePresence } from './GooPill'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
 import './theme.css'
 import './TabFab.css'
 import './TabBar.css'
@@ -30,6 +30,7 @@ export type TabBarProps = {
 
 export type TabBarEnter = 'bottom' | 'top' | 'left' | 'right'
 
+// Da dove parte l'ingresso, in px (variabili lette da @keyframes tab-bar-enter)
 const enterOffset: Record<TabBarEnter, { x?: number; y?: number }> = {
   bottom: { y: 100 },
   top: { y: -100 },
@@ -37,13 +38,12 @@ const enterOffset: Record<TabBarEnter, { x?: number; y?: number }> = {
   right: { x: 100 },
 }
 
-const spring: Transition = { type: 'spring', duration: 0.5, bounce: 0.3 }
-
 /*
  * Barra di navigazione con una pillola liquida nel colore accent sul tab scelto,
  * la cui icona fa un piccolo salto. Entra al caricamento dal lato scelto (enterFrom).
  * I tab possono avere larghezze diverse (layout inline): la pillola segue posizione
  * e larghezza misurate dal DOM.
+ * Animata solo in CSS (TabBar.css): ingresso, salto dell'icona e pressione dei tab.
  */
 function TabBar({
   tabs,
@@ -63,6 +63,8 @@ function TabBar({
   const vertical = orientation === 'vertical'
   // Posizione e lunghezza di ogni tab lungo l'asse, misurate dal DOM
   const [rects, setRects] = useState<{ offset: number; length: number }[]>([])
+  // La pillola di rollover resta sull'ultimo tab mentre si dissolve
+  const hover = usePresence(hovered !== null && rects[hovered] ? hovered : null)
 
   // Prima del paint: la pillola nasce già sul tab, senza scivolare da 0
   useLayoutEffect(() => {
@@ -98,26 +100,38 @@ function TabBar({
     radius: layout === 'inline' ? 16 : 22,
   })
 
+  const from = enterFrom ? enterOffset[enterFrom] : undefined
+  const enterVars = from && {
+    '--tab-bar-from-x': `${from.x ?? 0}px`,
+    '--tab-bar-from-y': `${from.y ?? 0}px`,
+  }
+
   return (
-    <MotionScope m={m} props={motionProps} transition={spring}>
-      <motion.nav
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
+      <nav
         {...m.rootProps}
         aria-label={label}
         className="tab-bar"
         data-layout={layout}
         data-position={position}
         data-orientation={orientation}
+        data-enter={enterFrom || undefined}
+        style={{ ...m.rootProps.style, ...enterVars } as CSSProperties}
         onPointerLeave={() => setHovered(null)}
-        initial={enterFrom ? { ...enterOffset[enterFrom], opacity: 0 } : false}
-        animate={{ x: 0, y: 0, opacity: 1, transition: m.t({ ...spring, delay: 0.2 }) }}
       >
         {rects[active] && <GooPill {...pillProps(active)} className="tab-bar__pill" opacity={0.3} />}
         {/* Rollover: stessa pillola tenue di TabFab, nel colore del testo */}
-        <AnimatePresence>
-          {hovered !== null && rects[hovered] && <GooPill key="hover" {...pillProps(hovered)} opacity={0.08} />}
-        </AnimatePresence>
+        {hover.value !== null && rects[hover.value] && (
+          <GooPill
+            key="hover"
+            {...pillProps(hover.value)}
+            opacity={0.08}
+            closing={hover.closing}
+            onExited={hover.exited}
+          />
+        )}
         {tabs.map((tab, i) => (
-          <motion.button
+          <button
             key={tab.label}
             ref={(el) => {
               tabRefs.current[i] = el
@@ -125,7 +139,6 @@ function TabBar({
             type="button"
             className="tab-fab__tab"
             aria-current={active === i ? 'page' : undefined}
-            whileTap={{ scale: 0.95 }}
             // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
             onPointerEnter={(e) => e.pointerType !== 'touch' && setHovered(i)}
             onFocus={() => setHovered(i)}
@@ -135,17 +148,14 @@ function TabBar({
               onChange?.(i)
             }}
           >
-            <motion.span
-              // key cambia a ogni selezione: l'animazione riparte anche sullo stesso tab
+            <span
+              // key cambia a ogni selezione: l'icona rinasce e il salto (CSS) riparte
               key={active === i ? 'on' : 'off'}
               className="tab-fab__tab-icon"
               aria-hidden="true"
-              initial={active === i ? { scale: 1, y: 0 } : false}
-              animate={active === i ? { scale: [1, 1.3, 1], y: [0, -4, 0] } : { scale: 1, y: 0 }}
-              transition={m.t({ duration: 0.4, ease: 'easeOut' })}
             >
               {tab.icon}
-            </motion.span>
+            </span>
             <span className="tab-fab__tab-label">{tab.label}</span>
             {/* Lo spazio sparisce nel flex ma separa label e value nel nome accessibile */}
             {tab.value != null && (
@@ -154,10 +164,10 @@ function TabBar({
                 <span className="tab-bar__value">{tab.value}</span>
               </>
             )}
-          </motion.button>
+          </button>
         ))}
-      </motion.nav>
-    </MotionScope>
+      </nav>
+    </GloopMotionProvider>
   )
 }
 

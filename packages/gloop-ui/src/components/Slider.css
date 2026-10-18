@@ -1,5 +1,10 @@
 /*
- * Misure allineate con Slider.tsx (THUMB, BUBBLE_H, BUBBLE_GAP).
+ * Animato senza Motion: testa e coda (--slider-lead, --slider-trail, in %) e lo
+ * squash & stretch (--slider-stretch, --slider-squash) li scrivono le molle di Slider.tsx a
+ * ogni frame. La goccia del valore sale con easing linear() campionati dalle molle di Motion,
+ * una coppia per preset; --*-jelly è il profilo della loro velocità. Le durate si dividono
+ * per --ui-motion-speed.
+ *
  * Lo spazio della goccia sopra (o sotto) il binario è sempre riservato: quando esce il layout non salta.
  */
 .slider {
@@ -10,6 +15,17 @@
   --slider-space: calc(var(--slider-bubble-h) + var(--slider-bubble-gap));
   /* Testo e segni sopra il colore accent */
   --slider-on-accent: #fff;
+  /* Da ferma la goccia del valore sta nascosta al centro del thumb (in negativo se esce sotto) */
+  --slider-sunk: calc(var(--slider-space) + var(--slider-thumb) / 2 - var(--slider-bubble-h) / 2);
+  --slider-speed: var(--ui-motion-speed, 1);
+  --slider-flow: linear(0, 0.039, 0.134, 0.267, 0.409, 0.55, 0.682, 0.796, 0.891, 0.968, 1.022, 1.058, 1.08, 1.089, 1.089, 1.083, 1.073, 1.06, 1.047, 1.035, 1.023, 1.014, 1.006, 1, 0.996, 0.994, 0.992, 0.992, 0.992, 0.993, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 1, 1, 1, 1.001, 1);
+  --slider-flow-ms: 543ms;
+  --slider-flow-jelly: linear(0, 0.291, 0.474, 0.572, 0.597, 0.572, 0.514, 0.437, 0.352, 0.265, 0.187, 0.119, 0.063, 0.019, 0.013, 0.035, 0.048, 0.053, 0.053, 0.049, 0.043, 0.036, 0.028, 0.021, 0.014, 0.008, 0.004, 0, 0.002, 0.004, 0.005, 0.005, 0.005, 0.004, 0.004, 0.003, 0.002, 0.002, 0.001, 0.001, 0);
+  --slider-suck: linear(0, 0.024, 0.082, 0.165, 0.253, 0.345, 0.434, 0.518, 0.598, 0.666, 0.726, 0.778, 0.822, 0.861, 0.891, 0.917, 0.937, 0.953, 0.967, 0.977, 0.984, 0.99, 0.994, 0.997, 1, 1.001, 1.002, 1.003, 1.003, 1.003, 1.003, 1.003, 1.002, 1.002, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1);
+  --slider-suck-ms: 404ms;
+  --slider-suck-jelly: linear(0, 0.24, 0.39, 0.476, 0.509, 0.509, 0.488, 0.452, 0.407, 0.36, 0.314, 0.269, 0.228, 0.189, 0.156, 0.127, 0.102, 0.082, 0.063, 0.049, 0.037, 0.028, 0.021, 0.015, 0.01, 0.007, 0.004, 0.002, 0.001, 0, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0);
+  --slider-ease: var(--slider-suck);
+  --slider-ms: var(--slider-suck-ms);
 
   position: relative;
   display: block;
@@ -17,6 +33,36 @@
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
+}
+
+/* smooth: molle smorzate in modo critico, nessun rimbalzo */
+.slider[data-motion-preset='smooth'] {
+  --slider-flow: linear(0, 0.027, 0.09, 0.173, 0.267, 0.357, 0.442, 0.521, 0.592, 0.655, 0.71, 0.757, 0.799, 0.833, 0.862, 0.886, 0.906, 0.923, 0.937, 0.948, 0.958, 0.966, 0.972, 0.977, 0.982, 0.985, 0.988, 0.99, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+  --slider-flow-ms: 463ms;
+  --slider-flow-jelly: linear(0, 0.233, 0.364, 0.426, 0.443, 0.431, 0.403, 0.366, 0.327, 0.287, 0.249, 0.214, 0.181, 0.153, 0.129, 0.108, 0.09, 0.075, 0.062, 0.051, 0.042, 0.034, 0.028, 0.023, 0.019, 0.015, 0.012, 0.01, 0.008, 0.007, 0.005, 0.004, 0.004, 0.003, 0.002, 0.002, 0.001, 0.001, 0.001, 0.001, 0);
+  --slider-suck: linear(0, 0.028, 0.093, 0.177, 0.269, 0.36, 0.447, 0.527, 0.598, 0.661, 0.716, 0.763, 0.803, 0.837, 0.866, 0.889, 0.909, 0.926, 0.939, 0.95, 0.96, 0.967, 0.973, 0.978, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+  --slider-suck-ms: 440ms;
+  --slider-suck-jelly: linear(0, 0.251, 0.39, 0.455, 0.471, 0.457, 0.426, 0.386, 0.343, 0.3, 0.259, 0.222, 0.188, 0.159, 0.133, 0.111, 0.092, 0.076, 0.063, 0.052, 0.043, 0.035, 0.028, 0.023, 0.019, 0.015, 0.012, 0.01, 0.008, 0.007, 0.005, 0.004, 0.003, 0.003, 0.002, 0.002, 0.001, 0.001, 0.001, 0.001, 0);
+}
+
+/* snappy: più rapido, rimbalzo dimezzato */
+.slider[data-motion-preset='snappy'] {
+  --slider-flow: linear(0, 0.031, 0.099, 0.195, 0.302, 0.404, 0.508, 0.598, 0.683, 0.756, 0.815, 0.866, 0.906, 0.937, 0.962, 0.979, 0.993, 1.002, 1.008, 1.011, 1.013, 1.014, 1.013, 1.012, 1.011, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1);
+  --slider-flow-ms: 353ms;
+  --slider-flow-jelly: linear(0, 0.337, 0.532, 0.641, 0.678, 0.667, 0.624, 0.565, 0.494, 0.42, 0.353, 0.286, 0.227, 0.178, 0.134, 0.1, 0.07, 0.047, 0.03, 0.017, 0.007, 0, 0.004, 0.007, 0.009, 0.009, 0.009, 0.008, 0.008, 0.007, 0.006, 0.005, 0.004, 0.003, 0.002, 0.002, 0.001, 0.001, 0.001, 0, 0);
+  --slider-suck: linear(0, 0.024, 0.082, 0.152, 0.237, 0.325, 0.41, 0.491, 0.56, 0.627, 0.686, 0.738, 0.782, 0.818, 0.851, 0.879, 0.902, 0.921, 0.936, 0.949, 0.959, 0.968, 0.975, 0.98, 0.985, 0.988, 0.991, 0.993, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1);
+  --slider-suck-ms: 296ms;
+  --slider-suck-jelly: linear(0, 0.317, 0.508, 0.606, 0.65, 0.651, 0.623, 0.579, 0.53, 0.473, 0.416, 0.361, 0.31, 0.267, 0.226, 0.189, 0.158, 0.13, 0.109, 0.089, 0.072, 0.058, 0.047, 0.038, 0.03, 0.024, 0.019, 0.015, 0.012, 0.009, 0.007, 0.005, 0.004, 0.003, 0.002, 0.002, 0.001, 0.001, 0.001, 0, 0);
+}
+
+/* In salita la molla che rimbalza, in discesa quella che risucchia */
+.slider[data-active] {
+  --slider-ease: var(--slider-flow);
+  --slider-ms: var(--slider-flow-ms);
+}
+
+.slider[data-bubble='bottom'] {
+  --slider-sunk: calc(-1 * (var(--slider-space) + var(--slider-thumb) / 2 - var(--slider-bubble-h) / 2));
 }
 
 .slider[data-bubble='top'] {
@@ -88,6 +134,8 @@
 }
 
 .slider__fill {
+  /* Parte da sotto il bordo sinistro del thumb e finisce sulla coda */
+  width: calc(var(--slider-trail, 0%) + var(--slider-thumb) / 2);
   background: var(--ui-accent);
 }
 
@@ -99,6 +147,17 @@
   height: var(--slider-thumb);
   border-radius: 50%;
   background: var(--ui-accent);
+  translate: -50% 0;
+}
+
+.slider__blob {
+  left: var(--slider-lead, 0%);
+  /* Squash & stretch: in corsa si allunga lungo il binario e si assottiglia */
+  scale: var(--slider-stretch, 1) var(--slider-squash, 1);
+}
+
+.slider__tail {
+  left: var(--slider-trail, 0%);
 }
 
 /* La coda è più piccola: da ferma sparisce dentro la testa */
@@ -124,6 +183,34 @@
   white-space: nowrap;
 }
 
+/*
+ * Goccia e testo del valore seguono la testa. Da fermi stanno nascosti dentro il thumb,
+ * rimpiccioliti (--slider-size, una proprietà registrata: il testo ne ricava l'opacità)
+ */
+@property --slider-size {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.4;
+}
+
+.slider__bubble,
+.slider__value {
+  --slider-size: 0.4;
+
+  left: var(--slider-lead, 0%);
+  translate: -50% var(--slider-sunk);
+  scale: var(--slider-size);
+  transition:
+    translate calc(var(--slider-ms) / var(--slider-speed)) var(--slider-ease),
+    --slider-size calc(var(--slider-ms) / var(--slider-speed)) var(--slider-ease);
+}
+
+.slider[data-active] :is(.slider__bubble, .slider__value) {
+  --slider-size: 1;
+
+  translate: -50% 0;
+}
+
 .slider[data-bubble='bottom'] :is(.slider__bubble, .slider__value) {
   top: calc(var(--slider-thumb) + var(--slider-bubble-gap));
 }
@@ -140,6 +227,32 @@
 .slider__value {
   color: var(--slider-on-accent);
   pointer-events: none;
+  /* Compare solo quando la goccia è quasi gonfia (dimensione da 0.6 a 1) */
+  opacity: clamp(0, (var(--slider-size) - 0.6) / 0.4, 1);
+}
+
+/*
+ * Squash & stretch della goccia che sale e scende: transform si somma a scale, l'easing è
+ * la velocità della molla. Il nome cambia a ogni salita e discesa, così l'animazione riparte.
+ */
+.slider[data-toggled] .slider__bubble {
+  animation: slider-stretch calc(var(--slider-suck-ms) / var(--slider-speed)) var(--slider-suck-jelly);
+}
+
+.slider[data-toggled][data-active] .slider__bubble {
+  animation: slider-stretch-up calc(var(--slider-flow-ms) / var(--slider-speed)) var(--slider-flow-jelly);
+}
+
+@keyframes slider-stretch {
+  to {
+    transform: scale(0.85, 1.25);
+  }
+}
+
+@keyframes slider-stretch-up {
+  to {
+    transform: scale(0.85, 1.25);
+  }
 }
 
 .slider__marks {
@@ -184,9 +297,11 @@
   z-index: 1;
   width: var(--slider-thumb);
   height: var(--slider-thumb);
+  left: var(--slider-lead, 0%);
   border-radius: 50%;
   outline: 0;
   cursor: grab;
+  translate: -50% 0;
 
   &::after {
     content: '';
@@ -215,4 +330,10 @@
   & .slider__thumb {
     cursor: not-allowed;
   }
+}
+
+/* Movimento ridotto: la goccia del valore compare e sparisce subito, senza molla */
+.slider[data-motion='reduced'] :is(.slider__bubble, .slider__value) {
+  transition: none;
+  animation: none;
 }

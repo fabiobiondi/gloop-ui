@@ -365,6 +365,45 @@
   }
 }
 
+/*
+ * Copy / Copied nella stessa cella: quella attiva entra dal basso, l'altra esce verso
+ * l'alto. Le animazioni partono solo dal primo clic (data-toggled), non al montaggio.
+ */
+.pg-code__copy > span {
+  grid-area: 1 / 1;
+
+  &:not([data-active]) {
+    opacity: 0;
+  }
+}
+
+.pg-code__copy[data-toggled] > span {
+  animation: pg-copy-out 150ms cubic-bezier(0.23, 1, 0.32, 1) both;
+
+  &[data-active] {
+    animation-name: pg-copy-in;
+  }
+}
+
+@keyframes pg-copy-in {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    translate: 0 4px;
+  }
+}
+
+@keyframes pg-copy-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    filter: blur(2px);
+    translate: 0 -4px;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .pg-code__copy:hover {
     color: #fff;

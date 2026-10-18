@@ -1,7 +1,7 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
-import { AnimatePresence, motion, stagger, type Variants } from 'motion/react'
+import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { Item, MenuRoot, Popover, ToolButton } from './menu'
-import { AnimatedValue, ColorPicker, OptionList, StrokeLine, SwatchRow } from './controls'
+import { AnimatedValue, ColorPicker, OptionList, PopLayout, StrokeLine, SwatchRow } from './controls'
+import { setStagger, usePresence } from './menu-shared'
 import {
   Caret,
   CopyIcon,
@@ -16,8 +16,9 @@ import {
   RotateIcon,
   SquareIcon,
   TrashIcon,
-} from './icons'
-import { MotionScope, useGloopMotion, type MotionProps } from '../motion'
+} from '../shape-toolbar/icons'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from '../motion-context'
+import { useGloopMotion } from '../gloop-motion'
 import '../theme.css'
 import './ShapeEditor.css'
 
@@ -36,87 +37,20 @@ const PATTERNS: { value: Pattern; label: string }[] = [
 const FONT_SIZES = [12, 14, 16, 20, 24, 32, 48, 64]
 const STROKE_WIDTHS = [1, 2, 3, 4, 6, 8, 12]
 
-const shapeSpring = { type: 'spring', duration: 0.5, bounce: 0.25 } as const
-
 /*
+ * Le molle sono easing linear() in ShapeEditor.css, una per preset.
+ *
  * Apertura della barra:
  * 1. la barra si "srotola" dal centro (clip-path) salendo verso l'alto
- * 2. i controlli sbocciano dal centro verso i lati (stagger from: 'center')
+ * 2. i controlli sbocciano dal centro verso i lati (ritardi a cascata dal centro)
  * Chiusura: rapida, tutto insieme.
  */
-const barVariants: Variants = {
-  hidden: {
-    clipPath: 'inset(0% 50% 0% 50% round 12px)',
-    y: 16,
-    opacity: 0,
-  },
-  visible: {
-    clipPath: 'inset(0% 0% 0% 0% round 12px)',
-    y: 0,
-    opacity: 1,
-    transition: {
-      clipPath: { type: 'spring', duration: 0.6, bounce: 0.15 },
-      y: { type: 'spring', duration: 0.5, bounce: 0.3 },
-      opacity: { duration: 0.15 },
-      delayChildren: stagger(0.025, { from: 'center', startDelay: 0.06 }),
-    },
-    // A fine apertura il clip va tolto, altrimenti taglierebbe i popover
-    transitionEnd: { clipPath: 'none' },
-  },
-  exit: {
-    opacity: 0,
-    y: 8,
-    scale: 0.96,
-    filter: 'blur(4px)',
-    transition: { duration: 0.15, ease: 'easeOut' },
-  },
-}
-
-const barItemVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.6, filter: 'blur(4px)' },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    filter: 'blur(0px)',
-    transition: { type: 'spring', duration: 0.45, bounce: 0.35 },
-  },
-}
-
 function BarItem({ children }: { children: ReactNode }) {
-  const m = useGloopMotion()
-  return (
-    <motion.div className="st-item" variants={m.v(barItemVariants)}>
-      {children}
-    </motion.div>
-  )
+  return <div className="st-item">{children}</div>
 }
 
 /* Maniglie di selezione, in ordine orario: compaiono a giro */
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const
-
-const frameVariants: Variants = {
-  hidden: { opacity: 0, scale: 1.06 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      type: 'spring',
-      duration: 0.4,
-      bounce: 0.2,
-      delayChildren: stagger(0.025),
-    },
-  },
-  exit: { opacity: 0, scale: 1.03, transition: { duration: 0.12, ease: 'easeOut' } },
-}
-
-const handleVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.3 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { type: 'spring', duration: 0.4, bounce: 0.5 },
-  },
-}
 
 function ShapeEditor(motionProps: ShapeEditorProps) {
   const m = useGloopMotion(motionProps)
@@ -131,21 +65,27 @@ function ShapeEditor(motionProps: ShapeEditorProps) {
   const [rotation, setRotation] = useState(0)
   const [selected, setSelected] = useState(false)
 
+  // Al posto di AnimatePresence: restano montati finché l'uscita non finisce
+  const bar = usePresence<HTMLDivElement>(selected)
+  const hint = usePresence<HTMLParagraphElement>(!selected)
+  const frame = usePresence<HTMLDivElement>(selected)
+  const label = usePresence<HTMLSpanElement>(text)
+
+  // I controlli sbocciano dal centro verso i lati: 60ms, poi 25ms per ogni passo dal centro
+  useLayoutEffect(() => {
+    const el = bar.ref.current
+    if (!el || !selected) return
+    const items = [...el.querySelectorAll<HTMLElement>(':scope > .st-bar > .st-item')]
+    setStagger(items, (i, n) => 60 + Math.abs(i - (n - 1) / 2) * 25)
+  }, [bar.ref, selected])
+
   return (
     // Click sul canvas vuoto: deseleziona
-    <MotionScope m={m} props={motionProps}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       <div {...m.rootProps} className="st-canvas" onClick={() => setSelected(false)}>
         <div className="st-bar-slot" onClick={(e) => e.stopPropagation()}>
-          <AnimatePresence>
-            {selected ? (
-              <motion.div
-                key="bar"
-                className="st-bar-reveal"
-                variants={m.v(barVariants)}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
+          {bar.mounted && (
+            <div ref={bar.ref} className="st-bar-reveal" data-closing={bar.closing || undefined}>
                 <MenuRoot className="st-bar">
                   <BarItem>
                     <span className="st-deco" aria-hidden="true">
@@ -247,17 +187,9 @@ function ShapeEditor(motionProps: ShapeEditorProps) {
                             aria-label={round ? 'Rounded corners' : 'Sharp corners'}
                             onClick={() => setRound((r) => !r)}
                           >
-                            <AnimatePresence mode="popLayout" initial={false}>
-                              <motion.span
-                                key={String(round)}
-                                className="st-swap"
-                                initial={{ opacity: 0, scale: 0.6, rotate: -45 }}
-                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                                exit={{ opacity: 0, scale: 0.6, transition: m.t({ duration: 0.1 }) }}
-                              >
-                                <CornerIcon round={round} />
-                              </motion.span>
-                            </AnimatePresence>
+                            <PopLayout value={String(round)} className="st-swap">
+                              {(r) => <CornerIcon round={r === 'true'} />}
+                            </PopLayout>
                           </ToolButton>
                         </Item>
                         <Item>
@@ -351,38 +283,31 @@ function ShapeEditor(motionProps: ShapeEditorProps) {
                     </Popover>
                   </BarItem>
                 </MenuRoot>
-              </motion.div>
-            ) : (
-              <motion.p
-                key="hint"
-                className="st-hint"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0, transition: m.t({ delay: 0.15 }) }}
-                exit={{ opacity: 0, y: -6, transition: m.t({ duration: 0.1 }) }}
-              >
-                Click the rectangle
-              </motion.p>
-            )}
-          </AnimatePresence>
+            </div>
+          )}
+          {hint.mounted && (
+            <p ref={hint.ref} className="st-hint" data-closing={hint.closing || undefined}>
+              Click the rectangle
+            </p>
+          )}
         </div>
 
         {/* Anteprima: la forma riflette i controlli */}
         <div className="st-stage" style={{ '--c': fill } as CSSProperties}>
-          <motion.div
-            className="st-shape-wrap"
-            animate={{ rotate: rotation }}
-            transition={m.t(shapeSpring)}
-          >
-            <motion.div
+          {/* Rotazione, opacità e raggio seguono la stessa molla (transizioni CSS) */}
+          <div className="st-shape-wrap" style={{ rotate: `${rotation}deg` }}>
+            <div
               role="button"
               tabIndex={0}
               aria-label="Rectangle"
               aria-pressed={selected}
               className={`st-shape st-fill--${pattern}`}
-              style={{ borderColor: stroke, borderWidth: strokeWidth }}
-              animate={{ opacity: opacity / 100, borderRadius: round ? 28 : 4 }}
-              transition={m.t(shapeSpring)}
-              whileTap={{ scale: 0.98 }}
+              style={{
+                borderColor: stroke,
+                borderWidth: strokeWidth,
+                opacity: opacity / 100,
+                borderRadius: round ? 28 : 4,
+              }}
               onClick={(e) => {
                 e.stopPropagation()
                 setSelected(true)
@@ -395,51 +320,31 @@ function ShapeEditor(motionProps: ShapeEditorProps) {
                 if (e.key === 'Escape') setSelected(false)
               }}
             >
-              <AnimatePresence>
-                {text && (
-                  <motion.span
-                    className="st-shape__text"
-                    style={{ fontSize, color: stroke }}
-                    initial={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
-                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                    exit={{
-                      opacity: 0,
-                      scale: 0.9,
-                      filter: 'blur(4px)',
-                      transition: m.t({ duration: 0.12 }),
-                    }}
-                  >
-                    Text
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            <AnimatePresence>
-              {selected && (
-                <motion.div
-                  className="st-frame"
-                  aria-hidden="true"
-                  variants={m.v(frameVariants)}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
+              {label.mounted && (
+                <span
+                  ref={label.ref}
+                  className="st-shape__text"
+                  data-closing={label.closing || undefined}
+                  style={{ fontSize, color: stroke }}
                 >
-                  {HANDLES.map((h) => (
-                    <motion.span
-                      key={h}
-                      className={`st-handle st-handle--${h}`}
-                      variants={m.v(handleVariants)}
-                    />
-                  ))}
-                  <motion.span className="st-handle st-handle--rotate" variants={m.v(handleVariants)} />
-                </motion.div>
+                  Text
+                </span>
               )}
-            </AnimatePresence>
-          </motion.div>
+            </div>
+
+            {frame.mounted && (
+              // Le maniglie compaiono a giro, 25ms l'una dopo l'altra (--st-i)
+              <div ref={frame.ref} className="st-frame" aria-hidden="true" data-closing={frame.closing || undefined}>
+                {HANDLES.map((h, i) => (
+                  <span key={h} className={`st-handle st-handle--${h}`} style={{ '--st-i': i } as CSSProperties} />
+                ))}
+                <span className="st-handle st-handle--rotate" style={{ '--st-i': HANDLES.length } as CSSProperties} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 

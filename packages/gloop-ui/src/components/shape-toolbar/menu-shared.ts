@@ -1,5 +1,4 @@
-import { createContext, useContext, useState } from 'react'
-import type { Transition, Variants } from 'motion/react'
+import { createContext, useContext, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 
 /*
  * Menu annidabile a qualsiasi profondità.
@@ -28,7 +27,7 @@ export function useDismiss() {
   return useMenu().dismiss
 }
 
-/** Id nuovo a ogni montaggio: evita che un layoutId "voli" dalla posizione della volta precedente */
+/** Id nuovo a ogni montaggio: evita che un elemento condiviso "voli" dalla posizione della volta precedente */
 export function useMountId() {
   const [id] = useState(() => Math.random().toString(36).slice(2))
   return id
@@ -36,26 +35,97 @@ export function useMountId() {
 
 export const triggerId = (rootId: string, id: string) => `${rootId}-${id}-trigger`
 
-export const spring: Transition = { type: 'spring', duration: 0.35, bounce: 0.2 }
-export const glide: Transition = { type: 'spring', duration: 0.35, bounce: 0.15 }
-export const exitFast: Transition = { duration: 0.12, ease: 'easeOut' }
+/*
+ * Le molle sono easing linear() in ShapeEditor.css (--st-spring, --st-glide, ...),
+ * una curva per preset. Il JS le legge da lì quando anima con element.animate().
+ */
 
-/** Variante per gli elementi dentro un popover: entrano a cascata */
-export const itemVariants: Variants = {
-  closed: { opacity: 0, y: 4, transition: { duration: 0.08 } },
-  open: { opacity: 1, y: 0, transition: spring },
+/** Chiama done quando sono finite le animazioni CSS dell'elemento e dei figli (subito se non ce ne sono) */
+export function afterAnimations(el: Element | null, done: () => void) {
+  let live = true
+  const check = () => {
+    if (!live) return
+    const running = el?.getAnimations?.({ subtree: true }).filter((a) => a.playState !== 'finished') ?? []
+    if (!running.length) return done()
+    // Un'animazione interrotta (o sostituita) non deve bloccare l'uscita: si ricontrolla
+    Promise.allSettled(running.map((a) => a.finished)).then(check)
+  }
+  check()
+  return () => {
+    live = false
+  }
 }
 
-export function panelVariants(placement: 'top' | 'bottom'): Variants {
-  const y = placement === 'top' ? 6 : -6
-  return {
-    closed: { opacity: 0, scale: 0.96, y, filter: 'blur(2px)', transition: exitFast },
-    open: {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      filter: 'blur(0px)',
-      transition: { ...spring, staggerChildren: 0.012, delayChildren: 0.02 },
-    },
-  }
+/*
+ * Al posto di AnimatePresence: l'elemento resta montato con closing = true finché le
+ * transizioni di uscita (data-closing nel CSS) non finiscono. Con animated={false} il CSS
+ * non ha transizioni, quindi si smonta subito. Se si riapre a metà, le transizioni CSS
+ * ripartono dal valore corrente.
+ */
+export function usePresence<T extends HTMLElement>(show: boolean) {
+  const ref = useRef<T>(null)
+  const [mounted, setMounted] = useState(show)
+  if (show && !mounted) setMounted(true)
+  const closing = mounted && !show
+
+  useLayoutEffect(() => {
+    if (!closing) return
+    return afterAnimations(ref.current, () => setMounted(false))
+  }, [closing])
+
+  return { ref, mounted: mounted || show, closing }
+}
+
+/** Ritardi a cascata: --st-delay su ogni elemento, in ms (il CSS li divide per la velocità) */
+export function setStagger(els: HTMLElement[], delay: (i: number, n: number) => number) {
+  els.forEach((el, i) => el.style.setProperty('--st-delay', `${delay(i, els.length)}ms`))
+}
+
+/** Ultima posizione degli elementi condivisi appena smontati, per chiave */
+const lastRects = new Map<string, DOMRect>()
+
+/*
+ * Al posto di layoutId: un solo elemento per chiave (evidenziatore, anello, pillola di hover).
+ * Quando sparisce da un punto e compare in un altro nello stesso commit, il nuovo parte
+ * dalla posizione e dalla misura del vecchio e ci arriva con la molla `curve` (FLIP).
+ * Si anima width/height e non scale, così il bordo arrotondato non si deforma.
+ */
+export function useSharedLayout(key: string, ref: RefObject<HTMLElement | null>, curve: string) {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const from = lastRects.get(key)
+    lastRects.delete(key)
+
+    // Come Motion con movimento ridotto: niente animazioni di layout
+    if (from && el.animate && el.closest('[data-motion]')?.getAttribute('data-motion') === 'on') {
+      const to = el.getBoundingClientRect()
+      const css = getComputedStyle(el)
+      const easing = css.getPropertyValue(`--st-${curve}`).trim() || 'ease-out'
+      const ms = parseFloat(css.getPropertyValue(`--st-${curve}-ms`)) || 350
+      const speed = parseFloat(css.getPropertyValue('--ui-motion-speed')) || 1
+      el.animate(
+        [
+          {
+            translate: `${from.left - to.left}px ${from.top - to.top}px`,
+            width: `${from.width}px`,
+            height: `${from.height}px`,
+          },
+          { translate: '0px 0px', width: `${to.width}px`, height: `${to.height}px` },
+        ],
+        { duration: ms / speed, easing },
+      )
+    }
+
+    return () => {
+      // Il cleanup gira prima che React tolga il nodo dal DOM: la misura è ancora valida
+      if (!el.isConnected) return
+      const rect = el.getBoundingClientRect()
+      lastRects.set(key, rect)
+      // Vale solo per chi monta nello stesso commit: se nessuno lo sostituisce, si dimentica
+      queueMicrotask(() => {
+        if (lastRects.get(key) === rect) lastRects.delete(key)
+      })
+    }
+  }, [key, ref, curve])
 }

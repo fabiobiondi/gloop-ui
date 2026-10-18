@@ -117,3 +117,71 @@
   padding: 0 4px;
   font-size: 10px;
 }
+
+/* ---------- Animazioni (solo CSS; molle --tf-* in TabFab.css) ---------- */
+
+/*
+ * Ingresso al caricamento: dal lato di enterFrom (--tab-bar-from-x/y, dallo style)
+ * con la molla, dopo 200ms. Usa transform: translate resta alla centratura.
+ */
+.tab-bar[data-enter] {
+  animation: tab-bar-enter calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring)
+    calc(200ms * var(--tween) / var(--speed)) backwards;
+}
+
+@keyframes tab-bar-enter {
+  from {
+    opacity: 0;
+    transform: translate(var(--tab-bar-from-x, 0), var(--tab-bar-from-y, 0));
+  }
+}
+
+/* L'icona del tab scelto fa un piccolo salto (rinasce a ogni selezione, vedi key in TabBar.tsx) */
+.tab-bar .tab-fab__tab[aria-current='page'] .tab-fab__tab-icon {
+  animation: tab-bar-hop calc(400ms * var(--tween) / var(--speed)) cubic-bezier(0, 0, 0.58, 1);
+}
+
+@keyframes tab-bar-hop {
+  50% {
+    scale: 1.3;
+    translate: 0 -4px;
+  }
+}
+
+.tab-bar .tab-fab__tab {
+  transition:
+    color calc(200ms / var(--speed)) ease,
+    scale calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
+
+  &:active {
+    scale: 0.95;
+  }
+}
+
+/* Movimento ridotto: niente spostamenti, l'ingresso è solo una dissolvenza */
+.tab-bar[data-motion='reduced'] {
+  &[data-enter] {
+    animation-name: tab-bar-fade;
+  }
+
+  & .tab-fab__tab {
+    transition-property: color;
+  }
+
+  & .tab-fab__tab-icon {
+    animation: none !important;
+  }
+}
+
+@keyframes tab-bar-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* animated={false}: i cambi di stato sono istantanei */
+.tab-bar[data-motion='off'],
+.tab-bar[data-motion='off'] * {
+  transition: none !important;
+  animation: none !important;
+}

@@ -1,3 +1,42 @@
+/*
+ * Animato solo in CSS: le molle sono campionate in easing linear(), una per preset,
+ * e le durate si dividono per --ui-motion-speed. Le stesse curve servono a TabBar e TabPop
+ * (che importano questo file): spring per la barra e i tab, morph per barra e sottomenu
+ * di TabFab, drop per i tab che schizzano fuori dal "+".
+ */
+:is(.tab-bar, .tab-pop, .tab-fab-wrap) {
+  --tf-spring: linear(0, 0.023, 0.087, 0.167, 0.27, 0.369, 0.476, 0.57, 0.656, 0.74, 0.807, 0.869, 0.916, 0.957, 0.986, 1.007, 1.024, 1.035, 1.041, 1.044, 1.044, 1.042, 1.039, 1.035, 1.03, 1.026, 1.021, 1.017, 1.013, 1.01, 1.007, 1.005, 1.003, 1.001, 1, 0.999, 0.999, 0.998, 0.998, 0.998, 1);
+  --tf-spring-ms: 457ms;
+  --tf-morph: linear(0, 0.025, 0.091, 0.174, 0.269, 0.377, 0.474, 0.566, 0.657, 0.731, 0.8, 0.854, 0.898, 0.937, 0.965, 0.986, 1.003, 1.013, 1.021, 1.025, 1.027, 1.027, 1.025, 1.023, 1.021, 1.018, 1.016, 1.013, 1.01, 1.008, 1.006, 1.005, 1.003, 1.002, 1.001, 1.001, 1, 1, 1, 0.999, 1);
+  --tf-morph-ms: 494ms;
+  --tf-drop: linear(0, 0.04, 0.129, 0.257, 0.4, 0.545, 0.672, 0.791, 0.891, 0.965, 1.024, 1.064, 1.087, 1.098, 1.099, 1.093, 1.083, 1.069, 1.055, 1.041, 1.028, 1.017, 1.008, 1.001, 0.996, 0.993, 0.991, 0.99, 0.99, 0.991, 0.992, 0.994, 0.995, 0.996, 0.998, 0.999, 0.999, 1, 1.001, 1.001, 1);
+  --tf-drop-ms: 668ms;
+  --speed: var(--ui-motion-speed, 1);
+  /* snappy: anche le durate fisse si accorciano (× 0.75), come in tuneTransition */
+  --tween: 1;
+
+  /* smooth: molle smorzate in modo critico, nessun rimbalzo */
+  &[data-motion-preset='smooth'] {
+    --tf-spring: linear(0, 0.027, 0.088, 0.168, 0.262, 0.35, 0.434, 0.511, 0.582, 0.644, 0.702, 0.749, 0.79, 0.824, 0.853, 0.878, 0.899, 0.918, 0.932, 0.944, 0.954, 0.962, 0.969, 0.974, 0.979, 0.983, 0.986, 0.989, 0.991, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 1);
+    --tf-spring-ms: 526ms;
+    --tf-morph: linear(0, 0.027, 0.088, 0.168, 0.262, 0.35, 0.434, 0.511, 0.582, 0.644, 0.702, 0.749, 0.79, 0.824, 0.853, 0.878, 0.899, 0.918, 0.932, 0.944, 0.954, 0.962, 0.969, 0.974, 0.979, 0.983, 0.986, 0.989, 0.991, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 1);
+    --tf-morph-ms: 526ms;
+    --tf-drop: linear(0, 0.026, 0.087, 0.165, 0.252, 0.339, 0.423, 0.501, 0.571, 0.634, 0.694, 0.741, 0.783, 0.818, 0.848, 0.873, 0.895, 0.913, 0.928, 0.94, 0.951, 0.959, 0.967, 0.973, 0.977, 0.982, 0.985, 0.988, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 1);
+    --tf-drop-ms: 562ms;
+  }
+
+  /* snappy: più rapido, rimbalzo dimezzato */
+  &[data-motion-preset='snappy'] {
+    --tf-spring: linear(0, 0.026, 0.095, 0.178, 0.28, 0.375, 0.467, 0.56, 0.636, 0.703, 0.767, 0.816, 0.861, 0.894, 0.921, 0.944, 0.961, 0.974, 0.984, 0.991, 0.997, 1, 1.003, 1.004, 1.005, 1.005, 1.005, 1.005, 1.004, 1.004, 1.003, 1.003, 1.002, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1, 1);
+    --tf-spring-ms: 415ms;
+    --tf-morph: linear(0, 0.025, 0.085, 0.164, 0.253, 0.345, 0.435, 0.519, 0.596, 0.665, 0.725, 0.772, 0.817, 0.855, 0.887, 0.913, 0.934, 0.951, 0.964, 0.974, 0.982, 0.989, 0.993, 0.997, 0.999, 1.001, 1.002, 1.002, 1.003, 1.003, 1.003, 1.002, 1.002, 1.002, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1);
+    --tf-morph-ms: 398ms;
+    --tf-drop: linear(0, 0.03, 0.093, 0.185, 0.288, 0.385, 0.488, 0.583, 0.661, 0.736, 0.8, 0.849, 0.893, 0.928, 0.953, 0.973, 0.989, 0.999, 1.006, 1.011, 1.014, 1.015, 1.015, 1.014, 1.013, 1.011, 1.01, 1.008, 1.007, 1.006, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+    --tf-drop-ms: 427ms;
+    --tween: 0.75;
+  }
+}
+
 .tab-fab {
   /* Sopra le gocce (che sono in position: absolute) */
   position: relative;
@@ -5,12 +44,47 @@
   align-items: center;
   height: 52px;
   color: var(--ui-fg);
-  background: var(--ui-bg);
   /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+}
+
+/*
+ * Lo sfondo della barra: cresce dal "+" fino alla misura della barra aperta
+ * (--tab-fab-w/h, dallo style) e torna nel "+" alla chiusura. Il layout cambia subito,
+ * come in Motion; solo lo sfondo si anima, senza stirare tab e bordi.
+ */
+.tab-fab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--tab-fab-w, 52px);
+  height: var(--tab-fab-h, 52px);
+  border-radius: inherit;
+  background: var(--ui-bg);
+  transition:
+    width calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
+    height calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+}
+
+.tab-fab[data-direction='right']::before {
+  right: auto;
+  left: 0;
+}
+
+.tab-fab:is([data-direction='top'], [data-direction='bottom'])::before {
+  right: auto;
+  left: 50%;
+  translate: -50% 0;
+}
+
+.tab-fab[data-direction='top']::before {
+  top: auto;
+  bottom: 0;
 }
 
 .tab-fab__tabs {
   display: flex;
+  flex: none;
 }
 
 /*
@@ -97,6 +171,8 @@
 }
 
 .tab-fab__trigger {
+  /* Sopra lo sfondo della barra (::before, in position: absolute) */
+  position: relative;
   display: grid;
   flex: none;
   place-items: center;
@@ -210,4 +286,183 @@
 /* Con sottomenu i tab sono bottoni, non role="tab": lo stato attivo è aria-pressed */
 .tab-fab-wrap .tab-fab__tab[aria-pressed='true'] {
   color: var(--ui-fg);
+}
+
+/* ---------- Animazioni di TabFab ---------- */
+
+/*
+ * Ogni tab schizza dal "+" al suo posto sulla sua goccia (vedi tabDrop): parte da
+ * --tab-from (dallo style), mezzo scalato e trasparente, con la molla drop e un ritardo
+ * a cascata (--tab-delay, in secondi). A riposo translate e scale tornano none: un
+ * transform sul bottone porterebbe la goccia (z-index -1) sopra lo sfondo della barra.
+ */
+.tab-fab .tab-fab__tab {
+  --delay: calc(var(--tab-delay, 0s) * var(--tween) / var(--speed));
+
+  transition:
+    color calc(200ms / var(--speed)) ease,
+    translate calc(var(--tf-drop-ms) / var(--speed)) var(--tf-drop) var(--delay),
+    scale calc(var(--tf-drop-ms) / var(--speed)) var(--tf-drop) var(--delay),
+    opacity calc(150ms * var(--tween) / var(--speed)) ease var(--delay);
+}
+
+@starting-style {
+  .tab-fab .tab-fab__tab {
+    translate: var(--tab-from, 0 0);
+    scale: 0.5;
+    opacity: 0;
+  }
+}
+
+/* La pressione scala solo il contenuto */
+.tab-fab .tab-fab__tab-content {
+  transition: scale calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+}
+
+.tab-fab .tab-fab__tab:active .tab-fab__tab-content {
+  scale: 0.95;
+}
+
+.tab-fab__trigger {
+  transition: scale calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+
+  &:active {
+    scale: 0.92;
+  }
+}
+
+/* Il "+" ruota e diventa una "×" */
+.tab-fab__trigger .tab-fab__trigger-icon {
+  transition: rotate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+}
+
+.tab-fab__trigger[aria-expanded='true'] .tab-fab__trigger-icon {
+  rotate: 45deg;
+}
+
+/*
+ * Collo tra tab e sottomenu: esce dal tab, va un po' oltre (--neck-over) e torna a metà
+ * dello spazio (--neck), gonfiandosi e poi assottigliandosi. Cambiando sottomenu scivola
+ * da un tab all'altro (left in riga, top in colonna, dallo style) con la molla morph.
+ * In uscita, se la barra resta aperta, rientra nel tab.
+ */
+.tab-fab-wrap > .goo-drop {
+  translate: var(--neck, 0 0);
+  scale: var(--neck-scale, 0.75);
+  animation: tab-fab-neck calc(450ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1);
+  transition:
+    left calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
+    top calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+
+  &[data-closing] {
+    translate: 0 0;
+    scale: 0.4;
+    animation: none;
+    transition:
+      translate calc(120ms * var(--tween) / var(--speed)) ease-out,
+      scale calc(120ms * var(--tween) / var(--speed)) ease-out;
+  }
+}
+
+@keyframes tab-fab-neck {
+  0% {
+    translate: 0 0;
+    scale: 0.6;
+  }
+  50% {
+    translate: var(--neck-over, 0 0);
+    scale: 1;
+  }
+}
+
+/*
+ * Pannello del sottomenu: nasce dal tab come una goccia, stretto e schiacciato
+ * (--panel-from, dallo style, è lo spostamento iniziale), e torna così in uscita.
+ * Cambiando sottomenu altezza (Web Animations, TabFab.tsx) e top seguono la molla.
+ */
+.tab-fab__panel {
+  transition:
+    opacity calc(120ms * var(--tween) / var(--speed)) ease,
+    scale calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
+    translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
+    top calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+
+  &[data-closing] {
+    opacity: 0;
+    scale: 0.4 0.3;
+    translate: var(--panel-from, 0 0);
+    transition-duration: calc(120ms * var(--tween) / var(--speed));
+    transition-timing-function: ease-out;
+  }
+}
+
+@starting-style {
+  .tab-fab__panel {
+    opacity: 0;
+    scale: 0.4 0.3;
+    translate: var(--panel-from, 0 0);
+  }
+}
+
+/*
+ * Contenuto del sottomenu: scorre nella direzione del tab scelto (--page-in entrando,
+ * --page-out uscendo). Quello che esce passa sopra, fuori dal flusso (come popLayout):
+ * l'altezza del pannello segue subito il nuovo. Il primo contenuto compare col pannello.
+ */
+.tab-fab__list-wrap {
+  transition:
+    opacity calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
+    translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
+    filter calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+
+  &[data-closing] {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    opacity: 0;
+    translate: var(--page-out, 0 0);
+    filter: blur(4px);
+    transition-duration: calc(120ms * var(--tween) / var(--speed));
+    transition-timing-function: ease-out;
+  }
+}
+
+@starting-style {
+  .tab-fab__list-wrap:not([data-initial]) {
+    opacity: 0;
+    translate: var(--page-in, 0 0);
+    filter: blur(4px);
+  }
+}
+
+/* Movimento ridotto: niente spostamenti né scale animati, restano le dissolvenze */
+.tab-fab-wrap[data-motion='reduced'] {
+  & .tab-fab::before,
+  & .tab-fab__trigger,
+  & .tab-fab__trigger-icon,
+  & .tab-fab__tab-content,
+  & > .goo-drop {
+    transition: none;
+    animation: none;
+  }
+
+  & .tab-fab__tab {
+    transition-property: color, opacity;
+  }
+
+  & .tab-fab__panel {
+    transition-property: opacity;
+  }
+
+  & .tab-fab__list-wrap {
+    transition-property: opacity, filter;
+  }
+}
+
+/* animated={false}: i cambi di stato sono istantanei */
+.tab-fab-wrap[data-motion='off'] *,
+.tab-fab-wrap[data-motion='off'] *::before {
+  transition: none !important;
+  animation: none !important;
 }

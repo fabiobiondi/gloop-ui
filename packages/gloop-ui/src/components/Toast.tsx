@@ -9,10 +9,10 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useIsPresent, type Transition } from 'motion/react'
 import { GooFilter } from './goo'
 import { useThemeVars } from './floating/useThemeVars'
-import { MotionScope, useGloopMotion, type GloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion, type GloopMotion } from './gloop-motion'
 import './theme.css'
 import './Toast.css'
 
@@ -47,12 +47,11 @@ export type ToastProps = {
   className?: string
 } & MotionProps
 
-// La goccia cola dal bordo, poi si gonfia: l'asse verticale arriva prima, l'orizzontale si allarga dopo
-const flow: Transition = { type: 'spring', stiffness: 460, damping: 26 }
-const spread: Transition = { type: 'spring', stiffness: 300, damping: 21 }
-const suck: Transition = { type: 'spring', stiffness: 520, damping: 40 }
-// Chiusura: forma e goccia risalgono insieme verso il bordo, piano mentre si stringono e poi sempre più veloci
-const rise: Transition = { duration: 0.38, delay: 0.06, ease: [0.55, 0, 0.75, 0.3] }
+/*
+ * Tutte le animazioni sono in Toast.css: la goccia cola dal bordo, poi si gonfia (l'asse
+ * verticale arriva prima, l'orizzontale si allarga dopo); in chiusura forma e goccia
+ * risalgono insieme verso il bordo. Le molle sono easing linear(), una serie per preset.
+ */
 
 // Diametro della goccia che viaggia dal bordo al toast, in px (uguale a --toast-drop)
 const DROP = 28
@@ -136,110 +135,35 @@ let openings = 0
  * e il collo si strappa. Chiusura: la pillola si richiude nella goccia, che risale
  * e viene risucchiata nel bordo.
  */
-function ToastBlob({ m, size, dir, atEdge }: { m: GloopMotion; size: Size; dir: 1 | -1; atEdge: () => boolean }) {
+function ToastBlob({ size, dir }: { size: Size; dir: 1 | -1 }) {
   const filterId = useId()
   // Distanza tra il centro del toast e il bordo dello schermo (dir: -1 in alto, 1 in basso)
   const toEdge = dir * (size.height / 2 + OFFSET)
+  // Da goccia: la forma è scalata a un cerchio grande quanto DROP
   const from = { scaleX: Math.min(1, DROP / size.width), scaleY: Math.min(1, DROP / size.height) }
   // Ellisse grande quanto la scheda: scalata a goccia diventa un cerchio vero. Un raggio
   // in px enorme verrebbe ridotto dal browser in proporzione e, scalato, sembrerebbe un quadrato
   const round = `${size.width / 2}px / ${size.height / 2}px`
-  const pill = `${RADIUS}px / ${RADIUS}px`
 
   return (
-    <div className="toast__goo" aria-hidden="true" style={{ filter: `url(#${CSS.escape(filterId)})` }}>
+    <div
+      className="toast__goo"
+      aria-hidden="true"
+      style={
+        {
+          filter: `url(#${CSS.escape(filterId)})`,
+          '--toast-to-edge': `${toEdge}px`,
+          '--toast-from-sx': from.scaleX,
+          '--toast-from-sy': from.scaleY,
+          '--toast-round': round,
+        } as CSSProperties
+      }
+    >
       <GooFilter id={filterId} blur={8} color="var(--toast-surface)" />
-
-      <motion.span
-        className="toast__source"
-        initial={{ scale: 0 }}
-        animate={{
-          scale: [0, 1, 1, 0],
-          transition: m.t({ duration: 0.6, times: [0, 0.25, 0.4, 1], ease: 'easeInOut' }),
-        }}
-        // Le uscite si decidono alla chiusura: solo il toast attaccato al bordo ci risale
-        variants={m.v({
-          exit: () =>
-            atEdge()
-              ? {
-                  scale: [0, 1, 0],
-                  // Il bordo si gonfia incontro al blob che risale e lo risucchia
-                  transition: { duration: 0.44, delay: 0.12, times: [0, 0.55, 1], ease: 'easeInOut' },
-                }
-              : { scale: 0, transition: { duration: 0 } },
-        })}
-        exit="exit"
-      />
-
-      <motion.span
-        className="toast__drop"
-        // Allungata nel verso del moto, si arrotonda quando arriva
-        initial={{ y: toEdge, scaleX: 0.7, scaleY: 1.5 }}
-        animate={{
-          y: 0,
-          scaleX: 1,
-          scaleY: 1,
-          transition: m.t({ ...flow, delay: 0.06 }),
-        }}
-        variants={m.v({
-          exit: () =>
-            atEdge()
-              ? {
-                  y: toEdge,
-                  // Resta tonda, nascosta dentro la forma che si stringe: si allunga solo quando
-                  // la forma ha preso la sua misura, così salgono sovrapposte come un unico blob
-                  scaleX: [1, 1, 0.7, 0],
-                  scaleY: [1, 1, 1.5, 0],
-                  transition: {
-                    y: rise,
-                    scaleX: { duration: 0.5, delay: 0.06, times: [0, 0.4, 0.7, 1] },
-                    scaleY: { duration: 0.5, delay: 0.06, times: [0, 0.4, 0.7, 1] },
-                  },
-                }
-              : // Lontano dal bordo (altri toast in mezzo): la goccia si asciuga sul posto
-                { scale: [1, 1, 0], transition: { duration: 0.42, delay: 0.06, times: [0, 0.5, 1] } },
-        })}
-        exit="exit"
-      />
-
-      <motion.span
-        className="toast__shape"
-        initial={{ ...from, borderRadius: round, opacity: 0 }}
-        animate={{
-          scaleX: 1,
-          scaleY: 1,
-          borderRadius: pill,
-          opacity: 1,
-          transition: m.t({
-            scaleY: { ...flow, delay: 0.16 },
-            scaleX: { ...spread, delay: 0.2 },
-            // Resta tonda finché è quasi gonfia
-            borderRadius: { duration: 0.45, delay: 0.16, ease: [0.5, 0, 0.2, 1] },
-            opacity: { duration: 0.01, delay: 0.16 },
-          }),
-        }}
-        variants={m.v({
-          exit: () => {
-            const edge = atEdge()
-            return {
-              ...from,
-              // Si stringe mentre risale insieme alla goccia: un unico blob che torna nel bordo
-              y: edge ? toEdge : 0,
-              borderRadius: round,
-              // Lascia il posto alla goccia, che viene risucchiata (o si asciuga sul posto)
-              opacity: 0,
-              transition: {
-                ...suck,
-                delay: 0.04,
-                y: rise,
-                borderRadius: { duration: 0.2, delay: 0.04, ease: 'easeIn' },
-                opacity: { duration: 0.01, delay: edge ? 0.32 : 0.28 },
-              },
-            }
-          },
-        })}
-        exit="exit"
-      />
+      <span className="toast__source" />
+      {/* Allungata nel verso del moto, si arrotonda quando arriva */}
+      <span className="toast__drop" />
+      <span className="toast__shape" />
     </div>
   )
 }
@@ -248,6 +172,9 @@ type ToastCardProps = Omit<ToastProps, 'open' | 'afterClose' | 'duration' | 'ali
   m: GloopMotion
   themeVars: CSSProperties
   onPause: (paused: boolean) => void
+  /** In uscita: resta montato finché le animazioni di chiusura non sono finite */
+  exiting?: boolean
+  onExited?: () => void
 }
 
 /*
@@ -268,43 +195,55 @@ function ToastCard({
   closeLabel = 'Close',
   className,
   onPause,
+  exiting = false,
+  onExited,
 }: ToastCardProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState<Size | null>(null)
   const dir = position === 'top' ? -1 : 1
 
-  // Con più toast impilati solo il più recente tocca il bordo: gli altri non ci risalgono
-  function atEdge() {
-    const rect = ref.current?.getBoundingClientRect()
-    if (!rect) return true
-    return dir < 0 ? rect.top <= OFFSET + 1 : rect.bottom >= window.innerHeight - OFFSET - 1
-  }
+
+  /*
+   * Uscita: 'edge' se il toast tocca il bordo e ci risale, 'away' se si asciuga sul posto.
+   * Si decide alla chiusura, prima che il toast esca dal flusso.
+   */
+  const [exit, setExit] = useState<'edge' | 'away' | null>(null)
+  const onExitedRef = useRef(onExited)
+  useLayoutEffect(() => {
+    onExitedRef.current = onExited
+  })
 
   // Riaperto mentre questo sta ancora uscendo: il nuovo toast prende il suo posto e questo
   // finisce l'uscita lì dov'è, fuori dal flusso (altrimenti starebbero affiancati)
-  const isPresent = useIsPresent()
   useLayoutEffect(() => {
     const el = ref.current
-    if (isPresent || !el) return
+    if (!exiting || !el) return
+    // Con più toast impilati solo il più recente tocca il bordo: gli altri non ci risalgono
+    const rect = el.getBoundingClientRect()
+    const atEdge = dir < 0 ? rect.top <= OFFSET + 1 : rect.bottom >= window.innerHeight - OFFSET - 1
+    setExit(atEdge ? 'edge' : 'away')
     const { offsetLeft, offsetWidth } = el
     Object.assign(el.style, { position: 'absolute', top: '0', left: `${offsetLeft}px`, width: `${offsetWidth}px` })
-  }, [isPresent])
+  }, [exiting, dir])
+
+  // Smonta quando tutte le animazioni di chiusura (anche quelle annidate) sono finite
+  useEffect(() => {
+    const el = ref.current
+    if (!exit || !el) return
+    let cancelled = false
+    const animations = typeof el.getAnimations === 'function' ? el.getAnimations({ subtree: true }) : []
+    Promise.all(animations.map((a) => a.finished.catch(() => undefined))).then(() => {
+      if (!cancelled) onExitedRef.current?.()
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [exit])
 
   // Prima del primo frame: la forma deve sapere quanto gonfiarsi
   useLayoutEffect(() => {
     if (ref.current) setSize({ width: ref.current.offsetWidth, height: ref.current.offsetHeight })
   }, [])
-
-  // Il contenuto arriva quando la goccia ha quasi preso forma
-  const reveal = {
-    initial: { opacity: 0, filter: 'blur(4px)' },
-    animate: {
-      opacity: 1,
-      filter: 'blur(0px)',
-      transition: m.t({ duration: 0.25, delay: m.reduced ? 0 : 0.28, ease: [0.23, 1, 0.32, 1] as const }),
-    },
-    exit: { opacity: 0, filter: 'blur(4px)', transition: m.t({ duration: 0.08 }) },
-  }
 
   // undefined: l'icona della variante; null: nessuna icona
   const shownIcon = icon === undefined ? VARIANT_ICONS[variant] : icon
@@ -314,11 +253,12 @@ function ToastCard({
   }
 
   return (
-    <motion.div
+    <div
       ref={ref}
       {...m.rootProps}
       className={className ? `toast ${className}` : 'toast'}
       data-variant={variant}
+      data-exit={exit ?? undefined}
       data-custom-color={color ? '' : undefined}
       style={
         {
@@ -333,40 +273,28 @@ function ToastCard({
       onPointerLeave={() => onPause(false)}
       onFocus={() => onPause(true)}
       onBlur={onBlur}
-      // Movimento ridotto: niente goccia, solo una dissolvenza con un piccolo spostamento
-      {...(m.reduced && {
-        initial: { opacity: 0, y: dir * 8 },
-        animate: { opacity: 1, y: 0, transition: m.t({ duration: 0.18 }) },
-        exit: { opacity: 0, transition: m.t({ duration: 0.12 }) },
-      })}
     >
+      {/* Movimento ridotto: niente goccia, solo una dissolvenza (Toast.css) */}
       {m.reduced ? (
         <span className="toast__shape" aria-hidden="true" style={{ borderRadius: RADIUS }} />
       ) : (
-        size && <ToastBlob m={m} size={size} dir={dir} atEdge={atEdge} />
+        size && <ToastBlob size={size} dir={dir} />
       )}
 
-      <motion.div className="toast__content" {...reveal}>
+      {/* Il contenuto arriva quando la goccia ha quasi preso forma */}
+      <div className="toast__content">
         {shownIcon != null && <span className="toast__icon">{shownIcon}</span>}
         <div className="toast__text">
           {title != null && <div className="toast__title">{title}</div>}
           {children != null && <div className="toast__message">{children}</div>}
         </div>
         {closeButton && (
-          <motion.button
-            type="button"
-            className="toast__close"
-            aria-label={closeLabel}
-            onClick={onClose}
-            whileHover={{ scale: 1.08, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
-            transition={m.t({ type: 'spring', duration: 0.4, bounce: 0.3 })}
-          >
+          <button type="button" className="toast__close" aria-label={closeLabel} onClick={onClose}>
             {CloseIcon}
-          </motion.button>
+          </button>
         )}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   )
 }
 
@@ -402,11 +330,34 @@ function Toast({
   // Ogni apertura riparte senza pausa (il puntatore può essere rimasto sul toast chiuso)
   // e va in cima alla pila, contro il bordo
   const [wasOpen, setWasOpen] = useState(open)
+  /*
+   * Toast in uscita, uno per apertura (al posto di AnimatePresence): restano montati con
+   * le props della chiusura finché le animazioni non sono finite. Con le animazioni spente
+   * non c'è uscita: afterClose arriva subito (closedOff).
+   */
+  const [exiting, setExiting] = useState<{ key: number; props: typeof cardProps }[]>([])
+  const [closedOff, setClosedOff] = useState(0)
   if (open !== wasOpen) {
     setWasOpen(open)
     setPaused(false)
     if (open) setOrder(++openings)
+    else if (m.state === 'off') setClosedOff((n) => n + 1)
+    else setExiting((list) => [...list, { key: order, props: cardProps }])
   }
+
+  // afterClose: quando l'ultimo toast in uscita è finito (come onExitComplete)
+  const afterCloseRef = useRef(afterClose)
+  useEffect(() => {
+    afterCloseRef.current = afterClose
+  })
+  const hadExiting = useRef(false)
+  useEffect(() => {
+    if (hadExiting.current && exiting.length === 0) afterCloseRef.current?.()
+    hadExiting.current = exiting.length > 0
+  }, [exiting.length])
+  useEffect(() => {
+    if (closedOff) afterCloseRef.current?.()
+  }, [closedOff])
 
   /*
    * Quando nella pila entra o esce un toast, gli altri cambiano posto: invece di saltare
@@ -487,13 +438,29 @@ function Toast({
             // Il più recente sta anche sopra: cola dal bordo passando davanti a quelli che scivolano via
             style={{ order, zIndex: order }}
           >
-            <MotionScope m={m} props={motionProps}>
-              <AnimatePresence onExitComplete={afterClose}>
-                {open && (
+            <GloopMotionProvider {...pickMotionProps(motionProps)}>
+              {/*
+                Una chiave per apertura: ogni apertura è un toast nuovo, misurato sul suo
+                contenuto. Con una chiave fissa, riaprire a fine uscita riusava il toast
+                uscente con le sue misure e la forma ancora spostata verso il bordo.
+                Un solo array: chiudendo, il toast passa nella lista di uscita senza rimontarsi
+              */}
+              {[
+                ...exiting.map(({ key, props }) => (
                   <ToastCard
-                    // Una chiave per apertura: ogni apertura è un toast nuovo, misurato sul suo
-                    // contenuto. Con una chiave fissa, riaprire a fine uscita riusava il toast
-                    // uscente con le sue misure e la forma ancora spostata verso il bordo
+                    key={key}
+                    m={m}
+                    themeVars={themeVars}
+                    onClose={onClose}
+                    position={position}
+                    onPause={setPaused}
+                    {...props}
+                    exiting
+                    onExited={() => setExiting((list) => list.filter((e) => e.key !== key))}
+                  />
+                )),
+                open && (
+                  <ToastCard
                     key={order}
                     m={m}
                     themeVars={themeVars}
@@ -502,9 +469,9 @@ function Toast({
                     onPause={setPaused}
                     {...cardProps}
                   />
-                )}
-              </AnimatePresence>
-            </MotionScope>
+                ),
+              ]}
+            </GloopMotionProvider>
           </div>,
           getStack(position, align),
         )}

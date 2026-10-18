@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useId,
   useLayoutEffect,
   useMemo,
@@ -10,16 +9,10 @@ import {
   type PointerEvent,
   type Ref,
 } from 'react'
-import {
-  animate,
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  useVelocity,
-} from 'motion/react'
 import { fromPointer, keyValue, snap, stepMarks, toPercent } from './slider-math'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
+import { tune, useFollow, type Spring } from './spring-follow'
 import './theme.css'
 import './Slider.css'
 
@@ -55,18 +48,13 @@ export type SliderProps = {
   ref?: Ref<HTMLDivElement>
 } & MotionProps
 
-// Misure in px: devono restare allineate con Slider.css
-const THUMB = 22
-const BUBBLE_H = 26
-const BUBBLE_GAP = 4
-// Da ferma la goccia del valore sta nascosta al centro del thumb (in negativo se esce sotto)
-const SUNK = BUBBLE_H + BUBBLE_GAP + THUMB / 2 - BUBBLE_H / 2
-
-const head = { stiffness: 520, damping: 34 }
-const tail = { stiffness: 170, damping: 20 }
-// Salita: la goccia "cola" verso l'alto e rimbalza; discesa: risucchiata senza rimbalzo
-const flow = { type: 'spring', stiffness: 460, damping: 26 } as const
-const suck = { type: 'spring', stiffness: 520, damping: 40 } as const
+// Testa rapida e coda in ritardo: inseguono il valore anche durante il drag (vedi useFollow)
+const head: Spring = { stiffness: 520, damping: 34 }
+const tail: Spring = { stiffness: 170, damping: 20 }
+/*
+ * La goccia del valore sale e scende con le molle di Input (flow in salita, suck in
+ * discesa): easing linear() in Slider.css, una coppia per preset
+ */
 
 const defaultFormat = (v: number) => String(v)
 
@@ -100,6 +88,7 @@ function Slider({
   const filterId = useId()
   const m = useGloopMotion(motionProps)
   const reduceMotion = m.reduced
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const railRef = useRef<HTMLDivElement | null>(null)
   const thumbRef = useRef<HTMLDivElement | null>(null)
 
@@ -116,45 +105,32 @@ function Slider({
   const [keyboard, setKeyboard] = useState(false)
   const bubble = showValue !== 'never'
   const active = showValue === 'always' || (showValue === 'auto' && (dragging || keyboard))
-  const sunk = valuePlacement === 'bottom' ? -SUNK : SUNK
 
-  // Posizione in % lungo il binario: la testa è rapida, la coda in ritardo crea la scia
+  /*
+   * Posizione in % lungo il binario: la testa è rapida, la coda in ritardo crea la scia.
+   * Le molle scrivono variabili CSS sulla radice, senza render di React a ogni frame.
+   */
   const percent = toPercent(current, min, max)
-  const target = useMotionValue(percent)
-  const headX = useSpring(target, m.t(head))
-  const tailX = useSpring(target, m.t(tail))
-  const lead = reduceMotion ? target : headX
-  const trail = reduceMotion ? target : tailX
+  const springs = useMemo(() => [tune(head, m.speed, m.preset), tune(tail, m.speed, m.preset)], [m.speed, m.preset])
+  useFollow(percent, springs, reduceMotion, ([headX, tailX], [velocity]) => {
+    const el = rootRef.current
+    if (!el) return
+    // Squash & stretch: in corsa la goccia si allunga lungo il binario e si assottiglia
+    const run = Math.min(1, Math.abs(velocity) / 300)
+    el.style.setProperty('--slider-lead', `${headX}%`)
+    el.style.setProperty('--slider-trail', `${tailX}%`)
+    el.style.setProperty('--slider-stretch', String(1 + 0.35 * run))
+    el.style.setProperty('--slider-squash', String(1 - 0.2 * run))
+  })
 
-  useEffect(() => {
-    target.set(percent)
-  }, [percent, target])
-
-  // Squash & stretch: in corsa la goccia si allunga lungo il binario e si assottiglia
-  const velocity = useVelocity(headX)
-  const stretch = useTransform(velocity, [-300, 0, 300], [1.35, 1, 1.35])
-  const squash = useTransform(velocity, [-300, 0, 300], [0.8, 1, 0.8])
-
-  const leadLeft = useTransform(lead, (p) => `${p}%`)
-  const tailLeft = useTransform(tailX, (p) => `${p}%`)
-  // Il riempimento parte da sotto il bordo sinistro del thumb e finisce sulla coda
-  const fillWidth = useTransform(trail, (p) => `calc(${p}% + ${THUMB / 2}px)`)
-
-  // Goccia del valore: posizione verticale e dimensione, come la linguetta di Input
-  const y = useMotionValue(active ? 0 : sunk)
-  const size = useMotionValue(active ? 1 : 0.4)
-  const yVelocity = useVelocity(y)
-  const bubbleStretch = useTransform(yVelocity, [-500, 0, 500], [1.25, 1, 1.25])
-  const bubbleSquash = useTransform(yVelocity, [-500, 0, 500], [0.85, 1, 0.85])
-  const bubbleScaleX = useTransform(() => size.get() * bubbleSquash.get())
-  const bubbleScaleY = useTransform(() => size.get() * bubbleStretch.get())
-  const textOpacity = useTransform(size, [0.6, 1], [0, 1])
-
-  useEffect(() => {
-    const transition = reduceMotion ? { duration: 0 } : m.t(active ? flow : suck)
-    const controls = [animate(y, active ? 0 : sunk, transition), animate(size, active ? 1 : 0.4, transition)]
-    return () => controls.forEach((c) => c.stop())
-  }, [active, sunk, reduceMotion, m, y, size])
+  /*
+   * Goccia del valore: posizione verticale e dimensione le anima Slider.css (data-active),
+   * come la linguetta di Input. Lo squash & stretch in salita e discesa parte solo dopo
+   * il primo cambio, non al montaggio.
+   */
+  const [toggled, setToggled] = useState(false)
+  const [firstActive] = useState(active)
+  if (!toggled && active !== firstActive) setToggled(true)
 
   const markList = useMemo(() => {
     if (!marks) return []
@@ -228,14 +204,16 @@ function Slider({
   const classes = className ? `slider ${className}` : 'slider'
 
   return (
-    <MotionScope m={m} props={motionProps}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       <div
         {...m.rootProps}
+        ref={rootRef}
         className={classes}
         style={{ ...m.rootProps.style, ...style }}
         data-disabled={disabled || undefined}
         data-dragging={dragging || undefined}
         data-active={active || undefined}
+        data-toggled={toggled || undefined}
         data-bubble={bubble ? valuePlacement : undefined}
         data-mark-labels={hasMarkLabels || undefined}
         onPointerDown={handlePointerDown}
@@ -257,7 +235,7 @@ function Slider({
         <div className="slider__rail" ref={railRef}>
           <span className="slider__track" />
           {/* Riempimento nitido: nel filtro una linea così sottile sparirebbe sotto la soglia */}
-          <motion.span className="slider__fill" style={{ width: fillWidth }} />
+          <span className="slider__fill" />
 
           {/* Il livello copre anche lo spazio della goccia: l'area del filtro si misura su di lui */}
           <div
@@ -267,24 +245,14 @@ function Slider({
           >
             <div className="slider__goo-rail">
               {/* Copia nel goo: vicino alla goccia si fonde e crea il "collo" liquido */}
-              <motion.span className="slider__fill" style={{ width: fillWidth }} />
-              {!reduceMotion && <motion.span className="slider__tail" style={{ left: tailLeft, x: '-50%' }} />}
-              <motion.span
-                className="slider__blob"
-                style={{
-                  left: leadLeft,
-                  x: '-50%',
-                  ...(reduceMotion ? {} : { scaleX: stretch, scaleY: squash }),
-                }}
-              />
+              <span className="slider__fill" />
+              {!reduceMotion && <span className="slider__tail" />}
+              <span className="slider__blob" />
               {bubble && (
-                <motion.span
-                  className="slider__bubble"
-                  style={{ left: leadLeft, x: '-50%', y, scaleX: bubbleScaleX, scaleY: bubbleScaleY }}
-                >
+                <span className="slider__bubble">
                   {/* Copia invisibile del valore: dà alla goccia la larghezza giusta senza misurare */}
                   <span className="slider__bubble-sizer">{text}</span>
-                </motion.span>
+                </span>
               )}
             </div>
           </div>
@@ -305,19 +273,14 @@ function Slider({
           )}
 
           {bubble && (
-            <motion.span
-              className="slider__value"
-              aria-hidden="true"
-              style={{ left: leadLeft, x: '-50%', y, scale: size, opacity: textOpacity }}
-            >
+            <span className="slider__value" aria-hidden="true">
               {text}
-            </motion.span>
+            </span>
           )}
 
-          <motion.div
+          <div
             ref={setRefs}
             className="slider__thumb"
-            style={{ left: leadLeft, x: '-50%' }}
             role="slider"
             tabIndex={disabled ? -1 : 0}
             aria-label={labelledBy ? undefined : label}
@@ -344,7 +307,7 @@ function Slider({
 
         {name && <input type="hidden" name={name} value={current} disabled={disabled} />}
       </div>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 

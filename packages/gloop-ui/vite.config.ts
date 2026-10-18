@@ -15,7 +15,7 @@ export default defineConfig({
     cssCodeSplit: false,
     sourcemap: true,
     rolldownOptions: {
-      external: [/^react($|\/)/, /^react-dom($|\/)/, /^motion($|\/)/],
+      external: [/^react($|\/)/, /^react-dom($|\/)/],
       output: {
         // Next.js App Router: i componenti usano hook ed eventi, sono client components
         banner: "'use client';",

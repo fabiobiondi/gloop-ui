@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, type CSSProperties } from 'react'
-import { animate, motion, useMotionValue, useSpring, useTransform, useVelocity } from 'motion/react'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { useId, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
+import { tune, useFollow, type Spring } from './spring-follow'
 import { toPercent } from './slider-math'
 import './theme.css'
 import './ProgressBar.css'
@@ -34,9 +35,10 @@ export type ProgressBarProps = {
   style?: CSSProperties
 } & MotionProps
 
+
 // Testa rapida con un po' di rimbalzo, coda gommosa in ritardo: in mezzo il goo crea il collo
-const head = { stiffness: 140, damping: 14 }
-const tail = { stiffness: 80, damping: 17 }
+const head: Spring = { stiffness: 140, damping: 14 }
+const tail: Spring = { stiffness: 80, damping: 17 }
 
 const INSIDE_MIN = 18
 
@@ -93,6 +95,7 @@ function ProgressBar({
 }: ProgressBarProps) {
   const filterId = useId()
   const m = useGloopMotion(motionProps)
+  const rootRef = useRef<HTMLDivElement>(null)
   const reduceMotion = m.reduced
   const indeterminate = value == null
   const current = indeterminate ? min : Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : min
@@ -103,44 +106,39 @@ function ProgressBar({
   const dripping = drip && !reduceMotion
   const complete = !indeterminate && percent >= 100
 
-  const target = useMotionValue(percent)
-  const headX = useSpring(target, m.t(head))
-  const tailX = useSpring(target, m.t(tail))
-  const lead = reduceMotion ? target : headX
-  const trail = reduceMotion ? target : tailX
+  /*
+   * Testa e coda scrivono variabili CSS sulla radice a ogni frame, senza render di React.
+   * Vicino a 0 la testa sparisce (--progress-grow): niente pallina ferma all'inizio della barra
+   */
+  const springs = useMemo(() => [tune(head, m.speed, m.preset), tune(tail, m.speed, m.preset)], [m.speed, m.preset])
+  useFollow(percent, springs, reduceMotion, ([lead, trail], [velocity]) => {
+    const el = rootRef.current
+    if (!el) return
+    const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
+    // Squash & stretch: in corsa la testa si allunga lungo la barra e si assottiglia
+    const run = Math.min(1, Math.abs(velocity) / 200)
+    const grow = clamp01(lead / 3)
+    el.style.setProperty('--progress-lead', `${lead}%`)
+    el.style.setProperty('--progress-trail', `${trail}%`)
+    // Collo: un filo sottile dalla fine del riempimento alla testa, il goo lo rende liquido
+    el.style.setProperty('--progress-neck', `${Math.max(0, lead - trail)}%`)
+    // Il riempimento parte mezzo spessore prima della corsia; vicino a 0 si ritira del tutto
+    el.style.setProperty('--progress-fill-grow', String(clamp01(trail / 3)))
+    el.style.setProperty('--progress-grow', String(grow))
+    el.style.setProperty('--progress-head-sx', String(grow * (1 + 0.4 * run)))
+    el.style.setProperty('--progress-head-sy', String(grow * (1 - 0.2 * run)))
+  })
 
-  useEffect(() => {
-    target.set(percent)
-  }, [percent, target])
-
-  // Squash & stretch: in corsa la testa si allunga lungo la barra e si assottiglia
-  const velocity = useVelocity(headX)
-  const stretch = useTransform(velocity, [-200, 0, 200], [1.4, 1, 1.4])
-  const squash = useTransform(velocity, [-200, 0, 200], [0.8, 1, 0.8])
-  // Vicino a 0 la testa sparisce: niente pallina ferma all'inizio della barra
-  const grow = useTransform(lead, [0, 3], [0, 1])
-  const headScaleX = useTransform(() => grow.get() * (reduceMotion ? 1 : stretch.get()))
-  const headScaleY = useTransform(() => grow.get() * (reduceMotion ? 1 : squash.get()))
-
-  const leadLeft = useTransform(lead, (p) => `${p}%`)
-  const tailLeft = useTransform(tailX, (p) => `${p}%`)
-  // Collo: un filo sottile dalla fine del riempimento alla testa, il goo lo rende liquido
-  const neckLeft = useTransform(trail, (p) => `${p}%`)
-  const neckWidth = useTransform(() => `${Math.max(0, lead.get() - trail.get())}%`)
-  // Il riempimento parte mezzo spessore prima della corsia; vicino a 0 si ritira del tutto
-  const fillWidth = useTransform(trail, (p) => `calc(${p}% + ${(h * Math.min(1, Math.max(0, p) / 3)).toFixed(2)}px)`)
-
-  // Arrivata al 100%: un piccolo "gulp" della testa, una volta sola
-  const gulp = useMotionValue(1)
-  const wasComplete = useRef(complete)
-  useEffect(() => {
-    if (complete && !wasComplete.current && !reduceMotion) {
-      const c = animate(gulp, [1, 1.25, 0.95, 1], m.t({ duration: 0.6, ease: 'easeInOut', delay: 0.25 }))
-      wasComplete.current = complete
-      return () => c.stop()
-    }
-    wasComplete.current = complete
-  }, [complete, reduceMotion, m, gulp])
+  /*
+   * Arrivata al 100%: un piccolo "gulp" della testa, una volta sola (non al montaggio).
+   * L'animazione è in ProgressBar.css, su data-gulp.
+   */
+  const [wasComplete, setWasComplete] = useState(complete)
+  const [gulp, setGulp] = useState(false)
+  if (wasComplete !== complete) {
+    setWasComplete(complete)
+    setGulp(complete && !reduceMotion)
+  }
 
   // Gradiente: il riempimento lo stende su tutta la corsia, testa e gocce prendono il colore del loro punto
   const [from, to] = color == null ? ['var(--ui-accent)', 'var(--ui-accent)'] : typeof color === 'string' ? [color, color] : color
@@ -149,9 +147,10 @@ function ProgressBar({
   const classes = className ? `progress ${className}` : 'progress'
 
   return (
-    <MotionScope m={m} props={motionProps}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       <div
         {...m.rootProps}
+        ref={rootRef}
         className={classes}
         role="progressbar"
         aria-label={labelledBy ? undefined : label}
@@ -164,6 +163,7 @@ function ProgressBar({
         data-value={mode === 'none' ? undefined : mode}
         data-drip={dripping || undefined}
         data-complete={complete || undefined}
+        data-gulp={gulp || undefined}
         style={
           {
             ...m.rootProps.style,
@@ -205,28 +205,26 @@ function ProgressBar({
                   ))
                 : (
                     <>
-                      <motion.span className="progress__fill" style={{ width: fillWidth }}>
+                      <span className="progress__fill">
                         {dripping &&
                           percent > 3 &&
                           FILL_DROPS.map((d, i) => (
                             <DripDrop key={i} drop={d} thickness={h} color={at((d.at * percent) / 100)} />
                           ))}
-                      </motion.span>
-                      {!reduceMotion && <motion.span className="progress__neck" style={{ left: neckLeft, width: neckWidth }} />}
-                      {!reduceMotion && (
-                        <motion.span className="progress__tail" style={{ left: tailLeft, x: '-50%', scale: grow }} />
-                      )}
-                      <motion.span className="progress__head-pos" style={{ left: leadLeft }}>
-                        <motion.span className="progress__head" style={{ scaleX: headScaleX, scaleY: headScaleY }}>
-                          <motion.span className="progress__head-gulp" style={{ scale: gulp }} />
-                        </motion.span>
+                      </span>
+                      {!reduceMotion && <span className="progress__neck" />}
+                      {!reduceMotion && <span className="progress__tail" />}
+                      <span className="progress__head-pos">
+                        <span className="progress__head">
+                          <span className="progress__head-gulp" />
+                        </span>
                         {mode === 'bubble' && (
                           <span className="progress__bubble">
                             {/* Copia invisibile del valore: dà alla goccia la larghezza giusta senza misurare */}
                             <span className="progress__bubble-sizer">{text}</span>
                           </span>
                         )}
-                      </motion.span>
+                      </span>
                     </>
                   )}
             </div>
@@ -235,19 +233,19 @@ function ProgressBar({
           {mode !== 'none' && (
             <div className="progress__lane" aria-hidden="true">
               {mode === 'bubble' ? (
-                <motion.span className="progress__value" data-placement="bubble" style={{ left: leadLeft }}>
+                <span className="progress__value" data-placement="bubble">
                   {text}
-                </motion.span>
+                </span>
               ) : (
-                <motion.span className="progress__value" data-placement="inside" style={{ width: fillWidth }}>
+                <span className="progress__value" data-placement="inside">
                   {text}
-                </motion.span>
+                </span>
               )}
             </div>
           )}
         </div>
       </div>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 

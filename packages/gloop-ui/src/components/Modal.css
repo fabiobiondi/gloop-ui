@@ -81,7 +81,7 @@
   box-shadow: inset 0 0 0 1px var(--modal-divider);
 }
 
-/* enter="drop": goccia in volo e schizzi, al centro della scheda; x e y li sposta Motion */
+/* enter="drop": goccia in volo e schizzi, al centro della scheda; lo spostamento è un'animazione WAAPI */
 .modal__fly {
   position: absolute;
   top: 50%;
@@ -98,7 +98,7 @@
   background: none;
 }
 
-/* Ruotato nella direzione del volo: dentro, lo stiramento di Motion avviene lungo il volo */
+/* Ruotato nella direzione del volo: dentro, lo stiramento avviene lungo il volo */
 .modal__fly-rotor {
   position: absolute;
   inset: 0;
@@ -113,7 +113,7 @@
 
 /*
  * Rigonfiamenti dei lati (swell): ellissi lunghe al centro di ogni lato, dentro la forma.
- * Da ferme stanno appena dentro il bordo; Motion le spinge fuori e il goo le fonde
+ * Da ferme stanno appena dentro il bordo; il keyframe le spinge fuori e il goo le fonde
  * con la scheda, così il lato si incurva e ondeggia come gelatina.
  */
 .modal__bulge {
@@ -285,4 +285,320 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+/* ---------- Animazioni ---------- */
+
+/*
+ * Solo CSS: le molle fisse sono campionate in easing linear(), una per preset; quelle
+ * della gelatina (--modal-jelly-x/y) le scrive Modal.tsx. Le durate si dividono per
+ * --ui-motion-speed. Apertura con keyframe (fill backwards durante i ritardi),
+ * chiusura con transizioni o keyframe espliciti, come in Motion.
+ */
+.modal-layer {
+  --speed: var(--ui-motion-speed, 1);
+  /* Angoli della scheda che si squadrano insieme alla scala, senza rimbalzo */
+  --modal-radius: linear(0, 0.018, 0.065, 0.125, 0.201, 0.274, 0.348, 0.426, 0.494, 0.562, 0.62, 0.671, 0.722, 0.762, 0.801, 0.832, 0.859, 0.884, 0.903, 0.921, 0.935, 0.947, 0.958, 0.966, 0.973, 0.978, 0.983, 0.987, 0.99, 0.992, 0.994, 0.996, 0.997, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1);
+  --modal-radius-ms: 456ms;
+  /* Pulsanti del footer che salgono */
+  --modal-drip: linear(0, 0.056, 0.182, 0.355, 0.54, 0.715, 0.859, 0.979, 1.064, 1.117, 1.141, 1.146, 1.134, 1.113, 1.087, 1.06, 1.035, 1.016, 0.999, 0.988, 0.982, 0.979, 0.979, 0.981, 0.984, 0.988, 0.992, 0.996, 0.998, 1.001, 1.002, 1.003, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1, 1);
+  --modal-drip-ms: 789ms;
+  /* Rollover della X */
+  --modal-close: linear(0, 0.025, 0.093, 0.177, 0.274, 0.386, 0.487, 0.582, 0.678, 0.754, 0.827, 0.882, 0.927, 0.967, 0.994, 1.014, 1.029, 1.037, 1.042, 1.044, 1.043, 1.04, 1.036, 1.032, 1.028, 1.023, 1.019, 1.015, 1.011, 1.008, 1.005, 1.003, 1.002, 1, 0.999, 0.999, 0.998, 0.998, 0.998, 0.998, 1);
+  --modal-close-ms: 374ms;
+}
+
+/* smooth: molle smorzate in modo critico, nessun rimbalzo */
+.modal-layer[data-motion-preset='smooth'] {
+  --modal-radius: linear(0, 0.027, 0.089, 0.17, 0.252, 0.341, 0.426, 0.505, 0.577, 0.64, 0.696, 0.741, 0.783, 0.819, 0.849, 0.875, 0.896, 0.913, 0.928, 0.941, 0.952, 0.96, 0.967, 0.973, 0.978, 0.982, 0.985, 0.988, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 1);
+  --modal-radius-ms: 554ms;
+  --modal-drip: var(--modal-radius);
+  --modal-drip-ms: 554ms;
+  --modal-close: linear(0, 0.03, 0.098, 0.184, 0.277, 0.37, 0.457, 0.536, 0.607, 0.67, 0.724, 0.77, 0.809, 0.842, 0.87, 0.893, 0.913, 0.928, 0.942, 0.952, 0.961, 0.968, 0.974, 0.979, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+  --modal-close-ms: 439ms;
+}
+
+/* snappy: più rapido, rimbalzo dimezzato */
+.modal-layer[data-motion-preset='snappy'] {
+  --modal-radius: linear(0, 0.026, 0.084, 0.162, 0.247, 0.335, 0.419, 0.498, 0.57, 0.634, 0.691, 0.741, 0.784, 0.82, 0.851, 0.878, 0.9, 0.918, 0.933, 0.946, 0.957, 0.965, 0.972, 0.978, 0.982, 0.986, 0.989, 0.991, 0.993, 0.994, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1, 1);
+  --modal-radius-ms: 401ms;
+  --modal-drip: linear(0, 0.026, 0.097, 0.184, 0.281, 0.393, 0.491, 0.583, 0.674, 0.746, 0.814, 0.866, 0.907, 0.944, 0.969, 0.989, 1.004, 1.013, 1.019, 1.022, 1.023, 1.023, 1.022, 1.02, 1.018, 1.015, 1.013, 1.01, 1.008, 1.006, 1.005, 1.003, 1.002, 1.002, 1.001, 1, 1, 1, 1, 0.999, 1);
+  --modal-drip-ms: 414ms;
+  --modal-close: linear(0, 0.033, 0.098, 0.194, 0.299, 0.393, 0.495, 0.587, 0.66, 0.732, 0.792, 0.837, 0.878, 0.908, 0.935, 0.955, 0.969, 0.981, 0.99, 0.995, 1, 1.002, 1.004, 1.005, 1.005, 1.005, 1.005, 1.004, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+  --modal-close-ms: 346ms;
+}
+
+/* ----- Sfondo ----- */
+
+.modal-layer[data-state='open'] .modal-backdrop {
+  animation: modal-fade-in calc(200ms / var(--speed)) linear;
+}
+
+.modal-layer[data-state='closing'] .modal-backdrop {
+  opacity: 0;
+  transition: opacity calc(250ms / var(--speed)) linear calc(120ms / var(--speed));
+}
+
+/* ----- Blob (enter="swell"; con "drop" le animazioni sono WAAPI) ----- */
+
+/*
+ * La pillola iniziale ha il raggio pari a metà del lato corto (50cqmin: il blob è un container).
+ * Larghezza sulla proprietà scale e altezza su transform (scaleY): ognuna ha la sua molla.
+ */
+.modal-layer[data-state='open'] .modal__blob:not([data-enter='drop']) .modal__blob-shape {
+  animation:
+    modal-grow-x calc(var(--modal-jelly-x-ms) / var(--speed)) var(--modal-jelly-x),
+    modal-grow-y calc(var(--modal-jelly-y-ms) / var(--speed)) var(--modal-jelly-y),
+    modal-round calc(var(--modal-radius-ms) / var(--speed)) var(--modal-radius),
+    modal-fade-in calc(80ms / var(--speed)) linear;
+}
+
+/* Chiusura: un piccolo gonfiore (il rimbalzo al contrario), poi goccia e sgonfiamento */
+.modal-layer[data-state='closing'] .modal__blob:not([data-enter='drop']) .modal__blob-shape {
+  animation:
+    modal-shrink calc(420ms / var(--speed)) calc(40ms / var(--speed)) both,
+    modal-unround calc(420ms / var(--speed)) calc(40ms / var(--speed)) both,
+    modal-fade-out calc(420ms / var(--speed)) linear calc(40ms / var(--speed)) both;
+}
+
+@keyframes modal-grow-x {
+  from {
+    scale: 0.16 1;
+  }
+}
+
+@keyframes modal-grow-y {
+  from {
+    transform: scaleY(0.2);
+  }
+}
+
+@keyframes modal-round {
+  from {
+    border-radius: 50cqmin;
+  }
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-shrink {
+  0% {
+    scale: 1;
+    animation-timing-function: ease-out;
+  }
+  22% {
+    scale: 1.03 1.04;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.75, 0.2);
+  }
+  100% {
+    scale: 0.16 0.2;
+  }
+}
+
+@keyframes modal-unround {
+  0%,
+  30% {
+    border-radius: 28px;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  100% {
+    border-radius: 50cqmin;
+  }
+}
+
+@keyframes modal-fade-out {
+  0%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
+ * Rigonfiamenti: escono dal lato (14px × jelly), rientrano un po' (-3), escono ancora (6)
+ * e tornano; alla fine spariscono, da fermi coprirebbero il bordo sottile della scheda.
+ * Prima i lati lunghi (alto e basso), poi quelli corti, appena sfasati.
+ */
+.modal__bulge {
+  --bulge-x: 0;
+  --bulge-y: 0;
+  opacity: 0;
+
+  &[data-side='top'] {
+    --bulge-y: -1;
+    --bulge-delay: 100ms;
+  }
+
+  &[data-side='bottom'] {
+    --bulge-y: 1;
+    --bulge-delay: 120ms;
+  }
+
+  &[data-side='left'] {
+    --bulge-x: -1;
+    --bulge-delay: 160ms;
+  }
+
+  &[data-side='right'] {
+    --bulge-x: 1;
+    --bulge-delay: 180ms;
+  }
+}
+
+.modal-layer[data-state='open'] .modal__bulge {
+  --bulge: calc(var(--modal-jelly, 0) * 1px);
+  animation: modal-bulge calc(850ms / var(--speed)) ease-in-out
+    calc((var(--modal-bulge-delay, 0ms) + var(--bulge-delay)) / var(--speed)) both;
+}
+
+@keyframes modal-bulge {
+  0% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  28% {
+    translate: calc(var(--bulge-x) * var(--bulge) * 14) calc(var(--bulge-y) * var(--bulge) * 14);
+  }
+  55% {
+    translate: calc(var(--bulge-x) * var(--bulge) * -3) calc(var(--bulge-y) * var(--bulge) * -3);
+  }
+  78% {
+    translate: calc(var(--bulge-x) * var(--bulge) * 6) calc(var(--bulge-y) * var(--bulge) * 6);
+    opacity: 1;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 0;
+  }
+}
+
+/* ----- Contenuto ----- */
+
+/* Arriva quando la goccia ha quasi preso forma; con "drop" dopo l'impatto (--modal-lag) */
+.modal__header {
+  --reveal-delay: 200ms;
+}
+
+.modal__body {
+  --reveal-delay: 240ms;
+}
+
+.modal__footer-custom {
+  --reveal-delay: 260ms;
+}
+
+.modal-layer[data-state='open'] :is(.modal__header, .modal__body, .modal__footer-custom) {
+  animation: modal-reveal calc(250ms / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1)
+    calc((var(--reveal-delay) + var(--modal-lag, 0ms)) / var(--speed)) backwards;
+}
+
+.modal-layer[data-state='closing'] :is(.modal__header, .modal__body, .modal__footer-custom) {
+  opacity: 0;
+  transition: opacity calc(80ms / var(--speed)) linear;
+}
+
+@keyframes modal-reveal {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+    filter: blur(4px);
+  }
+}
+
+/* Pulsanti del footer: salgono dal bordo inferiore, uno dopo l'altro */
+.modal-layer[data-state='open'] .modal__actions > div {
+  --action-delay: calc(var(--modal-lag, 0ms) + 240ms + var(--i, 0) * 50ms);
+  animation:
+    modal-action-in calc(var(--modal-drip-ms) / var(--speed)) var(--modal-drip) calc(var(--action-delay) / var(--speed)) backwards,
+    modal-fade-in calc(100ms / var(--speed)) linear calc(var(--action-delay) / var(--speed)) backwards;
+}
+
+.modal-layer[data-state='closing'] .modal__actions > div {
+  opacity: 0;
+  scale: 0.8;
+  transition:
+    opacity calc(100ms / var(--speed)) linear,
+    scale calc(100ms / var(--speed)) ease-out;
+}
+
+@keyframes modal-action-in {
+  from {
+    translate: 0 14px;
+    scale: 0.6;
+  }
+}
+
+/* La X ruota al passaggio del mouse e si schiaccia alla pressione */
+.modal__close {
+  transition:
+    scale calc(var(--modal-close-ms) / var(--speed)) var(--modal-close),
+    rotate calc(var(--modal-close-ms) / var(--speed)) var(--modal-close);
+
+  @media (hover: hover) {
+    &:hover {
+      scale: 1.08;
+      rotate: 90deg;
+    }
+  }
+
+  &:active {
+    scale: 0.9;
+  }
+}
+
+/* ----- Movimento ridotto: niente goo, spostamenti né scale; restano le dissolvenze ----- */
+.modal-layer[data-motion='reduced'] {
+  & .modal__close,
+  & .modal__actions > div,
+  & :is(.modal__header, .modal__body, .modal__footer-custom) {
+    translate: none !important;
+    scale: none !important;
+    rotate: none !important;
+  }
+
+  & .modal__close {
+    transition: none;
+  }
+
+  & .modal__blob-shape {
+    animation: none !important;
+  }
+
+  &[data-state='open'] {
+    & .modal__blob {
+      animation: modal-fade-in calc(150ms / var(--speed)) linear;
+    }
+
+    & :is(.modal__header, .modal__body, .modal__footer-custom) {
+      animation-name: modal-reveal-fade;
+    }
+
+    & .modal__actions > div {
+      animation: modal-fade-in calc(100ms / var(--speed)) linear calc(var(--action-delay) / var(--speed)) backwards;
+    }
+  }
+
+  &[data-state='closing'] .modal__blob {
+    opacity: 0;
+    transition: opacity calc(120ms / var(--speed)) linear;
+  }
+}
+
+@keyframes modal-reveal-fade {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+/* animated={false}: i cambi di stato sono istantanei */
+.modal-layer[data-motion='off'] * {
+  transition: none !important;
+  animation: none !important;
 }

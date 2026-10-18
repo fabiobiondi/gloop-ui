@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import Modal from './Modal'
-import { GloopMotionProvider, type MotionProps } from './motion'
+import { GloopMotionProvider, type MotionProps } from './motion-context'
 import { ModalContext, type ModalApi, type ModalHandle, type ModalOptions } from './modal-context'
 
 type Entry = {

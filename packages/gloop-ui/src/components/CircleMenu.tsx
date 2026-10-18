@@ -11,7 +11,7 @@ import {
 } from 'react'
 import Popover from './Popover'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
-import { useCssMotion } from './css-motion'
+import { useGloopMotion } from './gloop-motion'
 import Tooltip from './Tooltip'
 import type { FloatingPlacement } from './floating/position'
 import './theme.css'
@@ -188,7 +188,7 @@ function CircleMenu({
   onOpenChange,
   ...motionProps
 }: CircleMenuProps) {
-  const m = useCssMotion(motionProps)
+  const m = useGloopMotion(motionProps)
   const [uncontrolled, setUncontrolled] = useState(defaultOpen)
   const open = openProp ?? uncontrolled
   // I listener su document leggono sempre l'ultima onOpenChange

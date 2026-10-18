@@ -81,12 +81,13 @@ export type { FloatingBoundaryProps } from './components/FloatingBoundary'
 
 export type { FloatingPlacement, FloatingSide, FloatingAlign } from './components/floating/position'
 
-export { GloopMotionProvider, useGloopMotion, tuneTransition } from './components/motion'
+export { GloopMotionProvider } from './components/motion-context'
+export { useGloopMotion } from './components/gloop-motion'
+export type { GloopMotion } from './components/gloop-motion'
 export type {
   GloopMotionProviderProps,
   GloopMotionPreset,
   GloopReducedMotion,
-  GloopMotion,
   MotionProps,
   MotionState,
-} from './components/motion'
+} from './components/motion-context'

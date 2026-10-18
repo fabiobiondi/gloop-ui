@@ -1,4 +1,8 @@
 /*
+ * Animato senza Motion: posizioni di testa, coda e collo (--progress-lead,
+ * --progress-trail, --progress-neck), crescita e squash & stretch della testa li scrivono
+ * le molle di ProgressBar.tsx a ogni frame, come variabili sulla radice.
+ *
  * --progress-h (spessore), --progress-speed e i colori (--progress-from, --progress-to,
  * --progress-head-fill) arrivano da ProgressBar.tsx. La testa è più grossa della barra:
  * sporge di poco sopra, sotto e oltre la fine del binario, come una goccia appoggiata.
@@ -10,10 +14,16 @@
   --progress-drip-space: calc(var(--progress-h) + 28px);
   /* Testo sopra il colore del riempimento */
   --progress-on-fill: #fff;
+  /* Durate del "gulp": come tuneTransition, snappy le accorcia anche (× 0.75) */
+  --progress-tempo: var(--progress-speed);
 
   position: relative;
   display: block;
   width: 100%;
+}
+
+.progress[data-motion-preset='snappy'] {
+  --progress-tempo: calc(var(--progress-speed) * 4 / 3);
 }
 
 /* Lo spazio di goccia del valore e gocce che colano è riservato: il layout non salta */
@@ -79,6 +89,8 @@
   left: calc(var(--progress-h) / -2);
   height: var(--progress-h);
   border-radius: calc(var(--progress-h) / 2);
+  /* Parte mezzo spessore prima della corsia e finisce sulla coda; vicino a 0 si ritira del tutto */
+  width: calc(var(--progress-trail, 0%) + var(--progress-h) * var(--progress-fill-grow, 0));
   /* Il gradiente copre tutta la barra: il riempimento ne mostra solo il tratto già percorso */
   background: linear-gradient(90deg, var(--progress-from), var(--progress-to)) 0 0 / calc(100cqw + var(--progress-h)) 100%
     no-repeat;
@@ -87,6 +99,7 @@
 .progress__head-pos {
   position: absolute;
   top: 0;
+  left: var(--progress-lead, 0%);
   width: 0;
   height: var(--progress-head);
 }
@@ -97,6 +110,8 @@
   left: calc(var(--progress-head) / -2);
   width: var(--progress-head);
   height: var(--progress-head);
+  /* Squash & stretch in corsa, già moltiplicato per la crescita vicino a 0 */
+  scale: var(--progress-head-sx, 0) var(--progress-head-sy, 0);
 }
 
 .progress__head-gulp,
@@ -110,11 +125,27 @@
   inset: 0;
 }
 
+/* Arrivata al 100%: un piccolo "gulp" della testa, una volta sola */
+.progress[data-gulp] .progress__head-gulp {
+  animation: progress-gulp calc(0.6s / var(--progress-tempo)) ease-in-out calc(0.25s / var(--progress-tempo));
+}
+
+@keyframes progress-gulp {
+  33.3% {
+    scale: 1.25;
+  }
+  66.7% {
+    scale: 0.95;
+  }
+}
+
 /* Il collo è più sottile della barra: si allunga quando la testa scappa avanti, poi viene inghiottito */
 .progress__neck {
   position: absolute;
   top: calc((var(--progress-head) - var(--progress-h) * 0.55) / 2);
   height: calc(var(--progress-h) * 0.55);
+  left: var(--progress-trail, 0%);
+  width: var(--progress-neck, 0%);
   border-radius: 999px;
   background: var(--progress-head-fill);
 }
@@ -122,8 +153,11 @@
 /* La coda è poco più grossa della barra: da ferma sparisce dentro la testa */
 .progress__tail {
   top: calc((var(--progress-head) - var(--progress-h) * 1.2) / 2);
+  left: var(--progress-trail, 0%);
   width: calc(var(--progress-h) * 1.2);
   height: calc(var(--progress-h) * 1.2);
+  translate: -50% 0;
+  scale: var(--progress-grow, 0);
 }
 
 /* Goccia del valore, sopra la testa: il goo la tiene attaccata con un collo liquido */
@@ -158,12 +192,17 @@
   color: var(--progress-on-fill);
 }
 
+.progress__value[data-placement='bubble'] {
+  left: var(--progress-lead, 0%);
+}
+
 /* Dentro la barra: allineato alla fine del riempimento, mai oltre l'inizio */
 .progress__value[data-placement='inside'] {
   top: 0;
   left: calc(var(--progress-h) / -2);
   box-sizing: border-box;
   min-width: max-content;
+  width: calc(var(--progress-trail, 0%) + var(--progress-h) * var(--progress-fill-grow, 0));
   /* A destra lascia libera la testa: il testo finisce poco prima del blob */
   padding-inline: 8px calc(var(--progress-head) / 2 + 2px);
   font-size: 11px;
@@ -307,6 +346,10 @@
 
   & .progress__drop {
     display: none;
+  }
+
+  & .progress__head-gulp {
+    animation: none;
   }
 }
 

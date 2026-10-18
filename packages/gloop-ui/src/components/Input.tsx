@@ -1,13 +1,7 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type InputHTMLAttributes, type Ref } from 'react'
-import {
-  animate,
-  motion,
-  useMotionValue,
-  useTransform,
-  useVelocity,
-} from 'motion/react'
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type InputHTMLAttributes, type Ref } from 'react'
 import { GooFilter } from './goo'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
 import './theme.css'
 import './Input.css'
 
@@ -23,12 +17,13 @@ const TAB_H = 26
 // Quanto la linguetta entra nel campo: il goo ci costruisce sopra il ponte liquido
 const OVERLAP = 6
 const RAISE = TAB_H - OVERLAP
-// Da ferma la linguetta sta centrata dentro il campo (stesso colore: invisibile)
+// Da ferma la linguetta sta centrata dentro il campo (stesso colore: invisibile). Va in Input.css come --input-sunk
 const SUNK = RAISE + (FIELD_H - TAB_H) / 2
 
-// Salita: la goccia "cola" verso l'alto e rimbalza; discesa: risucchiata senza rimbalzo
-const flow = { type: 'spring', stiffness: 460, damping: 26 } as const
-const suck = { type: 'spring', stiffness: 520, damping: 40 } as const
+/*
+ * Salita: la goccia "cola" verso l'alto e rimbalza (flow); discesa: risucchiata senza
+ * rimbalzo (suck). Le due molle sono easing linear() in Input.css, una coppia per preset.
+ */
 
 const filled = (v: unknown) => v != null && String(v) !== ''
 
@@ -69,25 +64,14 @@ function Input({
   const controlled = value !== undefined
   const floated = focused || (controlled ? filled(value) : hasValueState)
 
-  // Una molla per la posizione (y) e una per la dimensione della goccia
-  const y = useMotionValue(floated ? 0 : SUNK)
-  const size = useMotionValue(floated ? 1 : 0.6)
-  // Squash & stretch: in corsa la goccia si allunga in verticale e si assottiglia
-  const velocity = useVelocity(y)
-  const stretch = useTransform(velocity, [-500, 0, 500], [1.3, 1, 1.3])
-  const squash = useTransform(velocity, [-500, 0, 500], [0.82, 1, 0.82])
-  const scaleX = useTransform(() => size.get() * squash.get())
-  const scaleY = useTransform(() => size.get() * stretch.get())
-
-  useEffect(() => {
-    // Movimento ridotto: la goccia si sposta subito, senza molla
-    const transition = reduceMotion ? { duration: 0 } : m.t(floated ? flow : suck)
-    const controls = [
-      animate(y, floated ? 0 : SUNK, transition),
-      animate(size, floated ? 1 : 0.6, transition),
-    ]
-    return () => controls.forEach((c) => c.stop())
-  }, [floated, reduceMotion, m, y, size])
+  /*
+   * Posizione e dimensione della goccia le anima Input.css (data-floated). Lo squash & stretch
+   * in corsa è un'animazione che segue la velocità della molla: il nome cambia a ogni salita
+   * e discesa, così riparte. Parte solo dopo il primo cambio, non al montaggio.
+   */
+  const [toggled, setToggled] = useState(false)
+  const [firstFloated] = useState(floated)
+  if (!toggled && floated !== firstFloated) setToggled(true)
 
   // L'autofill (e il ripristino del form dal browser) non sempre scatena onChange
   function syncValue() {
@@ -102,12 +86,13 @@ function Input({
   }
 
   return (
-    <MotionScope m={m} props={motionProps}>
+    <GloopMotionProvider {...motionProps}>
       <div
         {...m.rootProps}
         className={className ? `input ${className}` : 'input'}
-        style={{ ...m.rootProps.style, ...style }}
+        style={{ ...m.rootProps.style, '--input-sunk': `${SUNK}px`, ...style } as CSSProperties}
         data-floated={floated || undefined}
+        data-toggled={toggled || undefined}
         data-focused={focused || undefined}
         data-disabled={disabled || undefined}
       >
@@ -118,21 +103,15 @@ function Input({
           style={{ filter: reduceMotion ? undefined : `url(#${CSS.escape(filterId)})` }}
         >
           <span className="input__field-bg" />
-          <motion.span className="input__tab-bg" style={{ y, scaleX, scaleY }}>
+          <span className="input__tab-bg">
             {/* Copia invisibile della label: dà alla linguetta la larghezza giusta senza misurare */}
             <span className="input__tab-sizer">{label}</span>
-          </motion.span>
+          </span>
         </div>
 
-        <motion.label
-          className="input__label"
-          htmlFor={inputId}
-          initial={false}
-          animate={floated ? { x: 24, y: 0, scale: 0.8 } : { x: 18, y: SUNK, scale: 1 }}
-          transition={reduceMotion ? { duration: 0 } : m.t(floated ? flow : suck)}
-        >
+        <label className="input__label" htmlFor={inputId}>
           {label}
-        </motion.label>
+        </label>
 
         <input
           {...rest}
@@ -162,7 +141,7 @@ function Input({
           }}
         />
       </div>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 

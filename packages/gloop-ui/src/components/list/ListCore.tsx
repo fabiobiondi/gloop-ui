@@ -1,6 +1,5 @@
-import { useId, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
-import GooPill from '../GooPill'
+import { useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
+import GooPill, { usePresence } from '../GooPill'
 import '../theme.css'
 import './List.css'
 
@@ -73,6 +72,11 @@ function ListCore({
 }: ListCoreProps) {
   const [hovered, setHovered] = useState<number | null>(null)
   const groupIdPrefix = useId()
+  // Come AnimatePresence initial={false}: la pillola della voce già scelta compare senza dissolvenza
+  const mounted = useRef(false)
+  useEffect(() => {
+    mounted.current = true
+  }, [])
   const flat = flattenEntries(items)
 
   /*
@@ -128,30 +132,29 @@ function ListCore({
       onPointerEnter: track(i),
       onFocus: track(i),
       onBlur: hover ? () => setHovered(null) : undefined,
-      whileTap: item.disabled ? undefined : { scale: 0.97 },
     }
 
     return (
       <li key={item.id} role={neutral}>
         {item.href !== undefined ? (
           // Link disabilitato: senza href non è navigabile né raggiungibile col Tab
-          <motion.a
+          <a
             {...common}
             href={item.disabled ? undefined : item.href}
             aria-disabled={item.disabled || undefined}
             aria-current={selected ? 'page' : undefined}
           >
             {content}
-          </motion.a>
+          </a>
         ) : (
-          <motion.button
+          <button
             {...common}
             type="button"
             disabled={item.disabled}
             aria-current={selected ? 'true' : undefined}
           >
             {content}
-          </motion.button>
+          </button>
         )}
       </li>
     )
@@ -160,16 +163,33 @@ function ListCore({
   // Indice della prossima voce nella lista piatta
   let next = 0
 
+  // Le pillole restano sull'ultima voce mentre si dissolvono
+  const selectedPill = usePresence(showSelected && selectedIndex !== null && selectedIndex >= 0 ? selectedIndex : null)
+  const hoverPill = usePresence(hover && hovered !== null ? hovered : null)
+
   return (
     <div className="list__body" style={vars} onPointerLeave={() => setHovered(null)}>
-      <AnimatePresence initial={false}>
-        {showSelected && selectedIndex !== null && selectedIndex >= 0 && (
-          <GooPill key="selected" index={offsets[selectedIndex]} {...pill} opacity={0.1} />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {hover && hovered !== null && <GooPill key="hover" index={offsets[hovered]} {...pill} opacity={hoverOpacity} />}
-      </AnimatePresence>
+      {selectedPill.value !== null && offsets[selectedPill.value] !== undefined && (
+        <GooPill
+          key="selected"
+          index={offsets[selectedPill.value]}
+          {...pill}
+          opacity={0.1}
+          initial={mounted.current}
+          closing={selectedPill.closing}
+          onExited={selectedPill.exited}
+        />
+      )}
+      {hoverPill.value !== null && offsets[hoverPill.value] !== undefined && (
+        <GooPill
+          key="hover"
+          index={offsets[hoverPill.value]}
+          {...pill}
+          opacity={hoverOpacity}
+          closing={hoverPill.closing}
+          onExited={hoverPill.exited}
+        />
+      )}
 
       <ul className="list__items" role={neutral}>
         {items.map((entry, e) => {

@@ -1,5 +1,6 @@
 import { useId, type CSSProperties, type ReactNode } from 'react'
-import { useGloopMotion, type MotionProps } from './motion'
+import type { MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
 import './theme.css'
 import './GloopLoading.css'
 

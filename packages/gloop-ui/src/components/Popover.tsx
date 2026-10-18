@@ -16,7 +16,8 @@ import { Trigger } from './floating/trigger'
 import { forwardTriggerProps } from './floating/trigger-props'
 import { useFloating } from './floating/useFloating'
 import { useThemeVars } from './floating/useThemeVars'
-import { useGloopMotion, type MotionProps } from './motion'
+import type { MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
 
 export type PopoverProps = {
   /** Contenuto, oppure una funzione che riceve { close } (es. per un pulsante "Salva") */

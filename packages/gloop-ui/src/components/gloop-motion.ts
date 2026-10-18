@@ -2,9 +2,9 @@ import { useContext, useSyncExternalStore, type CSSProperties } from 'react'
 import { GloopMotionContext, type GloopMotionPreset, type MotionProps, type MotionState } from './motion-context'
 
 /*
- * Come useGloopMotion, ma per i componenti animati solo in CSS (senza motion/react):
- * risolve le stesse props e lo stesso provider, e le espone come attributi e variabili
- * sulla radice. Le transizioni CSS leggono data-motion, data-motion-preset e --ui-motion-speed.
+ * Risolve la configurazione delle animazioni di un componente (props > provider > default)
+ * e la espone come attributi e variabili sulla radice: le transizioni CSS leggono
+ * data-motion, data-motion-preset e --ui-motion-speed.
  */
 
 const QUERY = '(prefers-reduced-motion: reduce)'
@@ -18,7 +18,7 @@ function subscribe(onChange: () => void) {
 
 const getReduced = () => typeof window !== 'undefined' && !!window.matchMedia?.(QUERY).matches
 
-export type CssMotion = {
+export type GloopMotion = {
   speed: number
   preset: GloopMotionPreset
   state: MotionState
@@ -26,7 +26,7 @@ export type CssMotion = {
   rootProps: { 'data-motion': MotionState; 'data-motion-preset': GloopMotionPreset; style: CSSProperties }
 }
 
-export function useCssMotion(props: MotionProps = {}): CssMotion {
+export function useGloopMotion(props: MotionProps = {}): GloopMotion {
   const ctx = useContext(GloopMotionContext)
   const osReduced = useSyncExternalStore(subscribe, getReduced, () => false)
   const rawSpeed = props.speed ?? ctx.speed ?? 1

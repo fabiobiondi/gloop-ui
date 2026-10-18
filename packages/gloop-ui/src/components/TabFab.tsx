@@ -1,13 +1,14 @@
-import { useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionValue,
-  type Transition,
-  type Variants,
-} from 'motion/react'
-import GooPill from './GooPill'
+  useContext,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
+import GooPill, { useExit, usePresence } from './GooPill'
 import ListCore from './list/ListCore'
 import { GooFilter } from './goo'
 import { BoundaryContext } from './floating/boundary-context'
@@ -18,12 +19,12 @@ import {
   TRIGGER_SIZE,
   barFilterRegion,
   isVertical,
-  pressed,
   tabDrop,
   visualIndex,
   type TabPopDirection,
 } from './tab-drop'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
 import './theme.css'
 import './TabFab.css'
 
@@ -70,36 +71,47 @@ const ITEM_GAP = 2
 const PANEL_PADDING = 6
 const panelHeight = (count: number) => PANEL_PADDING * 2 + count * ITEM_HEIGHT + Math.max(0, count - 1) * ITEM_GAP
 
-const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
-const exitFast: Transition = { duration: 0.12, ease: 'easeOut' }
-
-/*
- * Uscita della goccia. Se si chiude solo il sottomenu torna nel tab; se si chiude tutta
- * la barra sparisce subito: la sua posizione è relativa all'angolo della barra, che si
- * restringe fino al "+", e durante l'uscita resterebbe fuori, oltre il "+".
- */
-const dropVariants: Variants = {
-  gone: (barOpen: boolean) =>
-    barOpen ? { x: 0, y: 0, scale: 0.4, transition: exitFast } : { opacity: 0, transition: { duration: 0 } },
+// Molla morph (TabFab.css) per le animazioni Web Animations: curva e durata lette dal CSS
+function morphTiming(el: Element, speed: number): KeyframeAnimationOptions {
+  const css = getComputedStyle(el)
+  return {
+    duration: (parseFloat(css.getPropertyValue('--tf-morph-ms')) || 500) / speed,
+    easing: css.getPropertyValue('--tf-morph').trim() || 'ease-out',
+  }
 }
 
-// Il contenuto del sottomenu scorre nella direzione del tab scelto (in colonna, in verticale)
-type Slide = { dir: number; axis: 'x' | 'y' }
-const shift = ({ axis }: Slide, value: number) => (axis === 'y' ? { y: value } : { x: value })
-const slide: Variants = {
-  enter: (s: Slide) => ({ opacity: 0, ...shift(s, s.dir * 24), filter: 'blur(4px)' }),
-  center: { opacity: 1, x: 0, y: 0, filter: 'blur(0px)' },
-  exit: (s: Slide) => ({
-    opacity: 0,
-    ...shift(s, s.dir * -24),
-    filter: 'blur(4px)',
-    transition: exitFast,
-  }),
+type PanelPageProps = {
+  closing: boolean
+  /** Il primo contenuto del pannello compare con lui, senza scorrere */
+  initial: boolean
+  onExited: () => void
+  style: CSSProperties
+  children: ReactNode
+}
+
+// Un contenuto del sottomenu: resta montato finché non è finita la sua uscita
+function PanelPage({ closing, initial, onExited, style, children }: PanelPageProps) {
+  const ref = useRef<HTMLDivElement>(null)
+  useExit(ref, closing, onExited)
+  return (
+    <div
+      ref={ref}
+      className="tab-fab__list-wrap"
+      data-closing={closing || undefined}
+      data-initial={initial || undefined}
+      style={style}
+    >
+      {children}
+    </div>
+  )
 }
 
 /*
  * Barra che nasce dal "+" come un liquido. I tab con items aprono un sottomenu
  * in un pannello che si fonde con la barra; gli altri chiudono la barra.
+ * Animata solo in CSS (TabFab.css): lo sfondo della barra cresce dal "+", i tab
+ * escono sulle loro gocce; due piccoli FLIP con Web Animations seguono gli spostamenti
+ * del "+" nella pagina e l'altezza del pannello quando cambia sottomenu.
  */
 function TabFab({
   icon,
@@ -110,7 +122,7 @@ function TabFab({
   ...motionProps
 }: TabFabProps) {
   const m = useGloopMotion(motionProps)
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
   // Tab sotto il cursore: una seconda pillola liquida lo segue
@@ -119,6 +131,7 @@ function TabFab({
   const [slideDir, setDirection] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
   // direction="auto": il lato si sceglie all'apertura, misurando lo spazio attorno al "+"
   const [autoSide, setAutoSide] = useState<TabPopDirection>('left')
   const direction = placement === 'auto' ? autoSide : placement
@@ -128,19 +141,53 @@ function TabFab({
       setAutoSide(resolveDirection('auto', triggerRef.current, boundaryRef?.current, tabs.length, 'morph'))
   }
   const vertical = isVertical(direction)
-  // Goccia del tab i, con la molla adattata a velocità e preset
-  const tabDropOf = (i: number) => {
-    const d = tabDrop(i, tabs.length, direction)
-    return {
-      ...d,
-      animate: { ...d.animate, transition: m.t(d.animate.transition) },
-      exit: { ...d.exit, transition: m.t(d.exit.transition) },
-    }
-  }
+  const n = tabs.length
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const barId = useId()
   const submenuId = useId()
   const filterId = useId()
+
+  /*
+   * Aprendo e chiudendo, il layout cambia subito (come in Motion) e il "+" può spostarsi
+   * nella pagina (es. barra centrata). Si misura il "+" prima del cambio: dopo, la barra
+   * parte da lì e scivola al suo posto con la molla morph (FLIP).
+   */
+  const barFrom = useRef<DOMRect | null>(null)
+  const barAnim = useRef<Animation | null>(null)
+  function setOpen(next: boolean) {
+    if (next !== open) barFrom.current = triggerRef.current?.getBoundingClientRect() ?? null
+    setOpenState(next)
+  }
+  useLayoutEffect(() => {
+    const from = barFrom.current
+    barFrom.current = null
+    const bar = barRef.current
+    const trigger = triggerRef.current
+    if (!from || !bar || !trigger || m.state !== 'on' || typeof bar.animate !== 'function') return
+    barAnim.current?.cancel()
+    const to = trigger.getBoundingClientRect()
+    const dx = from.left - to.left
+    const dy = from.top - to.top
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return
+    barAnim.current = bar.animate({ translate: [`${dx}px ${dy}px`, '0px 0px'] }, morphTiming(bar, m.speed))
+  }, [open, m.state, m.speed])
+
+  /*
+   * Tab i: parte dal centro del "+" (vedi tabDrop). Qui il layout è già quello aperto,
+   * quindi con 'left' e 'top' (tab prima del "+") la distanza si conta dalla fine dei tab.
+   */
+  const tabStyleOf = (i: number) => {
+    const d = tabDrop(i, n, direction)
+    const before = direction === 'left' || direction === 'top'
+    const shift = before ? n * (vertical ? TAB_HEIGHT : TAB_WIDTH) : 0
+    const start = d.initial as { x?: number; y?: number }
+    const along = (vertical ? start.y : start.x) ?? 0
+    const from = along + shift
+    return {
+      '--tab-from': vertical ? `0 ${from}px` : `${from}px 0`,
+      '--tab-delay': `${d.animate.transition.scale.delay}s`,
+    } as CSSProperties
+  }
 
   function close() {
     setOpen(false)
@@ -213,7 +260,6 @@ function TabFab({
     }
     if (submenu !== null && submenu !== i) {
       // Verso visivo: in colonna con 'top' l'ordine è rovesciato
-      const n = tabs.length
       setDirection(Math.sign(visualIndex(i, n, direction) - visualIndex(submenu, n, direction)))
     }
     if (submenu !== i) setFlipped(shouldFlip(i))
@@ -246,14 +292,18 @@ function TabFab({
     }
   }, [open, submenu])
 
-  const items = submenu !== null ? tabs[submenu].items : undefined
+  // Pannello, collo e pillola di rollover restano montati durante la loro uscita
+  const panel = usePresence(submenu)
+  // Ultimo sottomenu aperto: pannello e collo in uscita restano sul suo tab
+  const [lastSubmenu, setLastSubmenu] = useState<number | null>(null)
+  if (submenu !== null && submenu !== lastSubmenu) setLastSubmenu(submenu)
+  const shownSubmenu = submenu ?? lastSubmenu
 
   /*
    * Geometria del sottomenu aperto, rispetto all'angolo della barra.
    * Lato del pannello: in riga sopra (o sotto, se girato), in colonna a destra (o a sinistra).
    */
-  const n = tabs.length
-  const tabStart = submenu !== null ? tabStartOf(submenu) : 0
+  const tabStart = shownSubmenu !== null ? tabStartOf(shownSubmenu) : 0
   const panelSide = vertical ? (flipped ? 'left' : 'right') : flipped ? 'bottom' : 'top'
   // Verso che va dalla barra al pannello, sull'asse del pannello
   const away = panelSide === 'top' || panelSide === 'left' ? -1 : 1
@@ -266,37 +316,21 @@ function TabFab({
     : away * (PANEL_GAP / 2 + DRIP_SIZE / 2) // dal bordo della barra al centro dello spazio
   const overshoot = neck + away * 8
   /*
-   * Lungo la barra la goccia segue il tab con una molla: cambiando sottomenu il collo
-   * scivola da un tab all'altro invece di sparire e ricomparire
+   * Lungo la barra la goccia segue il tab con la molla (transizione su left/top): cambiando
+   * sottomenu il collo scivola da un tab all'altro invece di sparire e ricomparire.
+   * Alla prima comparsa nasce già sul tab.
    */
   const neckAlong = tabStart + (vertical ? TAB_HEIGHT : TAB_WIDTH) / 2 - DRIP_SIZE / 2
-  const neckPos = useMotionValue(neckAlong)
   const neckShown = attached && open && submenu !== null
-  const neckWasShown = useRef(false)
-  useLayoutEffect(() => {
-    if (!neckShown) {
-      neckWasShown.current = false
-      return
-    }
-    // Prima comparsa: nasce già sul tab, senza scivolare dal precedente
-    if (!neckWasShown.current) {
-      neckWasShown.current = true
-      neckPos.jump(neckAlong)
-      return
-    }
-    const controls = animate(neckPos, neckAlong, m.t(morph))
-    return () => controls.stop()
-  }, [neckShown, neckAlong])
+  // Se si chiude tutta la barra sparisce subito (vedi sotto)
+  const neckPresence = usePresence(neckShown ? true : null, !open)
+  const neckRef = useRef<HTMLSpanElement>(null)
+  useExit(neckRef, neckPresence.closing, neckPresence.exited)
+  const along = (value: number) => (vertical ? `${value}px 0` : `0 ${value}px`)
   const drip = vertical
-    ? {
-        style: { left: TAB_WIDTH / 2 - DRIP_SIZE / 2, top: neckPos },
-        to: { x: [0, overshoot, neck] },
-      }
-    : {
-        // Parte dal bordo della barra rivolto verso il pannello
-        style: { left: neckPos, top: flipped ? TAB_HEIGHT - DRIP_SIZE : 0 },
-        to: { y: [0, overshoot, neck] },
-      }
+    ? { left: TAB_WIDTH / 2 - DRIP_SIZE / 2, top: neckAlong }
+    : // Parte dal bordo della barra rivolto verso il pannello
+      { left: neckAlong, top: flipped ? TAB_HEIGHT - DRIP_SIZE : 0 }
   // Il pannello si gonfia dal punto più vicino al tab
   const panelStyle = vertical
     ? { top: tabStart, width: PANEL_WIDTH, transformOrigin: `${flipped ? PANEL_WIDTH : 0}px ${TAB_HEIGHT / 2}px` }
@@ -306,15 +340,73 @@ function TabFab({
    * così non si avvicina mai abbastanza alla barra da fondersi col goo
    */
   const panelShift = attached ? -away * 16 : away * 10
-  const panelFrom = vertical ? { x: panelShift, y: 0 } : { x: 0, y: panelShift }
+  const panelFrom = vertical ? `${panelShift}px 0px` : `0px ${panelShift}px`
   // Area del filtro goo: simmetrica attorno al "+" (vedi barFilterRegion), con spazio per il pannello
   const longest = Math.max(0, ...tabs.map((t) => t.items?.length ?? 0))
   const region = longest
     ? barFilterRegion(n, PANEL_GAP + Math.max(PANEL_WIDTH, panelHeight(longest)) + 60)
     : barFilterRegion(n)
 
+  const panelRef = useRef<HTMLDivElement>(null)
+  useExit(panelRef, panel.closing, panel.exited)
+
+  /*
+   * Contenuti del pannello (come AnimatePresence mode="popLayout"): quello del sottomenu
+   * attuale e quelli che stanno uscendo. first: il contenuto con cui il pannello è nato.
+   */
+  const [pages, setPages] = useState<{ current: number | null; first: number | null; leaving: number[] }>({
+    current: null,
+    first: null,
+    leaving: [],
+  })
+  if (panel.value !== pages.current) {
+    const next = panel.value
+    setPages(
+      next === null
+        ? { current: null, first: null, leaving: [] }
+        : pages.current === null
+          ? { current: next, first: next, leaving: [] }
+          : { current: next, first: pages.first, leaving: [...pages.leaving.filter((k) => k !== next), pages.current] },
+    )
+  }
+  const dropPage = (key: number) => setPages((p) => ({ ...p, leaving: p.leaving.filter((k) => k !== key) }))
+  const slideAlong = (value: number) => (vertical ? `0 ${value}px` : `${value}px 0`)
+  const pageStyle = {
+    '--page-in': slideAlong(slideDir * 24),
+    '--page-out': slideAlong(slideDir * -24),
+  } as CSSProperties
+
+  /*
+   * Cambiando sottomenu il pannello prende subito l'altezza del nuovo contenuto (quello
+   * in uscita è fuori dal flusso): si anima l'altezza dalla vecchia alla nuova (FLIP).
+   */
+  const panelH = useRef(0)
+  const panelAnim = useRef<Animation | null>(null)
+  useLayoutEffect(() => {
+    const el = panelRef.current
+    if (!el) {
+      panelH.current = 0
+      return
+    }
+    const from = panelAnim.current ? el.offsetHeight : panelH.current
+    panelAnim.current?.cancel()
+    panelAnim.current = null
+    const to = el.offsetHeight
+    panelH.current = to
+    if (!from || from === to || m.state !== 'on' || typeof el.animate !== 'function') return
+    // L'altezza di style è senza padding
+    const content = (h: number) => `${h - PANEL_PADDING * 2}px`
+    const anim = el.animate({ height: [content(from), content(to)] }, morphTiming(el, m.speed))
+    panelAnim.current = anim
+    anim.onfinish = () => {
+      if (panelAnim.current === anim) panelAnim.current = null
+    }
+  }, [pages.current, m.state, m.speed])
+
+  const hover = usePresence(open && hovered !== null ? hovered : null, !open)
+
   return (
-    <MotionScope m={m} props={motionProps} transition={morph}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       {/* Filtro goo su barra, pannello e gocce: si fondono come liquido */}
       <div
         {...m.rootProps}
@@ -328,62 +420,45 @@ function TabFab({
         <GooFilter id={filterId} region={region} />
 
         {/* Goccia che sale dal tab al pannello e resta tra i due come un collo liquido */}
-        <AnimatePresence custom={open}>
-          {neckShown && (
-            <motion.span
-              key="neck"
-              className="goo-drop"
-              aria-hidden="true"
-              style={{ ...drip.style, width: DRIP_SIZE, height: DRIP_SIZE }}
-              initial={{ x: 0, y: 0, scale: 0.6 }}
-              animate={{
-                ...drip.to,
-                scale: [0.6, 1, NECK_SCALE],
-                transition: m.t({ duration: 0.45, ease: [0.23, 1, 0.32, 1] }),
-              }}
-              variants={m.v(dropVariants)}
-              exit="gone"
-            />
-          )}
-        </AnimatePresence>
+        {neckPresence.value && (
+          <span
+            ref={neckRef}
+            className="goo-drop"
+            aria-hidden="true"
+            data-closing={neckPresence.closing || undefined}
+            style={
+              {
+                ...drip,
+                width: DRIP_SIZE,
+                height: DRIP_SIZE,
+                '--neck': along(neck),
+                '--neck-over': along(overshoot),
+                '--neck-scale': NECK_SCALE,
+              } as CSSProperties
+            }
+          />
+        )}
 
-        <AnimatePresence>
-          {items && (
-            <motion.div
-              id={submenuId}
-              role="menu"
-              layout
-              className="tab-fab__panel"
-              // Il pannello nasce dal tab che lo ha aperto
-              style={{ borderRadius: 20, ...panelStyle }}
-              // Come una goccia: parte stretta e schiacciata sul tab, poi si allarga
-              initial={{ opacity: 0, scaleX: 0.4, scaleY: 0.3, ...panelFrom }}
-              animate={{
-                opacity: 1,
-                scaleX: 1,
-                scaleY: 1,
-                x: 0,
-                y: 0,
-                transition: m.t({ ...morph, opacity: { duration: 0.12 } }),
-              }}
-              exit={{
-                opacity: 0,
-                scaleX: 0.4,
-                scaleY: 0.3,
-                ...panelFrom,
-                transition: m.t(exitFast),
-              }}
-            >
-              <AnimatePresence mode="popLayout" initial={false} custom={{ dir: slideDir, axis: vertical ? 'y' : 'x' }}>
-                <motion.div
-                  key={submenu}
-                  layout="position"
-                  className="tab-fab__list-wrap"
-                  custom={{ dir: slideDir, axis: vertical ? 'y' : 'x' }}
-                  variants={m.v(slide)}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
+        {panel.value !== null && (
+          <div
+            ref={panelRef}
+            id={submenuId}
+            role="menu"
+            className="tab-fab__panel"
+            data-closing={panel.closing || undefined}
+            // Il pannello nasce dal tab che lo ha aperto
+            style={{ borderRadius: 20, ...panelStyle, ...({ '--panel-from': panelFrom } as CSSProperties) }}
+          >
+            {[...pages.leaving, pages.current].map((key) => {
+              const items = key !== null ? tabs[key]?.items : undefined
+              if (key === null || !items) return null
+              return (
+                <PanelPage
+                  key={key}
+                  closing={key !== pages.current}
+                  initial={key === pages.first}
+                  onExited={() => dropPage(key)}
+                  style={pageStyle}
                 >
                   {/* Stesse voci di List, con la pillola liquida che segue il cursore */}
                   <ListCore
@@ -399,17 +474,24 @@ function TabFab({
                       triggerRef.current?.focus()
                     }}
                   />
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </PanelPage>
+              )
+            })}
+          </div>
+        )}
 
-        <motion.div
-          layout
+        <div
+          ref={barRef}
           className="tab-fab"
           data-direction={direction}
-          style={{ borderRadius: 26 }}
+          // Misura dello sfondo (::before): il "+" da chiusa, tutta la barra da aperta
+          style={
+            {
+              borderRadius: 26,
+              '--tab-fab-w': `${open && !vertical ? TRIGGER_SIZE + n * TAB_WIDTH : open ? TAB_WIDTH : TRIGGER_SIZE}px`,
+              '--tab-fab-h': `${open && vertical ? TRIGGER_SIZE + n * TAB_HEIGHT : TRIGGER_SIZE}px`,
+            } as CSSProperties
+          }
         >
           <div
             id={barId}
@@ -417,7 +499,7 @@ function TabFab({
             className="tab-fab__tabs"
             onPointerLeave={() => setHovered(null)}
           >
-            {/* Niente uscita animata: chiudendo, la barra scalata la stirerebbe (vedi tabDrop) */}
+            {/* Niente uscita animata: chiudendo, i tab spariscono subito */}
             {open && active !== null && (
               <GooPill
                 index={visualIndex(active, n, direction)}
@@ -426,59 +508,53 @@ function TabFab({
               />
             )}
             {/* Rollover: pillola più tenue che scorre da un tab all'altro */}
-            <AnimatePresence>
-              {open && hovered !== null && (
-                <GooPill
-                  key="hover"
-                  index={visualIndex(hovered, n, direction)}
-                  step={vertical ? TAB_HEIGHT : TAB_WIDTH}
-                  axis={vertical ? 'y' : 'x'}
-                  opacity={0.08}
-                />
-              )}
-            </AnimatePresence>
-            <AnimatePresence mode="popLayout" initial={false}>
-              {open &&
-                tabs.map((tab, i) => (
-                  <motion.button
-                    key={tab.label}
-                    ref={(el) => {
-                      tabRefs.current[i] = el
-                    }}
-                    layout="position"
-                    type="button"
-                    className="tab-fab__tab"
-                    role={hasSubmenus ? undefined : 'tab'}
-                    aria-selected={hasSubmenus ? undefined : active === i}
-                    aria-pressed={hasSubmenus ? active === i : undefined}
-                    aria-haspopup={tab.items?.length ? 'menu' : undefined}
-                    aria-expanded={tab.items?.length ? submenu === i : undefined}
-                    aria-controls={submenu === i ? submenuId : undefined}
-                    onClick={() => onTabClick(i)}
-                    // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
-                    onPointerEnter={(e) => e.pointerType !== 'touch' && setHovered(i)}
-                    onFocus={() => setHovered(i)}
-                    onBlur={() => setHovered(null)}
-                    {...tabDropOf(i)}
-                    // La pressione scala solo il contenuto: un transform sul bottone porterebbe
-                    // la goccia (z-index -1) sopra la pillola, come un cerchio scuro
-                    whileTap="pressed"
-                  >
-                    <span className="tab-fab__drop" aria-hidden="true" />
-                    <motion.span className="tab-fab__tab-content" variants={pressed}>
-                      <span className="tab-fab__tab-icon" aria-hidden="true">
-                        {tab.icon}
-                      </span>
-                      <span className="tab-fab__tab-label">{tab.label}</span>
-                    </motion.span>
-                  </motion.button>
-                ))}
-            </AnimatePresence>
+            {open && hover.value !== null && (
+              <GooPill
+                key="hover"
+                index={visualIndex(hover.value, n, direction)}
+                step={vertical ? TAB_HEIGHT : TAB_WIDTH}
+                axis={vertical ? 'y' : 'x'}
+                opacity={0.08}
+                closing={hover.closing}
+                onExited={hover.exited}
+              />
+            )}
+            {open &&
+              tabs.map((tab, i) => (
+                <button
+                  key={tab.label}
+                  ref={(el) => {
+                    tabRefs.current[i] = el
+                  }}
+                  type="button"
+                  className="tab-fab__tab"
+                  role={hasSubmenus ? undefined : 'tab'}
+                  aria-selected={hasSubmenus ? undefined : active === i}
+                  aria-pressed={hasSubmenus ? active === i : undefined}
+                  aria-haspopup={tab.items?.length ? 'menu' : undefined}
+                  aria-expanded={tab.items?.length ? submenu === i : undefined}
+                  aria-controls={submenu === i ? submenuId : undefined}
+                  style={tabStyleOf(i)}
+                  onClick={() => onTabClick(i)}
+                  // Solo mouse e penna: al tocco l'hover resterebbe "appeso"
+                  onPointerEnter={(e) => e.pointerType !== 'touch' && setHovered(i)}
+                  onFocus={() => setHovered(i)}
+                  onBlur={() => setHovered(null)}
+                >
+                  <span className="tab-fab__drop" aria-hidden="true" />
+                  {/* La pressione scala solo il contenuto (TabFab.css) */}
+                  <span className="tab-fab__tab-content">
+                    <span className="tab-fab__tab-icon" aria-hidden="true">
+                      {tab.icon}
+                    </span>
+                    <span className="tab-fab__tab-label">{tab.label}</span>
+                  </span>
+                </button>
+              ))}
           </div>
 
-          <motion.button
+          <button
             ref={triggerRef}
-            layout="position"
             type="button"
             className="tab-fab__trigger"
             aria-label={label}
@@ -490,19 +566,15 @@ function TabFab({
               chooseSide()
               setOpen(true)
             }}
-            whileTap={{ scale: 0.92 }}
           >
-            <motion.span
-              className="tab-fab__trigger-icon"
-              aria-hidden="true"
-              animate={{ rotate: open ? 45 : 0 }}
-            >
+            {/* Il "+" ruota e diventa una "×" */}
+            <span className="tab-fab__trigger-icon" aria-hidden="true">
               {icon}
-            </motion.span>
-          </motion.button>
-        </motion.div>
+            </span>
+          </button>
+        </div>
       </div>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 

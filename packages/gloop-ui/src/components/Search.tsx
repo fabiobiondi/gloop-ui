@@ -1,14 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionValue,
-  useTransform,
-  useVelocity,
-  type Variants,
-} from 'motion/react'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
 import './theme.css'
 import './Search.css'
 
@@ -29,77 +21,35 @@ const CLOSED_WIDTH = 44
 const OVERSHOOT = 28
 
 /*
- * Niente animazione di width (ricalcola il layout a ogni frame e sfarfalla):
- * il campo ha sempre la larghezza piena e si rivela con un clip-path.
- * Una sola molla ("progress" 0 → 1) guida tutto.
+ * Niente animazione di width sul campo (ricalcola il layout a ogni frame e sfarfalla):
+ * il campo ha sempre la larghezza piena e si rivela con un clip-path. Clip-path, slot e
+ * "gelatina" seguono la stessa molla: easing linear() in Search.css, una coppia
+ * (apertura elastica, chiusura rapida) per preset.
  */
-const openSpring = { type: 'spring', stiffness: 170, damping: 15, mass: 1 } as const
-const closeSpring = { type: 'spring', stiffness: 420, damping: 40 } as const
-
-// Il placeholder compare lettera per lettera, mentre il campo si allarga
-const placeholderVariants: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.02, delayChildren: 0.15 } },
-}
-
-const charVariants: Variants = {
-  hidden: { opacity: 0, x: -6 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { type: 'spring', duration: 0.35, bounce: 0.2 },
-  },
-}
-
-const iconSpring = { type: 'spring', duration: 0.45, bounce: 0.25 } as const
 
 /*
  * Lente → X in un unico SVG:
  * - il manico della lente si allunga e diventa la prima diagonale della X
+ *   (un tratteggio lungo la diagonale: cambiano inizio e lunghezza del tratto)
  * - il cerchio si stringe e sparisce
- * - la seconda diagonale si "disegna" (pathLength)
+ * - la seconda diagonale si "disegna" (stroke-dashoffset)
  * - tutto ruota di 90° per dare un piccolo giro
+ * Le transizioni sono in Search.css, guidate da data-open sul form.
  */
-function SearchCloseIcon({ open }: { open: boolean }) {
-  const m = useGloopMotion()
+function SearchCloseIcon() {
   return (
-    <motion.svg
+    <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       aria-hidden="true"
-      initial={false}
-      animate={{ rotate: open ? 90 : 0 }}
-      transition={m.t(iconSpring)}
     >
-      <motion.circle
-        cx="11"
-        cy="11"
-        initial={false}
-        animate={open ? { r: 0, opacity: 0 } : { r: 7, opacity: 1 }}
-        transition={m.t(iconSpring)}
-      />
-      <motion.line
-        initial={false}
-        animate={
-          open
-            ? { x1: 6, y1: 6, x2: 18, y2: 18 }
-            : { x1: 16.5, y1: 16.5, x2: 20, y2: 20 }
-        }
-        transition={m.t(iconSpring)}
-      />
-      <motion.line
-        x1="18"
-        y1="6"
-        x2="6"
-        y2="18"
-        initial={false}
-        animate={open ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
-        transition={m.t(open ? { ...iconSpring, delay: 0.08 } : { duration: 0.12 })}
-      />
-    </motion.svg>
+      <circle cx="11" cy="11" r="7" />
+      <line x1="4" y1="4" x2="22" y2="22" />
+      <line x1="18" y1="6" x2="6" y2="18" />
+    </svg>
   )
 }
 
@@ -116,26 +66,23 @@ function Search({
   const rootRef = useRef<HTMLFormElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const reduceMotion = m.reduced
-
-  const progress = useMotionValue(0)
   const hidden = width - CLOSED_WIDTH
-  const clipPath = useTransform(
-    progress,
-    (p) => `inset(0px ${OVERSHOOT + (1 - p) * hidden}px 0px 0px round 22px)`,
-  )
-  // Gelatina: più la molla corre, più il campo si schiaccia; da fermo torna normale
-  const velocity = useVelocity(progress)
-  const scaleY = useTransform(velocity, [-8, 0, 8], [0.86, 1, 0.86])
-  // Il bordo destro visibile del campo: lo slot lo segue (molla compresa) e spinge i vicini
-  const slotWidth = useTransform(progress, (p) => CLOSED_WIDTH + p * hidden)
+
+  /*
+   * Il campo resta montato finché la dissolvenza d'uscita non è finita (onAnimationEnd);
+   * con le animazioni spente sparisce subito
+   */
+  const [fieldMounted, setFieldMounted] = useState(open)
+  if (open && !fieldMounted) setFieldMounted(true)
+  const showField = open || (fieldMounted && m.state !== 'off')
+
+  // La gelatina parte solo dopo il primo cambio, non al montaggio
+  const [toggled, setToggled] = useState(false)
+  if (open && !toggled) setToggled(true)
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
-    // Movimento ridotto: il campo compare e sparisce di colpo
-    const controls = animate(progress, open ? 1 : 0, m.reduced ? { duration: 0 } : m.t(open ? openSpring : closeSpring))
-    return () => controls.stop()
-  }, [open, progress, m])
+  }, [open])
 
   function close() {
     setOpen(false)
@@ -143,28 +90,31 @@ function Search({
   }
 
   return (
-    <MotionScope m={m} props={motionProps}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       {/*
        * reserveSpace: lo slot ha già la larghezza da aperto, il campo cresce solo verso destra.
        * Altrimenti lo slot coincide con il bordo del clip-path e taglia il resto del form.
        */}
-      <motion.div
+      <div
         {...m.rootProps}
         className="search-slot"
         data-push={reserveSpace ? undefined : true}
-        style={{ ...m.rootProps.style, width: reserveSpace ? width + OVERSHOOT : slotWidth }}
+        style={
+          {
+            ...m.rootProps.style,
+            // Il bordo destro visibile del campo: lo slot lo segue (molla compresa) e spinge i vicini
+            width: reserveSpace ? width + OVERSHOOT : open ? width : CLOSED_WIDTH,
+            '--search-hidden': `${hidden}px`,
+          } as CSSProperties
+        }
       >
-        <motion.form
+        <form
           ref={rootRef}
           role="search"
           className="search"
           data-open={open || undefined}
-          style={{
-            width: width + OVERSHOOT,
-            paddingRight: OVERSHOOT,
-            clipPath,
-            scaleY: reduceMotion ? 1 : scaleY,
-          }}
+          data-toggled={toggled || undefined}
+          style={{ width: width + OVERSHOOT, paddingRight: OVERSHOOT }}
           onSubmit={(e) => {
             e.preventDefault()
             onSearch?.(query)
@@ -181,57 +131,50 @@ function Search({
           }}
         >
           {/* Un solo bottone: lente da chiuso, X da aperto */}
-          <motion.button
+          <button
             ref={triggerRef}
             type="button"
             className="search__trigger"
             aria-label={open ? 'Close search' : 'Search'}
             aria-expanded={open}
             onClick={() => (open ? close() : setOpen(true))}
-            whileTap={{ scale: 0.9 }}
           >
             <span className="search__icon">
-              <SearchCloseIcon open={open} />
+              <SearchCloseIcon />
             </span>
-          </motion.button>
+          </button>
 
-          <AnimatePresence>
-            {open && (
-              <motion.div
-                className="search__field"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: m.t({ duration: 0.08 }) }}
-              >
-                <input
-                  ref={inputRef}
-                  type="search"
-                  className="search__input"
-                  aria-label={placeholder}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-                {!query && (
-                  <motion.span
-                    className="search__placeholder"
-                    aria-hidden="true"
-                    variants={m.v(placeholderVariants)}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {[...placeholder].map((char, i) => (
-                      <motion.span key={i} className="search__char" variants={m.v(charVariants)}>
-                        {char === ' ' ? ' ' : char}
-                      </motion.span>
-                    ))}
-                  </motion.span>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.form>
-      </motion.div>
-    </MotionScope>
+          {showField && (
+            <div
+              className="search__field"
+              data-closing={!open || undefined}
+              onAnimationEnd={(e) => {
+                if (e.target === e.currentTarget && !open) setFieldMounted(false)
+              }}
+            >
+              <input
+                ref={inputRef}
+                type="search"
+                className="search__input"
+                aria-label={placeholder}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {!query && (
+                <span className="search__placeholder" aria-hidden="true">
+                  {/* Il placeholder compare lettera per lettera, mentre il campo si allarga */}
+                  {[...placeholder].map((char, i) => (
+                    <span key={i} className="search__char" style={{ '--i': i } as CSSProperties}>
+                      {char === ' ' ? ' ' : char}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </div>
+          )}
+        </form>
+      </div>
+    </GloopMotionProvider>
   )
 }
 

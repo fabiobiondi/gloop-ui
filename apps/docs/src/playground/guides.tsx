@@ -29,7 +29,7 @@ export type Guide = {
   hideHeader?: boolean
 }
 
-const INSTALL = `npm install gloop-ui motion`
+const INSTALL = `npm install gloop-ui`
 
 const STYLES = `// main.tsx (once, in your app entry)
 import 'gloop-ui/styles.css'`
@@ -113,7 +113,7 @@ export const guides: Guide[] = [
       <div className="pg-prose">
         <h2>Install</h2>
         <p>
-          <code>react</code> and <code>react-dom</code> 19 and <code>motion</code> 14 are peer dependencies.
+          <code>react</code> and <code>react-dom</code> 19 are peer dependencies. No animation library needed: everything is animated with CSS.
         </p>
         <CodeBlock code={INSTALL} lang="bash" />
 

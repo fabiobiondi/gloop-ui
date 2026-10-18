@@ -1,10 +1,11 @@
 import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, type Transition } from 'motion/react'
 import ExpandButton from './ExpandButton'
 import { GooFilter } from './goo'
 import { useThemeVars } from './floating/useThemeVars'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
+import { usePresence } from './jelly'
 import './theme.css'
 import './Dialog.css'
 
@@ -42,17 +43,19 @@ const GAP = 14
 const BADGE_SIZE = 56
 const BUTTON_HEIGHT = 44
 
-// Piccolo rimbalzo: la scheda si gonfia come una goccia e si assesta
-const swell: Transition = { type: 'spring', stiffness: 380, damping: 22, mass: 0.9 }
-const drip: Transition = { type: 'spring', stiffness: 300, damping: 18 }
-const suck: Transition = { type: 'spring', stiffness: 520, damping: 40 }
+/*
+ * Le molle (swell: la scheda si gonfia con un piccolo rimbalzo; drip: badge e pulsanti
+ * che colano; suck: il risucchio della chiusura) sono easing linear() in Dialog.css.
+ * Qui restano le distanze, passate come variabili CSS.
+ */
 
 /*
  * Dialog "liquido". Tre forme dentro un filtro goo:
  * - la scheda, che nasce piccola e schiacciata e si gonfia con un piccolo rimbalzo
  * - il badge con l'icona (facoltativo), che si stacca dalla parte alta
  * - i pulsanti, che colano fuori dal bordo inferiore uno dopo l'altro
- * In chiusura tutto viene risucchiato nella scheda, più in fretta.
+ * In chiusura tutto viene risucchiato nella scheda, più in fretta: il dialog resta montato
+ * (data-state="closing") finché le transizioni non sono finite.
  *
  * È renderizzato in un portal su <body>: i colori del tema (--ui-*) vengono letti
  * dal punto in cui il Dialog è usato e riapplicati, così segue il tema locale.
@@ -71,6 +74,8 @@ function Dialog({
 }: DialogProps) {
   const m = useGloopMotion(motionProps)
   const anchorRef = useRef<HTMLSpanElement>(null)
+  const layerRef = useRef<HTMLDivElement>(null)
+  const { mounted, closing } = usePresence(open, m.state === 'off', layerRef)
   const rootRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   // Colori del tema dal punto di utilizzo (il dialog è in un portal)
@@ -144,136 +149,84 @@ function Dialog({
     <>
       <span ref={anchorRef} hidden />
       {createPortal(
-        <MotionScope m={m} props={motionProps}>
-          <AnimatePresence>
-            {open && (
+        <GloopMotionProvider {...pickMotionProps(motionProps)}>
+          {mounted && (
+            <div
+              ref={layerRef}
+              {...m.rootProps}
+              className="dialog-layer"
+              data-state={closing ? 'closing' : 'open'}
+              style={
+                {
+                  ...m.rootProps.style,
+                  ...themeVars,
+                  // Badge e pulsanti partono dentro la scheda (y) e si staccano
+                  '--dialog-badge-from': `${BADGE_SIZE / 2 + GAP + 8}px`,
+                  '--dialog-action-from': `${-(BUTTON_HEIGHT / 2 + GAP + 8)}px`,
+                } as CSSProperties
+              }
+            >
+              <div className="dialog-backdrop" aria-hidden="true" style={backdropVars} onClick={onClose} />
+
               <div
-                key="dialog"
-                {...m.rootProps}
-                className="dialog-layer"
-                style={{ ...m.rootProps.style, ...themeVars }}
+                ref={rootRef}
+                className="dialog-goo"
+                style={{ gap: GAP, filter: `url(#${CSS.escape(filterId)})` }}
               >
-                <motion.div
-                  className="dialog-backdrop"
-                  aria-hidden="true"
-                  style={backdropVars}
-                  onClick={onClose}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1, transition: m.t({ duration: 0.2 }) }}
-                  exit={{ opacity: 0, transition: m.t({ duration: 0.15, delay: 0.05 }) }}
-                />
+                <GooFilter id={filterId} blur={9} />
+
+                {icon && (
+                  <div className="dialog__badge" aria-hidden="true" style={{ width: BADGE_SIZE, height: BADGE_SIZE }}>
+                    <span className="dialog__badge-icon">{icon}</span>
+                  </div>
+                )}
 
                 <div
-                  ref={rootRef}
-                  className="dialog-goo"
-                  style={{ gap: GAP, filter: `url(#${CSS.escape(filterId)})` }}
+                  ref={cardRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby={titleId}
+                  aria-describedby={children ? bodyId : undefined}
+                  tabIndex={-1}
+                  className="dialog"
                 >
-                  <GooFilter id={filterId} blur={9} />
-
-                  {icon && (
-                    <motion.div
-                      className="dialog__badge"
-                      aria-hidden="true"
-                      style={{ width: BADGE_SIZE, height: BADGE_SIZE }}
-                      // Parte dentro la scheda e si stacca verso l'alto
-                      initial={{ y: BADGE_SIZE / 2 + GAP + 8, scale: 0.4 }}
-                      animate={{ y: 0, scale: 1, transition: m.t({ ...drip, delay: 0.08 }) }}
-                      exit={{
-                        y: BADGE_SIZE / 2 + GAP + 8,
-                        scale: 0.4,
-                        opacity: 0,
-                        transition: m.t({ ...suck, opacity: { duration: 0.12, delay: 0.08 } }),
-                      }}
-                    >
-                      <motion.span
-                        className="dialog__badge-icon"
-                        initial={{ scale: 0.5, rotate: -20 }}
-                        animate={{ scale: 1, rotate: 0, transition: m.t({ ...drip, delay: 0.16 }) }}
-                      >
-                        {icon}
-                      </motion.span>
-                    </motion.div>
-                  )}
-
-                  <motion.div
-                    ref={cardRef}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby={titleId}
-                    aria-describedby={children ? bodyId : undefined}
-                    tabIndex={-1}
-                    className="dialog"
-                    initial={{ scaleX: 0.35, scaleY: 0.2, opacity: 0 }}
-                    animate={{
-                      scaleX: 1,
-                      scaleY: 1,
-                      opacity: 1,
-                      transition: m.t({ ...swell, opacity: { duration: 0.1 } }),
-                    }}
-                    exit={{
-                      scaleX: 0.35,
-                      scaleY: 0.2,
-                      opacity: 0,
-                      transition: m.t({ ...suck, delay: 0.06, opacity: { duration: 0.12, delay: 0.1 } }),
-                    }}
-                  >
-                    {/* Il contenuto arriva quando la goccia ha quasi preso forma */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 6, filter: 'blur(4px)' }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        filter: 'blur(0px)',
-                        transition: m.t({ duration: 0.25, delay: 0.12, ease: [0.23, 1, 0.32, 1] }),
-                      }}
-                      exit={{ opacity: 0, transition: m.t({ duration: 0.08 }) }}
-                    >
-                      <h2 id={titleId} className="dialog__title">
-                        {title}
-                      </h2>
-                      {children && (
-                        <div id={bodyId} className="dialog__body">
-                          {children}
-                        </div>
-                      )}
-                    </motion.div>
-                  </motion.div>
-
-                  {actions.length > 0 && (
-                    <div className="dialog__actions">
-                      {actions.map((action, i) => (
-                        <motion.div
-                          key={action.label}
-                          // Colano giù dal bordo della scheda, uno dopo l'altro
-                          initial={{ y: -(BUTTON_HEIGHT / 2 + GAP + 8), scale: 0.4 }}
-                          animate={{ y: 0, scale: 1, transition: m.t({ ...drip, delay: 0.1 + i * 0.05 }) }}
-                          exit={{
-                            y: -(BUTTON_HEIGHT / 2 + GAP + 8),
-                            scale: 0.4,
-                            opacity: 0,
-                            transition: m.t({ ...suck, opacity: { duration: 0.12, delay: 0.08 } }),
-                          }}
-                        >
-                          <ExpandButton
-                            variant="action"
-                            label={action.label}
-                            icon={action.icon}
-                            iconOnly={action.iconOnly}
-                            activeColor={action.color}
-                            autoFocus={action.autoFocus}
-                            onClick={() => {
-                              if (action.onClick?.() !== false) onClose()
-                            }}
-                          />
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+                  {/* Il contenuto arriva quando la goccia ha quasi preso forma */}
+                  <div>
+                    <h2 id={titleId} className="dialog__title">
+                      {title}
+                    </h2>
+                    {children && (
+                      <div id={bodyId} className="dialog__body">
+                        {children}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {actions.length > 0 && (
+                  <div className="dialog__actions">
+                    {actions.map((action, i) => (
+                      // Colano giù dal bordo della scheda, uno dopo l'altro
+                      <div key={action.label} style={{ '--i': i } as CSSProperties}>
+                        <ExpandButton
+                          variant="action"
+                          label={action.label}
+                          icon={action.icon}
+                          iconOnly={action.iconOnly}
+                          activeColor={action.color}
+                          autoFocus={action.autoFocus}
+                          onClick={() => {
+                            if (action.onClick?.() !== false) onClose()
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </AnimatePresence>
-        </MotionScope>,
+            </div>
+          )}
+        </GloopMotionProvider>,
         document.body,
       )}
     </>

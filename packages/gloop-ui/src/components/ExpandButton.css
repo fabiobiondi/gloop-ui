@@ -3,6 +3,44 @@
   display: inline-flex;
   /* Colore attuale della superficie, condiviso da bottone, gocce e ponti del goo */
   --expand-fill: var(--expand-surface);
+  --speed: var(--ui-motion-speed, 1);
+
+  /*
+   * Molle campionate in easing linear(), una per preset: morph della larghezza (la legge
+   * ExpandButton.tsx per la FLIP), lettere della label, rollover e pressione del bottone.
+   */
+  --expand-morph: linear(0, 0.024, 0.089, 0.172, 0.276, 0.377, 0.476, 0.58, 0.666, 0.75, 0.816, 0.873, 0.923, 0.96, 0.991, 1.011, 1.026, 1.036, 1.042, 1.044, 1.043, 1.041, 1.038, 1.034, 1.029, 1.024, 1.02, 1.016, 1.012, 1.009, 1.006, 1.004, 1.002, 1.001, 1, 0.999, 0.999, 0.998, 0.998, 0.998, 1);
+  --expand-morph-ms: 416ms;
+  --expand-char: linear(0, 0.026, 0.097, 0.184, 0.283, 0.399, 0.5, 0.596, 0.693, 0.769, 0.834, 0.894, 0.938, 0.972, 1, 1.019, 1.031, 1.039, 1.043, 1.043, 1.041, 1.038, 1.034, 1.03, 1.025, 1.021, 1.017, 1.013, 1.009, 1.007, 1.004, 1.002, 1.001, 1, 0.999, 0.999, 0.998, 0.998, 0.998, 0.998, 1);
+  --expand-char-ms: 333ms;
+  --expand-hover: linear(0, 0.022, 0.077, 0.156, 0.241, 0.33, 0.417, 0.501, 0.578, 0.652, 0.714, 0.768, 0.814, 0.853, 0.886, 0.914, 0.936, 0.954, 0.968, 0.978, 0.987, 0.993, 0.998, 1.001, 1.003, 1.005, 1.005, 1.006, 1.006, 1.005, 1.005, 1.004, 1.004, 1.003, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1);
+  --expand-hover-ms: 607ms;
+  --expand-press: linear(0, 0.041, 0.14, 0.273, 0.422, 0.571, 0.709, 0.829, 0.928, 1.005, 1.06, 1.092, 1.112, 1.118, 1.114, 1.102, 1.087, 1.069, 1.052, 1.035, 1.021, 1.009, 1, 0.993, 0.989, 0.987, 0.986, 0.987, 0.988, 0.99, 0.992, 0.994, 0.996, 0.997, 0.999, 1, 1.001, 1.001, 1.002, 1.002, 1);
+  --expand-press-ms: 518ms;
+
+  /* smooth: molle smorzate in modo critico, nessun rimbalzo */
+  &[data-motion-preset='smooth'] {
+    --expand-morph: linear(0, 0.028, 0.092, 0.175, 0.265, 0.355, 0.441, 0.526, 0.596, 0.658, 0.712, 0.759, 0.799, 0.833, 0.861, 0.885, 0.905, 0.922, 0.936, 0.947, 0.958, 0.965, 0.972, 0.977, 0.981, 0.985, 0.987, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1);
+    --expand-morph-ms: 483ms;
+    --expand-char: linear(0, 0.033, 0.105, 0.196, 0.293, 0.379, 0.468, 0.55, 0.622, 0.684, 0.738, 0.784, 0.822, 0.851, 0.878, 0.901, 0.919, 0.935, 0.947, 0.957, 0.965, 0.971, 0.977, 0.982, 0.985, 0.988, 0.99, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 0.999, 1);
+    --expand-char-ms: 395ms;
+    --expand-hover: linear(0, 0.025, 0.087, 0.163, 0.246, 0.331, 0.418, 0.494, 0.564, 0.626, 0.684, 0.732, 0.773, 0.809, 0.841, 0.867, 0.889, 0.907, 0.924, 0.937, 0.947, 0.956, 0.964, 0.971, 0.976, 0.98, 0.984, 0.987, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 1);
+    --expand-hover-ms: 610ms;
+    --expand-press: linear(0, 0.028, 0.1, 0.183, 0.273, 0.363, 0.456, 0.533, 0.602, 0.664, 0.721, 0.767, 0.805, 0.838, 0.868, 0.891, 0.91, 0.926, 0.94, 0.951, 0.96, 0.967, 0.974, 0.978, 0.982, 0.986, 0.989, 0.991, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+    --expand-press-ms: 450ms;
+  }
+
+  /* snappy: più rapido, rimbalzo dimezzato */
+  &[data-motion-preset='snappy'] {
+    --expand-morph: linear(0, 0.032, 0.096, 0.19, 0.283, 0.388, 0.479, 0.572, 0.647, 0.72, 0.776, 0.828, 0.867, 0.902, 0.927, 0.949, 0.965, 0.978, 0.987, 0.994, 0.998, 1.001, 1.003, 1.004, 1.005, 1.005, 1.005, 1.005, 1.004, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1, 1, 1);
+    --expand-morph-ms: 381ms;
+    --expand-char: linear(0, 0.034, 0.112, 0.198, 0.305, 0.413, 0.514, 0.595, 0.677, 0.747, 0.805, 0.848, 0.888, 0.919, 0.944, 0.96, 0.975, 0.985, 0.993, 0.997, 1.001, 1.003, 1.004, 1.005, 1.005, 1.005, 1.004, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+    --expand-char-ms: 310ms;
+    --expand-hover: linear(0, 0.021, 0.064, 0.129, 0.205, 0.284, 0.356, 0.433, 0.506, 0.567, 0.628, 0.683, 0.727, 0.77, 0.807, 0.84, 0.865, 0.889, 0.909, 0.924, 0.939, 0.951, 0.96, 0.968, 0.975, 0.98, 0.984, 0.988, 0.991, 0.993, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1);
+    --expand-hover-ms: 428ms;
+    --expand-press: linear(0, 0.029, 0.105, 0.196, 0.31, 0.413, 0.511, 0.613, 0.693, 0.77, 0.828, 0.875, 0.918, 0.948, 0.973, 0.989, 1.001, 1.01, 1.014, 1.017, 1.018, 1.017, 1.016, 1.015, 1.013, 1.011, 1.009, 1.007, 1.006, 1.004, 1.003, 1.002, 1.002, 1.001, 1.001, 1, 1, 1, 1, 1, 1);
+    --expand-press-ms: 336ms;
+  }
 }
 
 /* Rollover: la superficie si schiarisce leggermente, gocce comprese */
@@ -17,6 +55,8 @@
 }
 
 .expand-button {
+  /* Contiene la label in uscita, fuori dal flusso */
+  position: relative;
   display: inline-flex;
   align-items: center;
   height: 44px;
@@ -29,11 +69,46 @@
   color: var(--ui-fg);
   background-color: var(--expand-fill);
   cursor: pointer;
-  transition: background-color calc(400ms / var(--ui-motion-speed, 1)) cubic-bezier(0.23, 1, 0.32, 1);
+  transition:
+    background-color calc(400ms / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1),
+    scale calc(var(--expand-press-ms) / var(--speed)) var(--expand-press);
 
   &:focus-visible {
     outline: 2px solid var(--ui-accent);
     outline-offset: 2px;
+  }
+
+  /* Rollover (solo con un puntatore vero) e pressione: un piccolo gonfiore, poi si schiaccia */
+  @media (hover: hover) {
+    &:hover {
+      scale: 1.02;
+      transition:
+        background-color calc(400ms / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1),
+        scale calc(var(--expand-hover-ms) / var(--speed)) var(--expand-hover);
+    }
+  }
+
+  &:active {
+    scale: 0.95;
+    transition:
+      background-color calc(400ms / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1),
+      scale calc(var(--expand-press-ms) / var(--speed)) var(--expand-press);
+  }
+}
+
+/* Icona: "pop" con un piccolo dondolio quando si attiva (solo toggle) */
+.expand-button[aria-pressed='true'] .expand-button__icon {
+  animation: expand-button-pop calc(500ms / var(--speed)) ease-out;
+}
+
+@keyframes expand-button-pop {
+  33.33% {
+    scale: 1.35;
+    rotate: -12deg;
+  }
+  66.67% {
+    scale: 0.9;
+    rotate: 8deg;
   }
 }
 
@@ -60,6 +135,20 @@
   padding-left: 8px;
   white-space: nowrap;
 
+  /* Uscita rapida e tutta insieme, fuori dal flusso: il bottone si richiude subito */
+  &[data-state='closing'] {
+    position: absolute;
+    opacity: 0;
+    filter: blur(4px);
+    transition:
+      opacity calc(100ms / var(--speed)) linear,
+      filter calc(100ms / var(--speed)) linear;
+
+    & .expand-button__char {
+      animation: none;
+    }
+  }
+
   /* Senza icona la label è il primo elemento: stesso respiro a destra e a sinistra */
   &:first-child {
     padding: 0 6px;
@@ -75,6 +164,17 @@
 
 .expand-button__char {
   display: inline-block;
+  /* La label entra lettera per lettera */
+  animation: expand-button-char calc(var(--expand-char-ms) / var(--speed)) var(--expand-char)
+    calc((50ms + var(--i, 0) * 14ms) / var(--speed)) backwards;
+}
+
+@keyframes expand-button-char {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+    filter: blur(4px);
+  }
 }
 
 /* Centro dell'esplosione = centro dell'icona (padding 12 + metà icona 10) */
@@ -91,6 +191,15 @@
   height: 5px;
   margin: -2.5px 0 0 -2.5px;
   border-radius: 999px;
+  animation: expand-button-burst calc(500ms / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes expand-button-burst {
+  to {
+    translate: var(--particle-x) var(--particle-y);
+    scale: 0;
+    opacity: 0;
+  }
 }
 
 /* Contenitore filtrato dal goo (solo con drip): bottone e gocce si fondono */
@@ -144,4 +253,42 @@
 /* Il colore dei ponti del goo segue quello del bottone, con la stessa transizione */
 .expand-button__goo feFlood {
   transition: flood-color calc(400ms / var(--ui-motion-speed, 1)) cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Movimento ridotto: niente spostamenti né scale, restano solo le dissolvenze */
+.expand-button-wrap[data-motion='reduced'] {
+  & .expand-button {
+    scale: none;
+    transition: background-color calc(400ms / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  & .expand-button__icon {
+    animation: none;
+  }
+
+  & .expand-button__char {
+    animation-name: expand-button-char-fade;
+  }
+
+  & .expand-button__particle {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@keyframes expand-button-char-fade {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+/* animated={false}: i cambi di stato sono istantanei */
+.expand-button-wrap[data-motion='off'] * {
+  transition: none !important;
+  animation: none !important;
+}
+
+.expand-button-wrap[data-motion='off'] .expand-button__particle {
+  opacity: 0;
 }

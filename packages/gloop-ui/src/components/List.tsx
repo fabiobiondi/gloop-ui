@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { type Transition } from 'motion/react'
 import ListCore, { flattenEntries, type ListDivider, type ListEntry, type ListGroup, type ListItem } from './list/ListCore'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
 
 export type { ListDivider, ListEntry, ListGroup, ListItem }
 
@@ -23,8 +23,6 @@ export type ListProps = {
   className?: string
 } & MotionProps
 
-const morph: Transition = { type: 'spring', duration: 0.5, bounce: 0.25 }
-
 function List({
   items,
   value,
@@ -38,6 +36,7 @@ function List({
   className,
   ...motionProps
 }: ListProps) {
+  // Animata solo in CSS (list/List.css): la molla morph della pressione è lì
   const m = useGloopMotion(motionProps)
   const [internal, setInternal] = useState(defaultValue)
   const selected = value !== undefined ? value : internal
@@ -48,7 +47,7 @@ function List({
   const Root = flat.some((item) => item.href !== undefined) ? 'nav' : 'div'
 
   return (
-    <MotionScope m={m} props={motionProps} transition={morph}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       <Root
         {...m.rootProps}
         className={className ? `list ${className}` : 'list'}
@@ -72,7 +71,7 @@ function List({
           }}
         />
       </Root>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 

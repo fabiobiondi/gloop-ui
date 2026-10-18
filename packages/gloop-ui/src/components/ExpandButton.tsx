@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { AnimatePresence, motion, type Transition, type Variants } from 'motion/react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { GooFilter } from './goo'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
+import { usePresence } from './jelly'
 import './theme.css'
 import './ExpandButton.css'
 
@@ -27,23 +28,11 @@ export type ExpandButtonProps = {
   autoFocus?: boolean
 } & MotionProps
 
-const morph: Transition = { type: 'spring', duration: 0.45, bounce: 0.3 }
-
-// La label entra lettera per lettera
-const labelVariants: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.014, delayChildren: 0.05 } },
-}
-
-const charVariants: Variants = {
-  hidden: { opacity: 0, y: 6, filter: 'blur(4px)' },
-  visible: {
-    opacity: 1,
-    y: 0,
-    filter: 'blur(0px)',
-    transition: { type: 'spring', duration: 0.35, bounce: 0.3 },
-  },
-}
+/*
+ * Animato in CSS (ExpandButton.css): molle campionate in easing linear(), una per preset.
+ * La morph della larghezza (al posto del layout di Motion) è una piccola FLIP con WAAPI:
+ * legge la stessa molla dal CSS (--expand-morph).
+ */
 
 const PARTICLES = 8
 
@@ -101,27 +90,50 @@ function Drips({ hover, active }: { hover: boolean; active: boolean }) {
 
 /* Esplosione di particelle attorno all'icona, solo all'attivazione */
 function Burst({ color }: { color: string }) {
-  const m = useGloopMotion()
   return (
     <span className="expand-button__burst" aria-hidden="true">
       {Array.from({ length: PARTICLES }, (_, i) => {
         const angle = (i / PARTICLES) * Math.PI * 2
         return (
-          <motion.span
+          <span
             key={i}
             className="expand-button__particle"
-            style={{ background: color }}
-            initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
-            animate={{
-              x: Math.cos(angle) * 24,
-              y: Math.sin(angle) * 24,
-              scale: 0,
-              opacity: 0,
-            }}
-            transition={m.t({ duration: 0.5, ease: [0.23, 1, 0.32, 1] })}
+            style={
+              {
+                background: color,
+                '--particle-x': `${Math.cos(angle) * 24}px`,
+                '--particle-y': `${Math.sin(angle) * 24}px`,
+              } as CSSProperties
+            }
           />
         )
       })}
+    </span>
+  )
+}
+
+/*
+ * La label: entra lettera per lettera; in uscita resta montata finché non è svanita,
+ * fuori dal flusso (come popLayout), così il bottone si richiude subito.
+ * left: dove stava la label, misurato finché era visibile.
+ */
+function Label({ label, shown, instant, left }: { label: string; shown: boolean; instant: boolean; left: number }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const { mounted, closing } = usePresence(shown, instant, ref)
+  if (!mounted) return null
+  return (
+    <span
+      ref={ref}
+      className="expand-button__label"
+      aria-hidden="true"
+      data-state={closing ? 'closing' : undefined}
+      style={closing ? { left } : undefined}
+    >
+      {[...label].map((char, i) => (
+        <span key={i} className="expand-button__char" style={{ '--i': i } as CSSProperties}>
+          {char === ' ' ? '\u00a0' : char}
+        </span>
+      ))}
     </span>
   )
 }
@@ -151,9 +163,42 @@ function ExpandButton({
   // Colore della superficie: activeColor da pieno, --ui-bg altrimenti. Lo usano bottone e gocce
   const surface = filled && color ? color : 'var(--ui-bg)'
 
+  /*
+   * Morph della larghezza quando la label entra o esce: dopo il commit si confronta la
+   * larghezza nuova con la precedente (o con quella a metà animazione, se ce n'è una in corso)
+   * e si anima width con la molla del CSS. Movimento ridotto o spento: cambio istantaneo.
+   */
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const width = useRef<number | null>(null)
+  const morph = useRef<Animation | null>(null)
+  // Posizione della label finché è visibile: in uscita esce dal flusso restando lì
+  const labelLeft = useRef(0)
+  useLayoutEffect(() => {
+    const btn = buttonRef.current
+    if (!btn) return
+    const from = morph.current ? btn.offsetWidth : width.current
+    morph.current?.cancel()
+    morph.current = null
+    const to = btn.offsetWidth
+    width.current = to
+    const label = btn.querySelector<HTMLElement>('.expand-button__label:not([data-state])')
+    if (label) labelLeft.current = label.offsetLeft
+    if (from === null || Math.abs(from - to) < 0.5 || m.reduced || !btn.animate) return
+    const css = getComputedStyle(btn)
+    const ms = parseFloat(css.getPropertyValue('--expand-morph-ms')) || 416
+    const anim = btn.animate([{ width: `${from}px` }, { width: `${to}px` }], {
+      duration: ms / m.speed,
+      easing: css.getPropertyValue('--expand-morph').trim() || 'ease-out',
+    })
+    morph.current = anim
+    anim.onfinish = () => {
+      if (morph.current === anim) morph.current = null
+    }
+  }, [showLabel, label, iconOnly, !!icon, m.reduced, m.speed])
+
   return (
     // Movimento ridotto: niente spostamenti, solo dissolvenze
-    <MotionScope m={m} props={motionProps}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       <span
         {...m.rootProps}
         className="expand-button-wrap"
@@ -174,8 +219,8 @@ function ExpandButton({
         >
           {dripping && <GooFilter id={filterId} blur={5} shadow={false} color="var(--expand-fill)" />}
           {dripping && <Drips hover={dripping === 'hover'} active={dripping !== 'hover' || hovered} />}
-          <motion.button
-            layout
+          <button
+            ref={buttonRef}
             type="button"
             className="expand-button"
             data-open={filled || undefined}
@@ -187,57 +232,24 @@ function ExpandButton({
               if (!isAction) setOpen((open) => !open)
               onClick?.()
             }}
-            // border-radius nello style: Motion lo corregge durante la morph.
-            // Il colore di sfondo (--expand-fill, vedi CSS) cambia con una transition CSS.
+            // Il colore di sfondo (--expand-fill, vedi CSS) cambia con una transition CSS
             style={{ borderRadius: 999 }}
-            transition={m.t({ layout: morph })}
-            whileHover={{ scale: 1.02, transition: m.t({ type: 'spring', duration: 0.6, bounce: 0.15 }) }}
-            whileTap={{ scale: 0.95 }}
           >
-            {/* Icona: "pop" con un piccolo dondolio quando si attiva */}
+            {/* Icona: "pop" con un piccolo dondolio quando si attiva (keyframe nel CSS) */}
             {icon && (
-              <motion.span
-                layout="position"
-                className="expand-button__icon"
-                aria-hidden="true"
-                animate={
-                  open
-                    ? { scale: [1, 1.35, 0.9, 1], rotate: [0, -12, 8, 0] }
-                    : { scale: 1, rotate: 0 }
-                }
-                transition={m.t({ duration: 0.5, ease: 'easeOut' })}
-              >
+              <span className="expand-button__icon" aria-hidden="true">
                 {icon}
-              </motion.span>
+              </span>
             )}
 
             {/* In modalità action la label entra lettera per lettera anche alla comparsa */}
-            <AnimatePresence mode="popLayout" initial={isAction}>
-              {showLabel && (
-                <motion.span
-                  layout="position"
-                  className="expand-button__label"
-                  aria-hidden="true"
-                  variants={m.v(labelVariants)}
-                  initial="hidden"
-                  animate="visible"
-                  // Uscita rapida e tutta insieme: il bottone si richiude subito
-                  exit={{ opacity: 0, filter: 'blur(4px)', transition: m.t({ duration: 0.1 }) }}
-                >
-                  {[...label].map((char, i) => (
-                    <motion.span key={i} className="expand-button__char" variants={m.v(charVariants)}>
-                      {char === ' ' ? ' ' : char}
-                    </motion.span>
-                  ))}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
+            <Label label={label} shown={showLabel} instant={m.state === 'off'} left={labelLeft.current} />
+          </button>
         </span>
 
         {open && color && <Burst color={color} />}
       </span>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 

@@ -47,11 +47,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "lint:package": "publint && attw --pack --profile esm-only --exclude-entrypoints styles.css",
-    "prepublishOnly": "npm run build",
-    "test:css": "vitest run -c vitest.css.config.ts"
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "motion": "^14.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

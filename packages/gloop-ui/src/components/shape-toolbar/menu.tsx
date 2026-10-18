@@ -1,15 +1,16 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react'
-import { useGloopMotion } from '../motion'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
 import {
   MenuContext,
-  glide,
-  itemVariants,
-  panelVariants,
+  setStagger,
   triggerId,
   useMenu,
+  usePresence,
+  useSharedLayout,
   type MenuContextValue,
 } from './menu-shared'
+
+/** Elementi di un popover che entrano a cascata (in ShapeEditor.css la stessa lista) */
+const STAGGERED = '.st-item, .st-swatch-btn, .st-hex, .st-option-tile, .st-option'
 
 export function MenuRoot({ className, children }: { className?: string; children: ReactNode }) {
   const rootId = useId()
@@ -48,7 +49,7 @@ export function MenuRoot({ className, children }: { className?: string; children
   }
 
   return (
-    // Animazioni: le decide il MotionScope di ShapeEditor
+    // Animazioni: le decide il GloopMotionProvider di ShapeEditor
     <MenuContext.Provider value={value}>
       <div ref={rootRef} className={className} role="toolbar">
         {children}
@@ -57,7 +58,7 @@ export function MenuRoot({ className, children }: { className?: string; children
   )
 }
 
-type ToolButtonProps = Omit<HTMLMotionProps<'button'>, 'children'> & {
+type ToolButtonProps = Omit<ComponentProps<'button'>, 'children'> & {
   children?: ReactNode
   active?: boolean
   wide?: boolean
@@ -65,27 +66,25 @@ type ToolButtonProps = Omit<HTMLMotionProps<'button'>, 'children'> & {
 
 export function ToolButton({ active, wide, className, children, ...props }: ToolButtonProps) {
   const { rootId, depth } = useMenu()
-  const m = useGloopMotion()
 
   return (
-    <motion.button
+    // La pressione (scale 0.94) è in CSS, su :active
+    <button
       type="button"
       className={['st-btn', wide && 'st-btn--wide', className].filter(Boolean).join(' ')}
-      whileTap={{ scale: 0.94 }}
       {...props}
     >
       {/* Un solo evidenziatore per livello: scivola da un trigger all'altro */}
-      {active && (
-        <motion.span
-          layoutId={`${rootId}-active-${depth}`}
-          className="st-btn__active"
-          transition={m.t(glide)}
-          style={{ borderRadius: 8 }}
-        />
-      )}
+      {active && <ActiveMark id={`${rootId}-active-${depth}`} />}
       <span className="st-btn__content">{children}</span>
-    </motion.button>
+    </button>
   )
+}
+
+function ActiveMark({ id }: { id: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  useSharedLayout(id, ref, 'glide')
+  return <span ref={ref} className="st-btn__active" style={{ borderRadius: 8 }} />
 }
 
 type PopoverProps = {
@@ -110,8 +109,8 @@ export function Popover({
   wide,
 }: PopoverProps) {
   const ctx = useMenu()
-  const m = useGloopMotion()
   const open = ctx.path[ctx.depth] === id
+  const panel = usePresence<HTMLDivElement>(open)
   const panelId = `${ctx.rootId}-${id}`
   const tId = triggerId(ctx.rootId, id)
 
@@ -123,6 +122,17 @@ export function Popover({
       document.getElementById(tId)?.focus()
     },
   }
+
+  /*
+   * I contenuti entrano a cascata (staggerChildren 12ms, dopo 20ms). Solo quelli di
+   * questo pannello: i popover annidati fanno la loro cascata quando si aprono.
+   */
+  useLayoutEffect(() => {
+    const el = panel.ref.current
+    if (!el || !open) return
+    const items = [...el.querySelectorAll<HTMLElement>(STAGGERED)].filter((item) => item.closest('.st-popover') === el)
+    setStagger(items, (i) => 20 + i * 12)
+  })
 
   return (
     <div className="st-anchor">
@@ -139,40 +149,27 @@ export function Popover({
         {trigger}
       </ToolButton>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            id={panelId}
-            role="dialog"
-            aria-label={label}
-            className="st-popover"
-            data-placement={placement}
-            data-align={align}
-            // Il pannello si apre dal lato del trigger
-            style={{
-              originX: originX[align],
-              originY: placement === 'top' ? 1 : 0,
-              x: align === 'center' ? '-50%' : 0,
-            }}
-            variants={m.v(panelVariants(placement))}
-            initial="closed"
-            animate="open"
-            exit="closed"
-          >
-            <MenuContext.Provider value={inner}>{children}</MenuContext.Provider>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {panel.mounted && (
+        <div
+          ref={panel.ref}
+          id={panelId}
+          role="dialog"
+          aria-label={label}
+          className="st-popover"
+          data-placement={placement}
+          data-align={align}
+          data-closing={panel.closing || undefined}
+          // Il pannello si apre dal lato del trigger (lo spostamento -50% del centro è nel CSS)
+          style={{ transformOrigin: `${originX[align] * 100}% ${placement === 'top' ? 100 : 0}%` }}
+        >
+          <MenuContext.Provider value={inner}>{children}</MenuContext.Provider>
+        </div>
+      )}
     </div>
   )
 }
 
 /** Wrapper per far entrare a cascata qualsiasi contenuto di un popover */
 export function Item({ children }: { children: ReactNode }) {
-  const m = useGloopMotion()
-  return (
-    <motion.div className="st-item" variants={m.v(itemVariants)}>
-      {children}
-    </motion.div>
-  )
+  return <div className="st-item">{children}</div>
 }

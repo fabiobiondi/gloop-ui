@@ -68,3 +68,225 @@
   left: calc(100% + 16px);
   top: 50%;
 }
+
+/* ---------- Animazioni (solo CSS; molle --tf-* in TabFab.css) ---------- */
+
+.tab-pop {
+  --tp-slide-exit: linear(0, 0.025, 0.084, 0.163, 0.252, 0.335, 0.424, 0.509, 0.586, 0.656, 0.717, 0.77, 0.815, 0.85, 0.882, 0.909, 0.93, 0.948, 0.961, 0.972, 0.981, 0.987, 0.992, 0.995, 0.998, 1, 1.001, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1);
+  --tp-slide-exit-ms: 395ms;
+  --tp-pop-exit: linear(0, 0.019, 0.072, 0.136, 0.217, 0.294, 0.369, 0.452, 0.52, 0.59, 0.647, 0.697, 0.748, 0.786, 0.824, 0.853, 0.878, 0.901, 0.919, 0.935, 0.948, 0.958, 0.967, 0.974, 0.98, 0.984, 0.988, 0.991, 0.993, 0.995, 0.996, 0.998, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1, 1);
+  --tp-pop-exit-ms: 336ms;
+  --tp-pop-x: linear(0, 0.038, 0.139, 0.267, 0.422, 0.566, 0.701, 0.828, 0.926, 1.008, 1.062, 1.098, 1.119, 1.124, 1.119, 1.108, 1.092, 1.073, 1.055, 1.037, 1.022, 1.01, 1, 0.993, 0.988, 0.985, 0.985, 0.985, 0.987, 0.989, 0.991, 0.993, 0.995, 0.997, 0.999, 1, 1.001, 1.001, 1.002, 1.002, 1);
+  --tp-pop-x-ms: 536ms;
+  --tp-pop-y: linear(0, 0.026, 0.095, 0.181, 0.278, 0.379, 0.487, 0.58, 0.664, 0.738, 0.808, 0.861, 0.905, 0.94, 0.97, 0.99, 1.005, 1.015, 1.022, 1.025, 1.027, 1.026, 1.025, 1.023, 1.02, 1.017, 1.014, 1.012, 1.01, 1.008, 1.006, 1.004, 1.003, 1.002, 1.001, 1, 1, 1, 0.999, 0.999, 1);
+  --tp-pop-y-ms: 450ms;
+
+  &[data-motion-preset='smooth'] {
+    --tp-slide-exit: linear(0, 0.029, 0.096, 0.181, 0.273, 0.364, 0.451, 0.537, 0.607, 0.669, 0.722, 0.768, 0.807, 0.84, 0.868, 0.891, 0.911, 0.927, 0.94, 0.951, 0.961, 0.968, 0.974, 0.979, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+    --tp-slide-exit-ms: 443ms;
+    --tp-pop-exit: linear(0, 0.028, 0.1, 0.184, 0.282, 0.371, 0.464, 0.54, 0.615, 0.674, 0.73, 0.774, 0.815, 0.846, 0.875, 0.896, 0.916, 0.931, 0.944, 0.954, 0.963, 0.97, 0.975, 0.98, 0.984, 0.987, 0.989, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 0.999, 1);
+    --tp-pop-exit-ms: 419ms;
+    --tp-pop-x: linear(0, 0.026, 0.085, 0.168, 0.254, 0.34, 0.422, 0.499, 0.574, 0.636, 0.691, 0.738, 0.78, 0.817, 0.847, 0.872, 0.894, 0.911, 0.928, 0.94, 0.95, 0.959, 0.966, 0.973, 0.977, 0.981, 0.985, 0.987, 0.99, 0.992, 0.993, 0.994, 0.995, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 1);
+    --tp-pop-x-ms: 568ms;
+    --tp-pop-y: linear(0, 0.028, 0.092, 0.175, 0.265, 0.355, 0.441, 0.526, 0.596, 0.658, 0.712, 0.759, 0.799, 0.833, 0.861, 0.885, 0.905, 0.922, 0.936, 0.947, 0.958, 0.965, 0.972, 0.977, 0.981, 0.985, 0.987, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 1);
+    --tp-pop-y-ms: 483ms;
+  }
+
+  &[data-motion-preset='snappy'] {
+    --tp-slide-exit: linear(0, 0.029, 0.085, 0.167, 0.248, 0.341, 0.421, 0.505, 0.573, 0.642, 0.696, 0.749, 0.789, 0.829, 0.858, 0.885, 0.906, 0.925, 0.939, 0.952, 0.962, 0.97, 0.977, 0.981, 0.986, 0.989, 0.992, 0.993, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1);
+    --tp-slide-exit-ms: 301ms;
+    --tp-pop-exit: linear(0, 0.033, 0.095, 0.186, 0.272, 0.37, 0.452, 0.538, 0.614, 0.673, 0.732, 0.775, 0.818, 0.849, 0.879, 0.903, 0.921, 0.937, 0.949, 0.96, 0.968, 0.975, 0.98, 0.984, 0.988, 0.99, 0.993, 0.994, 0.995, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1, 1, 1, 1);
+    --tp-pop-exit-ms: 303ms;
+    --tp-pop-x: linear(0, 0.029, 0.098, 0.181, 0.283, 0.389, 0.492, 0.579, 0.665, 0.741, 0.806, 0.859, 0.899, 0.934, 0.962, 0.982, 0.996, 1.006, 1.013, 1.017, 1.019, 1.019, 1.019, 1.017, 1.016, 1.014, 1.012, 1.01, 1.008, 1.006, 1.005, 1.004, 1.003, 1.002, 1.001, 1.001, 1, 1, 1, 1, 1);
+    --tp-pop-x-ms: 431ms;
+    --tp-pop-y: linear(0, 0.026, 0.085, 0.174, 0.264, 0.356, 0.445, 0.529, 0.613, 0.679, 0.738, 0.788, 0.831, 0.87, 0.899, 0.922, 0.941, 0.957, 0.97, 0.979, 0.986, 0.991, 0.995, 0.998, 1, 1.001, 1.002, 1.002, 1.003, 1.003, 1.002, 1.002, 1.002, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1.001, 1);
+    --tp-pop-y-ms: 368ms;
+  }
+}
+
+.tab-pop__trigger {
+  transition: scale calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
+
+  &:active {
+    scale: 0.92;
+  }
+
+  & .tab-fab__trigger-icon {
+    transition: rotate calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
+  }
+
+  &[aria-expanded='true'] .tab-fab__trigger-icon {
+    rotate: 45deg;
+  }
+}
+
+/*
+ * La goccia: da chiusa sta nel "+", rimpicciolita. Aprendo fa il suo percorso
+ * (0 → --drip-mid → --drip-end, con la scala) e resta alla fine; chiudendo torna indietro
+ * con una transizione che parte da dove si trova.
+ */
+.tab-pop > .goo-drop {
+  --drip-ms: 500ms;
+  --drip-back-delay: 0ms;
+
+  translate: 0 0;
+  scale: 0.6;
+  transition:
+    translate calc(250ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1)
+      calc(var(--drip-back-delay) * var(--tween) / var(--speed)),
+    scale calc(250ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1)
+      calc(var(--drip-back-delay) * var(--tween) / var(--speed));
+}
+
+/* pop e bounce: parte prima e più in fretta; in chiusura aspetta che la barra si richiuda */
+.tab-pop:not([data-animation='slide']) > .goo-drop {
+  --drip-ms: 300ms;
+  --drip-back-delay: 100ms;
+}
+
+.tab-pop[data-open] > .goo-drop {
+  translate: var(--drip-end);
+  scale: var(--drip-end-s);
+  transition: none;
+  animation: tab-pop-drip calc(var(--drip-ms) * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes tab-pop-drip {
+  0% {
+    translate: 0 0;
+    scale: 0.6;
+  }
+  50% {
+    translate: var(--drip-mid);
+    scale: var(--drip-mid-s);
+  }
+}
+
+/*
+ * La barra. Centrata sull'altro asse (--bar-cx/cy); da nascosta è spostata verso il "+"
+ * (--bar-tuck) e schiacciata (--bar-sx, --bar-sy), valori dallo style. La larghezza
+ * (scaleX in transform) e l'altezza (scale) hanno ciascuna la sua molla.
+ * Entra con @starting-style, esce con data-closing: le transizioni ripartono da dove è.
+ */
+.tab-pop__bar {
+  --bar-cx: -50%;
+  --bar-cy: 0px;
+  --delay: 0ms;
+
+  translate: var(--bar-cx) var(--bar-cy);
+  transform: none;
+  scale: none;
+  /* slide: tutto con la molla spring, l'opacità in fretta */
+  transition:
+    opacity calc(100ms * var(--tween) / var(--speed)) ease,
+    translate calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring),
+    transform calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring),
+    scale calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
+
+  &[data-closing] {
+    opacity: 0;
+    translate: var(--bar-closed);
+    transform: scaleX(var(--bar-sx));
+    scale: 1 var(--bar-sy);
+    transition:
+      opacity calc(120ms * var(--tween) / var(--speed)) ease calc(80ms * var(--tween) / var(--speed)),
+      translate calc(var(--tp-slide-exit-ms) / var(--speed)) var(--tp-slide-exit),
+      transform calc(var(--tp-slide-exit-ms) / var(--speed)) var(--tp-slide-exit),
+      scale calc(var(--tp-slide-exit-ms) / var(--speed)) var(--tp-slide-exit);
+  }
+}
+
+.tab-pop:is([data-direction='left'], [data-direction='right']) .tab-pop__bar {
+  --bar-cx: 0px;
+  --bar-cy: -50%;
+}
+
+/* Posizione da nascosta: il centro più lo spostamento verso il "+" */
+.tab-pop__bar {
+  --bar-closed: calc(var(--bar-cx) + var(--bar-tuck-x)) calc(var(--bar-cy) + var(--bar-tuck-y));
+}
+
+@starting-style {
+  .tab-pop__bar {
+    opacity: 0;
+    translate: var(--bar-closed);
+    transform: scaleX(var(--bar-sx));
+    scale: 1 var(--bar-sy);
+  }
+}
+
+/* pop: larghezza e altezza con due molle, tutto parte dopo POP_DELAY (60ms) */
+.tab-pop:not([data-animation='slide']) .tab-pop__bar {
+  --delay: calc(60ms * var(--tween) / var(--speed));
+
+  transition:
+    opacity calc(50ms * var(--tween) / var(--speed)) ease var(--delay),
+    transform calc(var(--tp-pop-x-ms) / var(--speed)) var(--tp-pop-x) var(--delay),
+    scale calc(var(--tp-pop-y-ms) / var(--speed)) var(--tp-pop-y) var(--delay);
+
+  &[data-closing] {
+    transition:
+      opacity calc(100ms * var(--tween) / var(--speed)) ease calc(100ms * var(--tween) / var(--speed)),
+      transform calc(var(--tp-pop-exit-ms) / var(--speed)) var(--tp-pop-exit),
+      scale calc(var(--tp-pop-exit-ms) / var(--speed)) var(--tp-pop-exit);
+  }
+}
+
+/* bounce: in larghezza una curva back-out che supera bene la misura */
+.tab-pop[data-animation='bounce'] .tab-pop__bar:not([data-closing]) {
+  transition:
+    opacity calc(50ms * var(--tween) / var(--speed)) ease var(--delay),
+    transform calc(450ms * var(--tween) / var(--speed)) cubic-bezier(0.34, 1.8, 0.64, 1) var(--delay),
+    scale calc(var(--tp-pop-y-ms) / var(--speed)) var(--tp-pop-y) var(--delay);
+}
+
+/*
+ * Tab a cascata (--tab-delay dallo style, in secondi): da trasparenti, un po' più piccoli,
+ * più in basso e sfocati. In uscita restano come sono. La pressione usa scale.
+ */
+.tab-pop__bar .tab-fab__tab {
+  --tab-wait: calc(var(--tab-delay, 0s) * var(--tween) / var(--speed));
+
+  transition:
+    color calc(200ms / var(--speed)) ease,
+    opacity calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring) var(--tab-wait),
+    transform calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring) var(--tab-wait),
+    filter calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring) var(--tab-wait),
+    scale calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
+
+  &:active {
+    scale: 0.95;
+  }
+}
+
+@starting-style {
+  .tab-pop__bar .tab-fab__tab {
+    opacity: 0;
+    transform: translateY(6px) scale(0.8);
+    filter: blur(4px);
+  }
+}
+
+/* Movimento ridotto: niente spostamenti né scale animati, restano le dissolvenze */
+.tab-pop[data-motion='reduced'] {
+  & > .goo-drop,
+  & .tab-pop__trigger,
+  & .tab-fab__trigger-icon {
+    transition: none;
+    animation: none;
+  }
+
+  & .tab-pop__bar {
+    transition-property: opacity !important;
+  }
+
+  & .tab-pop__bar .tab-fab__tab {
+    transition-property: color, opacity, filter !important;
+  }
+}
+
+/* animated={false}: i cambi di stato sono istantanei */
+.tab-pop[data-motion='off'] * {
+  transition: none !important;
+  animation: none !important;
+}

@@ -1,17 +1,11 @@
-import { useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import {
-  AnimatePresence,
-  motion,
-  stagger,
-  type Transition,
-  type Variants,
-} from 'motion/react'
-import GooPill from './GooPill'
+import { useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import GooPill, { useExit, usePresence } from './GooPill'
 import { GooFilter } from './goo'
 import { BoundaryContext } from './floating/boundary-context'
 import { resolveDirection, type TabPopPlacement } from './tab-placement'
 import type { TabPopDirection } from './tab-drop'
-import { MotionScope, useGloopMotion, type MotionProps } from './motion'
+import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
+import { useGloopMotion } from './gloop-motion'
 import './theme.css'
 import './TabFab.css'
 import './TabPop.css'
@@ -55,8 +49,6 @@ export type TabPopProps = {
   animation?: TabPopAnimation
 } & MotionProps
 
-const spring: Transition = { type: 'spring', duration: 0.5, bounce: 0.3 }
-
 const TAB_WIDTH = 68
 const ICON_SIZE = 18
 const DEFAULT_TAB_GAP = TAB_WIDTH - ICON_SIZE
@@ -76,74 +68,40 @@ const AWAY: Record<TabPopDirection, { axis: 'x' | 'y'; sign: 1 | -1 }> = {
   right: { axis: 'x', sign: 1 },
 }
 
-const along = (d: TabPopDirection, value: number) => (AWAY[d].axis === 'y' ? { y: value } : { x: value })
+// Spostamento lungo il verso della barra, come valore di translate
+const along = (d: TabPopDirection, value: number) => (AWAY[d].axis === 'y' ? `0px ${value}px` : `${value}px 0px`)
 
-// time: adatta i tempi della cascata alla velocità (stagger è una funzione, m.t non la vede)
-type Time = (seconds: number) => number
-
-function barVariants(animation: TabPopAnimation, d: TabPopDirection, barWidth: number, time: Time): Variants {
-  if (animation === 'pop') return popBarVariants(barWidth, time)
-  if (animation === 'bounce') return bounceBarVariants(barWidth, time)
-  return slideBarVariants(d, time)
-}
-
-function dripVariants(animation: TabPopAnimation, d: TabPopDirection, attached: boolean): Variants {
-  // bounce: la goccia fa lo stesso percorso di pop
-  return animation === 'slide' ? slideDripVariants(d, attached) : popDripVariants(d, attached)
-}
+// Spostamento della barra da nascosta, per asse (si somma alla centratura in TabPop.css)
+const tuck = (d: TabPopDirection, value: number) => ({
+  '--bar-tuck-x': `${AWAY[d].axis === 'x' ? value : 0}px`,
+  '--bar-tuck-y': `${AWAY[d].axis === 'y' ? value : 0}px`,
+})
 
 /*
+ * Le tre aperture sono in TabPop.css (data-animation sulla radice); qui restano le misure
+ * che dipendono da lato, larghezza e attached, passate come variabili CSS.
+ *
  * slide. La barra esce dal "+" come una goccia: parte stretta e schiacciata contro il
  * trigger (attaccata a lui grazie al filtro goo), si allontana allargandosi e si stacca.
  * I tab entrano a cascata. In chiusura viene risucchiata, più in fretta.
+ *
+ * pop. La barra non si sposta: nasce già al suo posto, grande come il "+" (un cerchio),
+ * e si apre dal centro verso i lati come un popup, superando di poco la misura e
+ * tornando indietro (rimbalzo). I tab entrano a cascata dal centro.
+ * In chiusura si richiude verso il centro, senza rimbalzo.
+ *
+ * bounce. Si apre come pop, solo in larghezza, con una curva back-out più marcata del
+ * solito (1.8 invece di 1.56): parte decisa, supera bene la sua misura e ci torna.
  */
-function slideBarVariants(d: TabPopDirection, time: Time): Variants {
-  // Da nascosta sta 52px più vicina al "+"
-  const tucked = along(d, -AWAY[d].sign * 52)
-  return {
-    hidden: { opacity: 0, scaleX: 0.25, scaleY: 0.6, ...tucked },
-    visible: {
-      opacity: 1,
-      scaleX: 1,
-      scaleY: 1,
-      ...along(d, 0),
-      transition: {
-        ...spring,
-        opacity: { duration: 0.1 },
-        delayChildren: stagger(time(0.04), { startDelay: time(0.06) }),
-      },
-    },
-    exit: {
-      opacity: 0,
-      scaleX: 0.25,
-      scaleY: 0.6,
-      ...tucked,
-      transition: {
-        type: 'spring',
-        stiffness: 520,
-        damping: 40,
-        opacity: { duration: 0.12, delay: 0.08 },
-      },
-    },
-  }
-}
-
-/*
- * slide. Il "collo" tra trigger e barra: va verso di lei, poi si assottiglia e si stacca.
- * attached: si ferma a metà dei 16px di distacco, abbastanza larga da toccare entrambi
- * (24 = centro della goccia a 8px dal "+"; scala 0.7 = 22px, sborda ~3px per lato)
- */
-function slideDripVariants(d: TabPopDirection, attached: boolean): Variants {
-  const { axis, sign } = AWAY[d]
-  const path = attached ? [0, sign * 28, sign * 24] : [0, sign * 28, sign * 44]
-  return {
-    closed: { x: 0, y: 0, scale: 0.6, transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1] } },
-    open: {
-      ...(axis === 'y' ? { y: path } : { x: path }),
-      scale: attached ? [0.6, 1, 0.7] : [0.6, 1, 0.2],
-      transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
-    },
-  }
+function barVars(animation: TabPopAnimation, d: TabPopDirection, barWidth: number) {
+  // pop e bounce: da chiusa è larga quanto il "+"
+  const pill = Math.min(1, TRIGGER_SIZE / barWidth)
+  return (
+    animation === 'slide'
+      ? // Da nascosta sta 52px più vicina al "+"
+        { ...tuck(d, -AWAY[d].sign * 52), '--bar-sx': 0.25, '--bar-sy': 0.6 }
+      : { ...tuck(d, 0), '--bar-sx': pill, '--bar-sy': 0.7 }
+  ) as CSSProperties
 }
 
 // pop. La barra parte mentre la goccia è ancora in viaggio (la sua curva copre quasi tutto il
@@ -151,93 +109,29 @@ function slideDripVariants(d: TabPopDirection, attached: boolean): Variants {
 // in un unico movimento, senza pause tra goccia e barra
 const POP_DELAY = 0.06
 
-/*
- * pop. La barra non si sposta: nasce già al suo posto, grande come il "+" (un cerchio),
- * e si apre dal centro verso i lati come un popup, superando di poco la misura e
- * tornando indietro (rimbalzo). I tab entrano a cascata dal centro.
- * In chiusura si richiude verso il centro, senza rimbalzo.
- */
-function popBarVariants(barWidth: number, time: Time): Variants {
-  // Da chiusa è larga quanto il "+"
-  const pill = Math.min(1, TRIGGER_SIZE / barWidth)
-  return {
-    hidden: { opacity: 0, scaleX: pill, scaleY: 0.7 },
-    visible: {
-      opacity: 1,
-      scaleX: 1,
-      scaleY: 1,
-      transition: {
-        scaleX: { type: 'spring', duration: 0.55, bounce: 0.45, delay: POP_DELAY },
-        scaleY: { type: 'spring', duration: 0.45, bounce: 0.25, delay: POP_DELAY },
-        opacity: { duration: 0.05, delay: POP_DELAY },
-        delayChildren: stagger(time(0.04), { startDelay: time(POP_DELAY + 0.08), from: 'center' }),
-      },
-    },
-    exit: {
-      opacity: 0,
-      scaleX: pill,
-      scaleY: 0.7,
-      transition: {
-        type: 'spring',
-        stiffness: 600,
-        damping: 45,
-        opacity: { duration: 0.1, delay: 0.1 },
-      },
-    },
-  }
+// Ritardo del tab i nella cascata, in secondi: slide dal primo, pop e bounce dal centro
+function tabDelay(animation: TabPopAnimation, i: number, count: number) {
+  if (animation === 'slide') return 0.06 + i * 0.04
+  return POP_DELAY + 0.08 + Math.abs(i - (count - 1) / 2) * 0.04
 }
 
 /*
- * bounce. Si apre come pop, solo in larghezza, con una curva back-out più marcata del
- * solito (1.8 invece di 1.56): parte decisa, supera bene la sua misura e ci torna.
- * In altezza e in posizione non si muove.
+ * Il "collo" tra trigger e barra: va verso di lei, poi si assottiglia e si stacca.
+ * attached: si ferma a metà dei 16px di distacco, abbastanza larga da toccare entrambi
+ * (24 = centro della goccia a 8px dal "+"; scala 0.7 = 22px, sborda ~3px per lato).
+ * pop e bounce: parte per primo, più in fretta che in slide, e si gonfia mentre
+ * attraversa lo spazio, così si vede che lega la "×" alla barra; staccata finisce
+ * dentro la barra, assorbita. In chiusura aspetta che la barra si richiuda.
  */
-function bounceBarVariants(barWidth: number, time: Time): Variants {
-  const pill = Math.min(1, TRIGGER_SIZE / barWidth)
+function dripVars(animation: TabPopAnimation, d: TabPopDirection, attached: boolean) {
+  const { sign } = AWAY[d]
+  const slide = animation === 'slide'
   return {
-    hidden: { opacity: 0, scaleX: pill, scaleY: 0.7 },
-    visible: {
-      opacity: 1,
-      scaleX: 1,
-      scaleY: 1,
-      transition: {
-        scaleX: { duration: 0.45, delay: POP_DELAY, ease: [0.34, 1.8, 0.64, 1] },
-        scaleY: { type: 'spring', duration: 0.45, bounce: 0.25, delay: POP_DELAY },
-        opacity: { duration: 0.05, delay: POP_DELAY },
-        delayChildren: stagger(time(0.04), { startDelay: time(POP_DELAY + 0.08), from: 'center' }),
-      },
-    },
-    exit: {
-      opacity: 0,
-      scaleX: pill,
-      scaleY: 0.7,
-      transition: {
-        type: 'spring',
-        stiffness: 600,
-        damping: 45,
-        opacity: { duration: 0.1, delay: 0.1 },
-      },
-    },
-  }
-}
-
-/*
- * pop. Il "collo" parte per primo, più in fretta che in slide, e si gonfia mentre
- * attraversa lo spazio, così si vede che lega la "×" alla barra.
- * attached: si ferma a metà del distacco come in slide; staccata: finisce dentro la barra, assorbita.
- * In chiusura aspetta che la barra si richiuda, poi torna nella "×".
- */
-function popDripVariants(d: TabPopDirection, attached: boolean): Variants {
-  const { axis, sign } = AWAY[d]
-  const path = attached ? [0, sign * 30, sign * 24] : [0, sign * 30, sign * 44]
-  return {
-    closed: { x: 0, y: 0, scale: 0.6, transition: { duration: 0.25, delay: 0.1, ease: [0.23, 1, 0.32, 1] } },
-    open: {
-      ...(axis === 'y' ? { y: path } : { x: path }),
-      scale: attached ? [0.6, 1.15, 0.7] : [0.6, 1.15, 0.2],
-      transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1] },
-    },
-  }
+    '--drip-mid': along(d, sign * (slide ? 28 : 30)),
+    '--drip-end': along(d, sign * (attached ? 24 : 44)),
+    '--drip-mid-s': slide ? 1 : 1.15,
+    '--drip-end-s': attached ? 0.7 : 0.2,
+  } as CSSProperties
 }
 
 // La goccia parte dal bordo del "+" rivolto verso la barra
@@ -249,17 +143,17 @@ const DRIP_START: Record<TabPopDirection, { left: number; top: number }> = {
   right: { left: TRIGGER_SIZE - DRIP_SIZE, top: DRIP_MID },
 }
 
-// Centrata sul "+" sull'altro asse, ancorata dal lato del "+": cresce da lì
-const BAR_STYLE: Record<TabPopDirection, object> = {
-  top: { x: '-50%', originX: 0.5, originY: 1 },
-  bottom: { x: '-50%', originX: 0.5, originY: 0 },
-  left: { y: '-50%', originX: 1, originY: 0.5 },
-  right: { y: '-50%', originX: 0, originY: 0.5 },
+// Ancorata dal lato del "+": cresce da lì (la centratura sull'altro asse è in TabPop.css)
+const BAR_ORIGIN: Record<TabPopDirection, string> = {
+  top: '50% 100%',
+  bottom: '50% 0%',
+  left: '100% 50%',
+  right: '0% 50%',
 }
 
 // pop e bounce: si apre sempre dal suo centro, anche di fianco al "+"
-const barStyle = (animation: TabPopAnimation, d: TabPopDirection) =>
-  animation === 'slide' ? BAR_STYLE[d] : { ...BAR_STYLE[d], originX: 0.5 }
+const barOrigin = (animation: TabPopAnimation, d: TabPopDirection) =>
+  animation === 'slide' ? BAR_ORIGIN[d] : BAR_ORIGIN[d].replace(/^\S+/, '50%')
 
 // Distanza tra "+" e barra (vedi TabPop.css) e margine per goo, ombra e rimbalzo di pop/bounce
 const BAR_GAP = 16
@@ -290,11 +184,10 @@ function filterRegion(d: TabPopDirection, barWidth: number) {
   }
 }
 
-const tabVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.8, y: 6, filter: 'blur(4px)' },
-  visible: { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', transition: spring },
-}
-
+/*
+ * Animata solo in CSS (TabPop.css): goccia, barra e tab in cascata. La barra resta
+ * montata finché non è finita la sua uscita (usePresence/useExit).
+ */
 function TabPop({
   icon,
   label,
@@ -307,12 +200,12 @@ function TabPop({
   ...motionProps
 }: TabPopProps) {
   const m = useGloopMotion(motionProps)
-  const staggerTime = (seconds: number) => m.t({ delay: seconds }).delay ?? 0
   const [open, setOpen] = useState(false)
   // Nessun tab selezionato all'apertura
   const [active, setActive] = useState<number | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
   // direction="auto": il lato si sceglie all'apertura, misurando lo spazio attorno al "+"
   const [autoSide, setAutoSide] = useState<TabPopDirection>('top')
   const direction = placement === 'auto' ? autoSide : placement
@@ -334,6 +227,11 @@ function TabPop({
   }
   const barId = useId()
   const filterId = useId()
+
+  // La barra resta durante l'uscita; la pillola si dissolve se la scelta si azzera
+  const bar = usePresence(open ? true : null)
+  useExit(barRef, bar.closing, bar.exited)
+  const pill = usePresence(active)
 
   useEffect(() => {
     if (!open) return
@@ -357,79 +255,91 @@ function TabPop({
   }, [open])
 
   return (
-    <MotionScope m={m} props={motionProps} transition={spring}>
+    <GloopMotionProvider {...pickMotionProps(motionProps)}>
       {/* Filtro goo su trigger, goccia e barra: si fondono come liquido */}
       <div
         {...m.rootProps}
         ref={rootRef}
         className="tab-pop"
         data-direction={direction}
+        data-animation={animation}
+        data-open={open || undefined}
         style={{ ...m.rootProps.style, filter: `url(#${CSS.escape(filterId)})` }}
       >
         {/* Area ampia: la barra sta fuori dal riquadro del trigger, su qualsiasi lato */}
         <GooFilter id={filterId} region={filterRegion(direction, barWidth)} />
-        <motion.span
+        <span
           className="goo-drop"
           aria-hidden="true"
-          style={{ ...DRIP_START[direction], width: DRIP_SIZE, height: DRIP_SIZE }}
-          variants={m.v(dripVariants(animation, direction, attached))}
-          initial={false}
-          animate={open ? 'open' : 'closed'}
+          style={{
+            ...DRIP_START[direction],
+            width: DRIP_SIZE,
+            height: DRIP_SIZE,
+            ...dripVars(animation, direction, attached),
+          }}
         />
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              id={barId}
-              role="tablist"
-              className="tab-pop__bar"
-              style={{ ...barStyle(animation, direction), paddingInline: barPadding }}
-              variants={m.v(barVariants(animation, direction, barWidth, staggerTime))}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              {/* Contenitore spostato di pillOffset: la pillola si allinea alle tab, oltre il margine della barra */}
-              <span className="tab-pop__pill" style={{ left: pillOffset, right: -pillOffset }}>
-                <AnimatePresence initial={false}>
-                  {active !== null && <GooPill index={active} step={tabWidth} length={pillLength} />}
-                </AnimatePresence>
-              </span>
-              {tabs.map((tab, i) => (
-                <motion.button
-                  key={tab.label}
-                  type="button"
-                  role="tab"
-                  className="tab-fab__tab"
-                  aria-selected={active === i}
-                  aria-label={iconOnly ? tab.label : undefined}
-                  style={tabWidth === TAB_WIDTH ? undefined : { width: tabWidth }}
-                  variants={m.v(tabVariants)}
-                  whileTap={{ scale: 0.95 }}
-                  // Scelta fatta: si chiude subito, con la sua animazione di uscita
-                  onClick={() => {
-                    setActive(i)
-                    setOpen(false)
-                    triggerRef.current?.focus()
-                  }}
-                >
-                  <span className="tab-fab__tab-icon" aria-hidden="true">
-                    {tab.icon}
-                  </span>
-                  {!iconOnly && <span className="tab-fab__tab-label">{tab.label}</span>}
-                </motion.button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {bar.value && (
+          <div
+            ref={barRef}
+            id={barId}
+            role="tablist"
+            className="tab-pop__bar"
+            data-closing={bar.closing || undefined}
+            style={{
+              transformOrigin: barOrigin(animation, direction),
+              paddingInline: barPadding,
+              ...barVars(animation, direction, barWidth),
+            }}
+          >
+            {/* Contenitore spostato di pillOffset: la pillola si allinea alle tab, oltre il margine della barra */}
+            <span className="tab-pop__pill" style={{ left: pillOffset, right: -pillOffset }}>
+              {pill.value !== null && (
+                <GooPill
+                  index={pill.value}
+                  step={tabWidth}
+                  length={pillLength}
+                  closing={pill.closing}
+                  onExited={pill.exited}
+                />
+              )}
+            </span>
+            {tabs.map((tab, i) => (
+              <button
+                key={tab.label}
+                type="button"
+                role="tab"
+                className="tab-fab__tab"
+                aria-selected={active === i}
+                aria-label={iconOnly ? tab.label : undefined}
+                style={
+                  {
+                    ...(tabWidth === TAB_WIDTH ? undefined : { width: tabWidth }),
+                    '--tab-delay': `${tabDelay(animation, i, tabs.length)}s`,
+                  } as CSSProperties
+                }
+                // Scelta fatta: si chiude subito, con la sua animazione di uscita
+                onClick={() => {
+                  setActive(i)
+                  setOpen(false)
+                  triggerRef.current?.focus()
+                }}
+              >
+                <span className="tab-fab__tab-icon" aria-hidden="true">
+                  {tab.icon}
+                </span>
+                {!iconOnly && <span className="tab-fab__tab-label">{tab.label}</span>}
+              </button>
+            ))}
+          </div>
+        )}
 
-        <motion.button
+        <button
           ref={triggerRef}
           type="button"
           className="tab-pop__trigger"
           aria-label={label}
           aria-expanded={open}
           aria-controls={open ? barId : undefined}
-          whileTap={{ scale: 0.92 }}
           onClick={() => {
             if (!open) {
               setActive(null)
@@ -439,16 +349,12 @@ function TabPop({
           }}
         >
           {/* Il "+" ruota e diventa una "×" */}
-          <motion.span
-            className="tab-fab__trigger-icon"
-            aria-hidden="true"
-            animate={{ rotate: open ? 45 : 0 }}
-          >
+          <span className="tab-fab__trigger-icon" aria-hidden="true">
             {icon}
-          </motion.span>
-        </motion.button>
+          </span>
+        </button>
       </div>
-    </MotionScope>
+    </GloopMotionProvider>
   )
 }
 
