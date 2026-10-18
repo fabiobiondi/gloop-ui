@@ -115,6 +115,10 @@ export const guides: Guide[] = [
         <p>
           <code>react</code> and <code>react-dom</code> 19 are peer dependencies. No animation library needed: everything is animated with CSS.
         </p>
+        <p>
+          It needs browsers with CSS <code>linear()</code>, <code>@property</code> and <code>@starting-style</code>:
+          Chrome 117+, Safari 17.5+, Firefox 129+. Older browsers skip the entrance animations.
+        </p>
         <CodeBlock code={INSTALL} lang="bash" />
 
         <h2>Import the styles</h2>
@@ -146,7 +150,7 @@ export const guides: Guide[] = [
   {
     id: 'theming',
     name: 'Theming',
-    description: 'Three CSS variables color every component. Try them in the Theme panel on the left.',
+    description: 'Three CSS variables color every component. Try them in the Theme panel in the sidebar.',
     content: (
       <div className="pg-prose">
         <h2>The variables</h2>
@@ -201,7 +205,7 @@ export const guides: Guide[] = [
             <tr>
               <td><code>speed</code></td>
               <td><code>1</code></td>
-              <td>Speed multiplier: <code>2</code> is twice as fast, <code>0.5</code> half as fast. Springs, tweens and CSS transitions all scale, and springs keep their bounce.</td>
+              <td>Speed multiplier: <code>2</code> is twice as fast, <code>0.5</code> half as fast. Every transition and animation scales, and the bouncy presets keep their bounce.</td>
             </tr>
             <tr>
               <td><code>motion</code></td>

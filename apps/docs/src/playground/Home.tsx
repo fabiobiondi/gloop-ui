@@ -64,7 +64,7 @@ function SplatLogo() {
 const FEATURES = [
   {
     title: 'Liquid by design',
-    text: 'Every shape is made of blobs that merge and split, driven by an SVG goo filter and springs.',
+    text: 'Every shape is made of blobs that merge and split, animated with plain CSS: no animation library.',
   },
   {
     title: 'Real components',
