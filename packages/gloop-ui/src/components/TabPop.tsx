@@ -155,38 +155,38 @@ const BAR_ORIGIN: Record<TabPopDirection, string> = {
 const barOrigin = (animation: TabPopAnimation, d: TabPopDirection) =>
   animation === 'slide' ? BAR_ORIGIN[d] : BAR_ORIGIN[d].replace(/^\S+/, '50%')
 
-// Distanza tra "+" e barra (vedi TabPop.css) e margine per goo, ombra e rimbalzo di pop/bounce
+// Distanza tra "+" e barra (vedi TabPop.css)
 const BAR_GAP = 16
-const REGION_MARGIN = 40
+// Il filtro goo entra nella barra di tanto: i ponti liquidi stanno sempre prima
+const NECK_DEPTH = 24
 
 /*
- * Area del filtro goo, in px dall'angolo del "+": solo il lato in cui si apre la barra.
- * Stretta di proposito: su Safari/iOS un'area molto più grande del necessario
- * (dipende anche dalla posizione nello schermo) fa sparire tutto il componente
+ * Area del filtro goo, in px dall'angolo del "+": solo il collo, cioè dal centro del "+"
+ * fino a poco dentro la barra, largo quanto basta per i ponti liquidi ai lati.
+ * Il resto di barra e trigger è fuori dal filtro (sono gli elementi veri, sopra): il
+ * filtro si ricalcola in software a ogni frame su Safari/iOS e il costo va con l'area.
+ * Stretta anche perché su Safari/iOS un'area molto più grande del necessario fa
+ * sparire tutto il componente
  */
-function filterRegion(d: TabPopDirection, barWidth: number) {
-  const m = REGION_MARGIN + barWidth * 0.1
-  // Barra + distacco + "+", sull'asse in cui si allontana
-  const reach = TRIGGER_SIZE + BAR_GAP + barWidth
-  if (d === 'left' || d === 'right')
-    return {
-      x: d === 'left' ? -BAR_GAP - barWidth - m : -m,
-      y: -REGION_MARGIN,
-      width: reach + 2 * m,
-      height: TRIGGER_SIZE + 2 * REGION_MARGIN,
-    }
-  const height = 2 * TRIGGER_SIZE + BAR_GAP
-  return {
-    x: TRIGGER_SIZE / 2 - barWidth / 2 - m,
-    y: d === 'top' ? -TRIGGER_SIZE - BAR_GAP - REGION_MARGIN : -REGION_MARGIN,
-    width: barWidth + 2 * m,
-    height: height + 2 * REGION_MARGIN,
-  }
+function neckRegion(d: TabPopDirection, barWidth: number) {
+  const mid = TRIGGER_SIZE / 2
+  const half = Math.max(mid + 40, barWidth * 0.15 + 30)
+  const reach = mid + BAR_GAP + NECK_DEPTH
+  const along = { start: AWAY[d].sign < 0 ? mid - reach : mid, size: reach }
+  const across = { start: mid - half, size: 2 * half }
+  return AWAY[d].axis === 'y'
+    ? { x: across.start, y: along.start, width: across.size, height: along.size }
+    : { x: along.start, y: across.start, width: along.size, height: across.size }
 }
 
 /*
  * Animata solo in CSS (TabPop.css): goccia, barra e tab in cascata. La barra resta
  * montata finché non è finita la sua uscita (usePresence/useExit).
+ *
+ * Due livelli. Sotto, il goo: sagome piene di trigger, goccia e barra (senza contenuto),
+ * con le stesse animazioni, filtrate solo nell'area del collo (neckRegion). Sopra,
+ * trigger e barra veri, fuori dal filtro: animano solo transform e opacity, sulla GPU.
+ * Le sagome coincidono con gli elementi veri, quindi del goo si vedono solo i ponti.
  */
 function TabPop({
   icon,
@@ -232,6 +232,12 @@ function TabPop({
   const bar = usePresence(open ? true : null)
   useExit(barRef, bar.closing, bar.exited)
   const pill = usePresence(active)
+  // Stesso stile per la barra vera e la sua sagoma nel goo: si muovono insieme
+  const barStyle: CSSProperties = {
+    transformOrigin: barOrigin(animation, direction),
+    paddingInline: barPadding,
+    ...barVars(animation, direction, barWidth),
+  }
 
   useEffect(() => {
     if (!open) return
@@ -256,7 +262,6 @@ function TabPop({
 
   return (
     <GloopMotionProvider {...pickMotionProps(motionProps)}>
-      {/* Filtro goo su trigger, goccia e barra: si fondono come liquido */}
       <div
         {...m.rootProps}
         ref={rootRef}
@@ -264,20 +269,28 @@ function TabPop({
         data-direction={direction}
         data-animation={animation}
         data-open={open || undefined}
-        style={{ ...m.rootProps.style, filter: `url(#${CSS.escape(filterId)})` }}
       >
-        {/* Area ampia: la barra sta fuori dal riquadro del trigger, su qualsiasi lato */}
-        <GooFilter id={filterId} region={filterRegion(direction, barWidth)} />
-        <span
-          className="goo-drop"
-          aria-hidden="true"
-          style={{
-            ...DRIP_START[direction],
-            width: DRIP_SIZE,
-            height: DRIP_SIZE,
-            ...dripVars(animation, direction, attached),
-          }}
-        />
+        {/* Goo: sagome di trigger, goccia e barra, fuse come liquido solo nel collo */}
+        <div className="tab-pop__goo" aria-hidden="true" style={{ filter: `url(#${CSS.escape(filterId)})` }}>
+          <GooFilter id={filterId} region={neckRegion(direction, barWidth)} shadow={false} />
+          <span className="tab-pop__goo-trigger" />
+          <span
+            className="goo-drop"
+            style={{
+              ...DRIP_START[direction],
+              width: DRIP_SIZE,
+              height: DRIP_SIZE,
+              ...dripVars(animation, direction, attached),
+            }}
+          />
+          {bar.value && (
+            <span
+              className="tab-pop__bar tab-pop__bar--goo"
+              data-closing={bar.closing || undefined}
+              style={{ ...barStyle, width: barWidth }}
+            />
+          )}
+        </div>
         {bar.value && (
           <div
             ref={barRef}
@@ -285,11 +298,7 @@ function TabPop({
             role="tablist"
             className="tab-pop__bar"
             data-closing={bar.closing || undefined}
-            style={{
-              transformOrigin: barOrigin(animation, direction),
-              paddingInline: barPadding,
-              ...barVars(animation, direction, barWidth),
-            }}
+            style={barStyle}
           >
             {/* Contenitore spostato di pillOffset: la pillola si allinea alle tab, oltre il margine della barra */}
             <span className="tab-pop__pill" style={{ left: pillOffset, right: -pillOffset }}>

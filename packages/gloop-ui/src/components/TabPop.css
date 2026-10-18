@@ -9,7 +9,41 @@
 .tab-pop__bar {
   color: var(--ui-fg);
   background: var(--ui-bg);
-  /* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+}
+
+/* Trigger e barra veri sono fuori dal filtro goo: l'ombra è un box-shadow normale */
+.tab-pop__trigger,
+.tab-pop__bar:not(.tab-pop__bar--goo) {
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.25);
+}
+
+/*
+ * Livello goo, sotto trigger e barra veri: grande quanto il trigger, le sagome escono
+ * dal riquadro come gli elementi veri (stesse regole di posizione e animazione)
+ */
+.tab-pop__goo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tab-pop__goo-trigger {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ui-bg);
+  transition: scale calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
+}
+
+/* Segue il trigger quando viene premuto, o sbucherebbe da sotto */
+.tab-pop:has(.tab-pop__trigger:active) .tab-pop__goo-trigger {
+  scale: 0.92;
+}
+
+/* Sagoma della barra: senza tab, alta e larga come la barra vera */
+.tab-pop__bar--goo {
+  box-sizing: border-box;
+  height: 52px;
 }
 
 .tab-pop__trigger {
@@ -125,7 +159,7 @@
  * (0 → --drip-mid → --drip-end, con la scala) e resta alla fine; chiudendo torna indietro
  * con una transizione che parte da dove si trova.
  */
-.tab-pop > .goo-drop {
+.tab-pop .goo-drop {
   --drip-ms: 500ms;
   --drip-back-delay: 0ms;
 
@@ -139,12 +173,12 @@
 }
 
 /* pop e bounce: parte prima e più in fretta; in chiusura aspetta che la barra si richiuda */
-.tab-pop:not([data-animation='slide']) > .goo-drop {
+.tab-pop:not([data-animation='slide']) .goo-drop {
   --drip-ms: 300ms;
   --drip-back-delay: 100ms;
 }
 
-.tab-pop[data-open] > .goo-drop {
+.tab-pop[data-open] .goo-drop {
   translate: var(--drip-end);
   scale: var(--drip-end-s);
   transition: none;
@@ -269,7 +303,8 @@
 
 /* Movimento ridotto: niente spostamenti né scale animati, restano le dissolvenze */
 .tab-pop[data-motion='reduced'] {
-  & > .goo-drop,
+  & .goo-drop,
+  & .tab-pop__goo-trigger,
   & .tab-pop__trigger,
   & .tab-fab__trigger-icon {
     transition: none;
