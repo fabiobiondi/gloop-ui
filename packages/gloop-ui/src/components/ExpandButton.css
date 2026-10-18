@@ -139,10 +139,8 @@
   &[data-state='closing'] {
     position: absolute;
     opacity: 0;
-    filter: blur(4px);
     transition:
-      opacity calc(100ms / var(--speed)) linear,
-      filter calc(100ms / var(--speed)) linear;
+      opacity calc(100ms / var(--speed)) linear;
 
     & .expand-button__char {
       animation: none;
@@ -173,7 +171,6 @@
   from {
     opacity: 0;
     translate: 0 6px;
-    filter: blur(4px);
   }
 }
 
@@ -279,7 +276,6 @@
 @keyframes expand-button-char-fade {
   from {
     opacity: 0;
-    filter: blur(4px);
   }
 }
 

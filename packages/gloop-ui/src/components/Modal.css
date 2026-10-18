@@ -507,7 +507,6 @@
   from {
     opacity: 0;
     translate: 0 6px;
-    filter: blur(4px);
   }
 }
 
@@ -593,7 +592,6 @@
 @keyframes modal-reveal-fade {
   from {
     opacity: 0;
-    filter: blur(4px);
   }
 }
 

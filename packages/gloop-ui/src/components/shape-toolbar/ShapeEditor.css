@@ -224,7 +224,6 @@
   from {
     opacity: 0;
     translate: 0 calc(var(--dir, 1) * 10px);
-    filter: blur(2px);
   }
 }
 
@@ -232,7 +231,6 @@
   to {
     opacity: 0;
     translate: 0 calc(var(--dir, 1) * -10px);
-    filter: blur(2px);
   }
 }
 
@@ -380,8 +378,7 @@
   transition:
     opacity calc(var(--st-spring-ms) / var(--ui-motion-speed, 1)) var(--st-spring),
     translate calc(var(--st-spring-ms) / var(--ui-motion-speed, 1)) var(--st-spring),
-    scale calc(var(--st-spring-ms) / var(--ui-motion-speed, 1)) var(--st-spring),
-    filter calc(var(--st-spring-ms) / var(--ui-motion-speed, 1)) var(--st-spring);
+    scale calc(var(--st-spring-ms) / var(--ui-motion-speed, 1)) var(--st-spring);
 
   &[data-placement='bottom'] {
     top: calc(100% + 8px);
@@ -408,7 +405,6 @@
     opacity: 0;
     translate: var(--st-x) var(--st-from-y);
     scale: 0.96;
-    filter: blur(2px);
     transition-duration: calc(120ms / var(--ui-motion-speed, 1));
     transition-timing-function: ease-out;
   }
@@ -420,7 +416,6 @@
     opacity: 0;
     translate: var(--st-x) var(--st-from-y);
     scale: 0.96;
-    filter: blur(2px);
   }
 }
 
@@ -662,17 +657,14 @@
   transition:
     font-size calc(200ms / var(--ui-motion-speed, 1)) ease-out,
     opacity calc(300ms / var(--ui-motion-speed, 1)) cubic-bezier(0.25, 0.1, 0.35, 1),
-    filter calc(300ms / var(--ui-motion-speed, 1)) cubic-bezier(0.25, 0.1, 0.35, 1),
     scale calc(var(--st-tap-ms) / var(--ui-motion-speed, 1)) var(--st-tap);
 
   &[data-closing] {
     opacity: 0;
     scale: 0.9;
-    filter: blur(4px);
     transition:
       font-size calc(200ms / var(--ui-motion-speed, 1)) ease-out,
       opacity calc(120ms / var(--ui-motion-speed, 1)) ease-in-out,
-      filter calc(120ms / var(--ui-motion-speed, 1)) ease-in-out,
       scale calc(120ms / var(--ui-motion-speed, 1)) ease-in-out;
   }
 }
@@ -681,7 +673,6 @@
   .st-shape__text {
     opacity: 0;
     scale: 0.9;
-    filter: blur(4px);
   }
 }
 
@@ -740,8 +731,7 @@
     opacity: 0;
     translate: 0 8px;
     scale: 0.96;
-    filter: blur(4px);
-    transition-property: opacity, translate, scale, filter;
+    transition-property: opacity, translate, scale;
     transition-duration: calc(150ms / var(--ui-motion-speed, 1));
     transition-timing-function: ease-out;
   }
@@ -773,7 +763,6 @@
   from {
     opacity: 0;
     scale: 0.6;
-    filter: blur(4px);
   }
 }
 
@@ -858,12 +847,11 @@
 
 /* ---------- Movimento ridotto e animazioni spente ---------- */
 
-/* Movimento ridotto: niente spostamenti, scale, rotazioni né sfocature; restano le dissolvenze */
+/* Movimento ridotto: niente spostamenti, scale né rotazioni; restano le dissolvenze */
 .st-canvas[data-motion='reduced'] {
   & :is(.st-popover, .st-bar-reveal, .st-hint, .st-shape__text, .st-frame) {
     translate: none;
     scale: none;
-    filter: none;
     transition: opacity calc(150ms / var(--ui-motion-speed, 1)) ease-out;
   }
 
@@ -911,7 +899,6 @@
   .st-canvas[data-motion='reduced'] :is(.st-popover, .st-bar-reveal, .st-hint, .st-shape__text, .st-frame) {
     translate: none;
     scale: none;
-    filter: none;
   }
 
   .st-canvas[data-motion='reduced'] .st-popover[data-align='center'] {

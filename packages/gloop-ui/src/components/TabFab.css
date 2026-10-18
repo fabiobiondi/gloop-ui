@@ -412,8 +412,7 @@
 .tab-fab__list-wrap {
   transition:
     opacity calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
-    translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph),
-    filter calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
+    translate calc(var(--tf-morph-ms) / var(--speed)) var(--tf-morph);
 
   &[data-closing] {
     position: absolute;
@@ -422,7 +421,6 @@
     right: 6px;
     opacity: 0;
     translate: var(--page-out, 0 0);
-    filter: blur(4px);
     transition-duration: calc(120ms * var(--tween) / var(--speed));
     transition-timing-function: ease-out;
   }
@@ -432,7 +430,6 @@
   .tab-fab__list-wrap:not([data-initial]) {
     opacity: 0;
     translate: var(--page-in, 0 0);
-    filter: blur(4px);
   }
 }
 
@@ -456,7 +453,7 @@
   }
 
   & .tab-fab__list-wrap {
-    transition-property: opacity, filter;
+    transition-property: opacity;
   }
 }
 

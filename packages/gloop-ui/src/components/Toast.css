@@ -349,7 +349,6 @@
 @keyframes toast-reveal {
   from {
     opacity: 0;
-    filter: blur(4px);
   }
 }
 
@@ -407,7 +406,6 @@
 @keyframes toast-conceal {
   to {
     opacity: 0;
-    filter: blur(4px);
   }
 }
 

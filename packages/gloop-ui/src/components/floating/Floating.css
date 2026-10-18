@@ -179,10 +179,8 @@
 
   & .floating__content {
     opacity: 0;
-    filter: blur(4px);
     transition:
-      opacity calc(80ms / var(--speed)) linear,
-      filter calc(80ms / var(--speed)) linear;
+      opacity calc(80ms / var(--speed)) linear;
   }
 
   & .floating__arrow {
@@ -212,7 +210,6 @@
 @keyframes floating-reveal {
   from {
     opacity: 0;
-    filter: blur(4px);
   }
 }
 
