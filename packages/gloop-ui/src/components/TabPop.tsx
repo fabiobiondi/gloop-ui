@@ -261,6 +261,35 @@ const BAR_STYLE: Record<TabPopDirection, object> = {
 const barStyle = (animation: TabPopAnimation, d: TabPopDirection) =>
   animation === 'slide' ? BAR_STYLE[d] : { ...BAR_STYLE[d], originX: 0.5 }
 
+// Distanza tra "+" e barra (vedi TabPop.css) e margine per goo, ombra e rimbalzo di pop/bounce
+const BAR_GAP = 16
+const REGION_MARGIN = 40
+
+/*
+ * Area del filtro goo, in px dall'angolo del "+": solo il lato in cui si apre la barra.
+ * Stretta di proposito: su Safari/iOS un'area molto più grande del necessario
+ * (dipende anche dalla posizione nello schermo) fa sparire tutto il componente
+ */
+function filterRegion(d: TabPopDirection, barWidth: number) {
+  const m = REGION_MARGIN + barWidth * 0.1
+  // Barra + distacco + "+", sull'asse in cui si allontana
+  const reach = TRIGGER_SIZE + BAR_GAP + barWidth
+  if (d === 'left' || d === 'right')
+    return {
+      x: d === 'left' ? -BAR_GAP - barWidth - m : -m,
+      y: -REGION_MARGIN,
+      width: reach + 2 * m,
+      height: TRIGGER_SIZE + 2 * REGION_MARGIN,
+    }
+  const height = 2 * TRIGGER_SIZE + BAR_GAP
+  return {
+    x: TRIGGER_SIZE / 2 - barWidth / 2 - m,
+    y: d === 'top' ? -TRIGGER_SIZE - BAR_GAP - REGION_MARGIN : -REGION_MARGIN,
+    width: barWidth + 2 * m,
+    height: height + 2 * REGION_MARGIN,
+  }
+}
+
 const tabVariants: Variants = {
   hidden: { opacity: 0, scale: 0.8, y: 6, filter: 'blur(4px)' },
   visible: { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', transition: spring },
@@ -338,15 +367,7 @@ function TabPop({
         style={{ ...m.rootProps.style, filter: `url(#${CSS.escape(filterId)})` }}
       >
         {/* Area ampia: la barra sta fuori dal riquadro del trigger, su qualsiasi lato */}
-        <GooFilter
-          id={filterId}
-          region={{
-            x: -barWidth - 60,
-            y: -160,
-            width: 2 * barWidth + TRIGGER_SIZE + 120,
-            height: 2 * 160 + TRIGGER_SIZE,
-          }}
-        />
+        <GooFilter id={filterId} region={filterRegion(direction, barWidth)} />
         <motion.span
           className="goo-drop"
           aria-hidden="true"

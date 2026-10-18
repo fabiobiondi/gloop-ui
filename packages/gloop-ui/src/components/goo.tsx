@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef } from 'react'
+
 export type GooFilterProps = {
   id: string
   /** Più alto = gocce più "appiccicose" */
@@ -5,6 +7,7 @@ export type GooFilterProps = {
   /**
    * Area del filtro, in px rispetto all'angolo in alto a sinistra dell'elemento.
    * Serve quando i figli escono dall'elemento (es. una barra in position: absolute sopra).
+   * Va messo dentro l'elemento filtrato: ne misura il riquadro per convertire l'area in frazioni.
    * Senza, l'area è il riquadro dell'elemento ±50% in larghezza e ±100% in altezza (per l'ombra).
    */
   region?: { x: number; y: number; width: number; height: number }
@@ -22,13 +25,39 @@ export type GooFilterProps = {
  * con la forma (alone attorno ai bordi).
  */
 export function GooFilter({ id, blur = 8, region, shadow = true, color = 'var(--ui-bg)' }: GooFilterProps) {
-  const area = region
-    ? { filterUnits: 'userSpaceOnUse' as const, ...region }
-    : { x: '-50%', y: '-100%', width: '200%', height: '300%' }
+  const filterRef = useRef<SVGFilterElement>(null)
+  const { x, y, width, height } = region ?? {}
+
+  /*
+   * L'area in px diventa una frazione del riquadro dell'elemento filtrato (objectBoundingBox):
+   * Safari/iOS non applica filterUnits="userSpaceOnUse" ai filtri CSS sugli elementi HTML e
+   * li nasconde. Si riscrive a ogni cambio di misura, prima del paint: l'area resta ferma
+   * in px anche quando il riquadro si allarga o si stringe di colpo
+   */
+  useLayoutEffect(() => {
+    const filter = filterRef.current
+    const el = filter?.closest('svg')?.parentElement
+    if (x === undefined || !filter || !el) return
+    const fit = () => {
+      const w = el.offsetWidth || 1
+      const h = el.offsetHeight || 1
+      filter.setAttribute('x', String(x / w))
+      filter.setAttribute('y', String(y! / h))
+      filter.setAttribute('width', String(width! / w))
+      filter.setAttribute('height', String(height! / h))
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [x, y, width, height])
+
+  // Con region gli attributi li scrive l'effetto
+  const area = region ? {} : { x: '-50%', y: '-100%', width: '200%', height: '300%' }
 
   return (
     <svg className="goo-filter" aria-hidden="true" width="0" height="0">
-      <filter id={id} {...area}>
+      <filter ref={filterRef} id={id} {...area}>
         <feGaussianBlur in="SourceGraphic" stdDeviation={blur} result="blur" />
         {/* Soglia a 0.5: la forma fusa non esce mai dal bordo vero degli elementi */}
         <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="goo" />
