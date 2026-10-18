@@ -15,6 +15,7 @@ import { Trigger } from './floating/trigger'
 import { forwardTriggerProps } from './floating/trigger-props'
 import { useFloating } from './floating/useFloating'
 import { useThemeVars } from './floating/useThemeVars'
+import { resolveJelly } from './jelly'
 import { useGloopMotion, type MotionProps } from './motion'
 
 export type TooltipProps = {
@@ -31,6 +32,11 @@ export type TooltipProps = {
   disabled?: boolean
   /** Larghezza massima, in px */
   maxWidth?: number
+  /**
+   * Bolla che trema come gelatina all'apertura, da 0 a 1 (come nel Modal).
+   * true (o solo `jelly`): intensità di default 0.5. Assente o false: nessun rimbalzo.
+   */
+  jelly?: boolean | number
 } & MotionProps
 
 // Il focus apre subito solo se arriva dalla tastiera: il clic del mouse non deve riaprirlo
@@ -57,6 +63,7 @@ function Tooltip(props: TooltipProps) {
     closeDelay = 100,
     disabled = false,
     maxWidth = 240,
+    jelly,
     speed,
     motion,
     animated,
@@ -122,6 +129,7 @@ function Tooltip(props: TooltipProps) {
         themeVars={themeVars}
         m={m}
         motionProps={motionProps}
+        jelly={resolveJelly(jelly)}
         style={{ '--floating-max-width': `${maxWidth}px` } as CSSProperties}
         bubbleProps={{ id, role: 'tooltip' }}
         layerProps={{

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useIsPresent, type Transition } from 'motion/react'
 import ExpandButton from './ExpandButton'
 import { GooFilter } from './goo'
+import { DEFAULT_JELLY, JELLY_X, JELLY_Y, jellySpring } from './jelly'
 import { useThemeVars } from './floating/useThemeVars'
 import { MotionScope, useGloopMotion, type GloopMotion, type MotionProps } from './motion'
 import './theme.css'
@@ -75,16 +76,6 @@ export type ModalProps = {
 } & MotionProps
 
 const drip: Transition = { type: 'spring', stiffness: 300, damping: 18 }
-
-// Molle della gelatina: larghezza più rigida, altezza più morbida, così rimbalzano fuori fase
-// jelly regola lo smorzamento: 0 = smorzamento critico (nessun rimbalzo), 1 = le molle qui sotto
-const JELLY_X = { stiffness: 300, damping: 13, mass: 0.9 }
-const JELLY_Y = { stiffness: 210, damping: 10, mass: 0.9 }
-function jellySpring({ stiffness, damping, mass }: typeof JELLY_X, jelly: number, delay = 0): Transition {
-  const critical = 2 * Math.sqrt(stiffness * mass)
-  const amount = Math.min(1, Math.max(0, jelly))
-  return { type: 'spring', stiffness, mass, delay, damping: critical - amount * (critical - damping) }
-}
 
 // Rigonfiamenti al centro dei lati: quanto escono (px) nei vari momenti, e quando
 const BULGE = [0, 14, -3, 6, 0]
@@ -475,7 +466,7 @@ function Modal({
   footer,
   size = 'md',
   enter = 'swell',
-  jelly = 0.5,
+  jelly = DEFAULT_JELLY,
   closeOnBackdrop = true,
   closeOnEscape = true,
   afterClose,

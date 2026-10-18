@@ -1767,6 +1767,30 @@ handle.close()`,
 </FloatingBoundary>`,
       },
       {
+        title: 'Jelly · off, default (0.5), 1',
+        description: 'jelly makes the bubble wobble when it opens. Just jelly uses the default, 0.5, like the Modal; a number from 0 to 1 sets how much.',
+        preview: (
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Tooltip content="No jelly">
+              <DemoButton>Off</DemoButton>
+            </Tooltip>
+            <Tooltip content="Jelly: the default wobble" jelly>
+              <DemoButton>jelly</DemoButton>
+            </Tooltip>
+            <Tooltip content="Jelly 1: wide bounces" jelly={1}>
+              <DemoButton>jelly={'{1}'}</DemoButton>
+            </Tooltip>
+          </div>
+        ),
+        code: `<Tooltip content="Jelly: the default wobble" jelly>
+  <button>jelly</button>
+</Tooltip>
+
+<Tooltip content="Jelly 1: wide bounces" jelly={1}>
+  <button>jelly={1}</button>
+</Tooltip>`,
+      },
+      {
         title: 'Custom delays',
         preview: (
           <Tooltip content="Instant" delay={0} closeDelay={300}>

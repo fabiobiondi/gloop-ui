@@ -2,6 +2,7 @@ import { useId, type CSSProperties, type HTMLAttributes, type ReactNode, type Re
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, type Transition, type Variants } from 'motion/react'
 import { GooFilter } from '../goo'
+import { JELLY_X, JELLY_Y, jellySpring } from '../jelly'
 import { MotionScope, type GloopMotion, type MotionProps } from '../motion'
 import type { FloatingPosition, FloatingSide } from './position'
 import { ARROW } from './useFloating'
@@ -22,6 +23,8 @@ type FloatingBubbleProps = {
   /** Animazioni risolte dal Tooltip/Popover che usa la bolla */
   m: GloopMotion
   motionProps: MotionProps
+  /** Gelatina all'apertura, da 0 a 1: larghezza e altezza rimbalzano fuori fase. Assente: nessuna */
+  jelly?: number
   children: ReactNode
 }
 
@@ -48,24 +51,29 @@ function drop(pos: FloatingPosition | null) {
   }
 }
 
+type BubbleCustom = { pos: FloatingPosition | null; jelly?: number }
+
 const bubbleVariants: Variants = {
   hidden: { scaleX: 0, scaleY: 0, opacity: 0 },
-  open: (pos: FloatingPosition | null) => {
+  open: ({ pos, jelly }: BubbleCustom) => {
     const d = drop(pos)
     const vertical = isVertical(pos?.placement ?? 'top')
+    // Con jelly: l'asse che parte dal trigger usa la molla più rigida, l'altro la più morbida
+    const along = jelly === undefined ? flow : jellySpring(JELLY_X, jelly)
+    const across = jelly === undefined ? spread : jellySpring(JELLY_Y, jelly, 0.03)
     return {
       // Keyframe esplicito: parte dalla goccia calcolata sulla dimensione reale
       scaleX: [d.scaleX, 1],
       scaleY: [d.scaleY, 1],
       opacity: 1,
       transition: {
-        scaleX: vertical ? spread : flow,
-        scaleY: vertical ? flow : spread,
+        scaleX: vertical ? across : along,
+        scaleY: vertical ? along : across,
         opacity: { duration: 0.08 },
       },
     }
   },
-  exit: (pos: FloatingPosition | null) => ({
+  exit: ({ pos }: BubbleCustom) => ({
     ...drop(pos),
     opacity: 0,
     transition: { ...suck, delay: 0.04, opacity: { duration: 0.1, delay: 0.1 } },
@@ -124,6 +132,7 @@ function FloatingBubble({
   style,
   m,
   motionProps,
+  jelly,
   children,
 }: FloatingBubbleProps) {
   const filterId = useId()
@@ -164,7 +173,7 @@ function FloatingBubble({
               {...(bubbleProps as object)}
               className="floating__bubble"
               style={origin(position)}
-              custom={position}
+              custom={{ pos: position, jelly } satisfies BubbleCustom}
               variants={m.v(bubbleVariants)}
               initial="hidden"
               animate={shown}

@@ -148,6 +148,7 @@ const componentProps: Record<string, PropDoc[]> = {
     { name: 'closeDelay', type: 'number', default: '100', description: 'Delay before closing after the pointer leaves, in ms.' },
     { name: 'disabled', type: 'boolean', default: 'false', description: 'Never show the tooltip.' },
     { name: 'maxWidth', type: 'number', default: '240', description: 'Maximum width of the bubble, in px.' },
+    { name: 'jelly', type: 'boolean | number', description: 'The bubble wobbles like jelly when it opens: width and height bounce out of phase. A number from 0 to 1 sets how much; true (or just jelly) uses the Modal default, 0.5. Off when omitted.' },
   ],
   popover: [
     { name: 'content', type: 'ReactNode | ({ close }) => ReactNode', required: true, description: 'Body of the popover. As a function it receives close(); nested components can use usePopover().' },
