@@ -503,13 +503,13 @@
     }
   }
 
-  /* La sidebar diventa un cassetto che entra da sinistra */
+  /* La sidebar diventa un cassetto che entra da destra, dal lato dell'hamburger */
   .pg-sidebar {
     position: fixed;
     z-index: 60;
     top: 0;
     bottom: 0;
-    left: 0;
+    right: 0;
     width: min(300px, 85vw);
     height: auto;
     /* Alto quanto lo schermo: con align-self: start (sidebar larga) Chrome e Safari recenti lo stringerebbero sul contenuto */
@@ -517,14 +517,16 @@
     /* Non scorre: scorre .pg-sidebar__scroll. Su iOS un elemento che scorre e si muove con transform non risponde al dito */
     overflow: hidden;
     padding: 0;
+    border-right: none;
+    border-left: 1px solid var(--pg-border);
     background: var(--pg-bg);
-    transform: translateX(-100%);
+    transform: translateX(100%);
     visibility: hidden;
     transition:
       transform 280ms cubic-bezier(0.32, 0.72, 0, 1),
       visibility 0s linear 280ms;
 
-    /* Ombra solo da aperto: da chiuso si vedrebbe sul bordo sinistro */
+    /* Ombra solo da aperto: da chiuso si vedrebbe sul bordo destro */
     &[data-open] {
       transform: none;
       visibility: visible;
@@ -542,7 +544,7 @@
     overflow-y: auto;
     /* Arrivati in fondo (o in cima) lo scroll non passa alla pagina */
     overscroll-behavior: contain;
-    padding: calc(24px + env(safe-area-inset-top)) 16px 0;
+    padding: calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 0 16px;
   }
 
   .pg-main {
