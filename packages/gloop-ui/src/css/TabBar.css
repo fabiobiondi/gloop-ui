@@ -1,0 +1,187 @@
+/* Tab, icone e pillola liquida riusano gli stili di TabFab.css */
+
+.tab-bar {
+  display: flex;
+  border-radius: 26px;
+  color: var(--ui-fg);
+  background: var(--ui-bg);
+  box-shadow:
+    0 12px 32px -8px rgb(0 0 0 / 0.3),
+    0 4px 8px -4px rgb(0 0 0 / 0.12);
+
+  /* Solo la pillola del tab scelto: quella di rollover resta nel colore del testo */
+  & .tab-bar__pill .goo-pill__blob {
+    background: var(--ui-accent);
+  }
+
+  & .tab-fab__tab[aria-current='page'] {
+    color: var(--ui-fg);
+  }
+}
+
+.tab-bar[data-position='fixed'] {
+  position: fixed;
+  z-index: 50;
+  /* Sopra la "home indicator" degli iPhone */
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  /* Centratura con translate: transform resta libero per l'animazione d'ingresso */
+  translate: -50% 0;
+}
+
+.tab-bar[data-position='static'] {
+  /* Contenitore della pillola (position: absolute) */
+  position: relative;
+  display: inline-flex;
+}
+
+/* ---------- Verticale: tab in colonna ---------- */
+
+.tab-bar[data-orientation='vertical'] {
+  flex-direction: column;
+}
+
+.tab-bar[data-orientation='vertical'][data-position='fixed'] {
+  bottom: auto;
+  top: 50%;
+  left: max(16px, env(safe-area-inset-left));
+  translate: 0 -50%;
+}
+
+.tab-bar[data-orientation='vertical'][data-layout='inline'] .tab-fab__tab {
+  /* Tutti larghi come il più largo, contenuto allineato a sinistra */
+  justify-content: flex-start;
+}
+
+/* ---------- Layout inline: icona, label e value in riga, larghezza dal contenuto ---------- */
+
+.tab-bar[data-layout='inline'] {
+  padding: 4px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ui-fg) 8%, transparent);
+
+  & .tab-fab__tab {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    width: auto;
+    height: 44px;
+    padding: 0 16px;
+    font-size: 15px;
+    white-space: nowrap;
+
+    &:focus-visible {
+      border-radius: 16px;
+    }
+  }
+
+  & .tab-bar__value {
+    position: relative;
+  }
+}
+
+/* ---------- Value: contatore accanto alla label ---------- */
+
+.tab-bar__value {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: color-mix(in srgb, var(--ui-fg) 75%, transparent);
+  background: color-mix(in srgb, var(--ui-fg) 12%, transparent);
+  transition:
+    color calc(200ms / var(--ui-motion-speed, 1)) ease,
+    background-color calc(200ms / var(--ui-motion-speed, 1)) ease;
+}
+
+.tab-fab__tab[aria-current='page'] .tab-bar__value {
+  color: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-fg));
+  background: color-mix(in srgb, var(--ui-accent) 22%, transparent);
+}
+
+/* Stacked: il value diventa un badge in alto a destra dell'icona */
+.tab-bar[data-layout='stacked'] .tab-bar__value {
+  position: absolute;
+  top: 4px;
+  left: calc(50% + 4px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+}
+
+/* ---------- Animazioni (solo CSS; molle --tf-* in TabFab.css) ---------- */
+
+/*
+ * Ingresso al caricamento: dal lato di enterFrom (--tab-bar-from-x/y, dallo style)
+ * con la molla, dopo 200ms. Usa transform: translate resta alla centratura.
+ */
+.tab-bar[data-enter] {
+  animation: tab-bar-enter calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring)
+    calc(200ms * var(--tween) / var(--speed)) backwards;
+}
+
+@keyframes tab-bar-enter {
+  from {
+    opacity: 0;
+    transform: translate(var(--tab-bar-from-x, 0), var(--tab-bar-from-y, 0));
+  }
+}
+
+/* L'icona del tab scelto fa un piccolo salto (rinasce a ogni selezione, vedi key in TabBar.tsx) */
+.tab-bar .tab-fab__tab[aria-current='page'] .tab-fab__tab-icon {
+  animation: tab-bar-hop calc(400ms * var(--tween) / var(--speed)) cubic-bezier(0, 0, 0.58, 1);
+}
+
+@keyframes tab-bar-hop {
+  50% {
+    scale: 1.3;
+    translate: 0 -4px;
+  }
+}
+
+.tab-bar .tab-fab__tab {
+  transition:
+    color calc(200ms / var(--speed)) ease,
+    scale calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
+
+  &:active {
+    scale: 0.95;
+  }
+}
+
+/* Movimento ridotto: niente spostamenti, l'ingresso è solo una dissolvenza */
+.tab-bar[data-motion='reduced'] {
+  &[data-enter] {
+    animation-name: tab-bar-fade;
+  }
+
+  & .tab-fab__tab {
+    transition-property: color;
+  }
+
+  & .tab-fab__tab-icon {
+    animation: none !important;
+  }
+}
+
+@keyframes tab-bar-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* animated={false}: i cambi di stato sono istantanei */
+.tab-bar[data-motion='off'],
+.tab-bar[data-motion='off'] * {
+  transition: none !important;
+  animation: none !important;
+}

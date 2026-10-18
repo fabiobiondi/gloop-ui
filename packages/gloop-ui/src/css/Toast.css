@@ -1,0 +1,512 @@
+/*
+ * Pila condivisa dai Toast con lo stesso bordo e allineamento: quelli aperti insieme si
+ * mettono in fila invece di sovrapporsi. L'ordine (style.order) mette il più recente
+ * contro il bordo, da dove cola la goccia. Vuota non intercetta il puntatore.
+ */
+.toast-stack {
+  position: fixed;
+  z-index: 120;
+  inset-inline: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--toast-offset) 16px;
+  pointer-events: none;
+  /* Spazio dal bordo e goccia: devono coincidere con OFFSET e DROP in Toast.tsx */
+  --toast-offset: 16px;
+  --toast-drop: 28px;
+  --toast-source: 48px;
+  --toast-gap: 10px;
+
+  /* In alto il più recente (order più alto) sta in cima */
+  &[data-position='top'] {
+    top: 0;
+    flex-direction: column-reverse;
+  }
+
+  &[data-position='bottom'] {
+    bottom: 0;
+  }
+}
+
+/* Una per Toast, sempre montata (regione live). Chiusa è vuota e non occupa spazio */
+.toast-layer {
+  /* Per lo z-index (inline): l'ordine di disegno segue l'apertura, non il DOM */
+  position: relative;
+  display: flex;
+  justify-content: center;
+
+  &[data-align='start'] {
+    justify-content: flex-start;
+  }
+
+  &[data-align='end'] {
+    justify-content: flex-end;
+  }
+}
+
+.toast {
+  position: relative;
+  /* Il fondo liquido (z-index -1) resta sotto il contenuto */
+  isolation: isolate;
+  max-width: min(420px, 100%);
+  color: var(--toast-fg, var(--ui-fg));
+  pointer-events: auto;
+  /*
+   * Dichiarate qui e non sul layer: il toast riceve i --ui-* del punto in cui è usato
+   * (useThemeVars), e le variabili derivate vanno calcolate dove ci sono
+   */
+  --toast-surface: var(--ui-surface, color-mix(in srgb, var(--ui-bg), var(--ui-fg) 6%));
+  --toast-divider: color-mix(in srgb, var(--ui-fg) 10%, transparent);
+  --toast-icon: var(--ui-accent);
+  --toast-close-bg: var(--ui-bg);
+  /*
+   * Animato solo in CSS: le molle di Motion sono easing linear(), una serie per preset.
+   * Le molle si dividono per --toast-speed; durate e ritardi fissi per --toast-tempo
+   * (come tuneTransition, snappy li accorcia anche)
+   */
+  --toast-speed: var(--ui-motion-speed, 1);
+  --toast-tempo: var(--toast-speed);
+  --toast-flow: linear(0, 0.039, 0.134, 0.267, 0.409, 0.55, 0.682, 0.796, 0.891, 0.968, 1.022, 1.058, 1.08, 1.089, 1.089, 1.083, 1.073, 1.06, 1.047, 1.035, 1.023, 1.014, 1.006, 1, 0.996, 0.994, 0.992, 0.992, 0.992, 0.993, 0.994, 0.995, 0.996, 0.997, 0.998, 0.999, 1, 1, 1, 1.001, 1);
+  --toast-flow-ms: 543ms;
+  --toast-spread: linear(0, 0.037, 0.13, 0.256, 0.395, 0.536, 0.667, 0.779, 0.876, 0.953, 1.011, 1.051, 1.075, 1.088, 1.09, 1.086, 1.077, 1.065, 1.053, 1.04, 1.028, 1.018, 1.01, 1.003, 0.998, 0.995, 0.993, 0.992, 0.992, 0.992, 0.993, 0.994, 0.995, 0.997, 0.998, 0.998, 0.999, 1, 1, 1, 1);
+  --toast-spread-ms: 658ms;
+  --toast-suck: linear(0, 0.024, 0.082, 0.165, 0.253, 0.345, 0.434, 0.518, 0.598, 0.666, 0.726, 0.778, 0.822, 0.861, 0.891, 0.917, 0.937, 0.953, 0.967, 0.977, 0.984, 0.99, 0.994, 0.997, 1, 1.001, 1.002, 1.003, 1.003, 1.003, 1.003, 1.003, 1.002, 1.002, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1);
+  --toast-suck-ms: 404ms;
+  --toast-press: linear(0, 0.037, 0.125, 0.237, 0.365, 0.493, 0.612, 0.714, 0.804, 0.878, 0.935, 0.978, 1.007, 1.027, 1.039, 1.044, 1.045, 1.042, 1.038, 1.032, 1.027, 1.021, 1.016, 1.011, 1.008, 1.005, 1.002, 1.001, 0.999, 0.999, 0.998, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1, 1);
+  --toast-press-ms: 456ms;
+
+  /*
+   * Varianti colorate: il colore riempie tutto il blob (bordo, goccia e pillola, anche nel
+   * filtro goo, che legge --toast-surface). Si cambiano dal tema con --ui-info, --ui-success,
+   * --ui-warning, --ui-error. Testo e icone in contrasto AA sul colore pieno.
+   */
+  &[data-variant='info'] {
+    --toast-color: var(--ui-info, #2563eb);
+  }
+
+  &[data-variant='success'] {
+    --toast-color: var(--ui-success, #15803d);
+  }
+
+  &[data-variant='warning'] {
+    --toast-color: var(--ui-warning, #f59e0b);
+  }
+
+  &[data-variant='error'] {
+    --toast-color: var(--ui-error, #dc2626);
+  }
+
+  /* Spazio tra toast impilati, dal lato lontano dal bordo */
+  [data-position='top'] > & {
+    margin-bottom: var(--toast-gap);
+  }
+
+  [data-position='bottom'] > & {
+    margin-top: var(--toast-gap);
+  }
+
+  /* Il colore custom (--toast-color inline) vale anche sopra una variante */
+  &:not([data-variant='default']),
+  &[data-custom-color] {
+    --toast-surface: var(--toast-color);
+    --toast-fg: #fff;
+    --toast-icon: currentColor;
+    --toast-close-bg: color-mix(in srgb, currentColor 18%, transparent);
+  }
+
+  /* Il warning è chiaro: testo scuro anche quando la regola sopra rimette il bianco */
+  &[data-variant='warning']:not([data-custom-color]) {
+    --toast-fg: #1c1917;
+  }
+}
+
+/* smooth: molle smorzate in modo critico, nessun rimbalzo */
+.toast[data-motion-preset='smooth'] {
+  --toast-flow: linear(0, 0.027, 0.09, 0.173, 0.267, 0.357, 0.442, 0.521, 0.592, 0.655, 0.71, 0.757, 0.799, 0.833, 0.862, 0.886, 0.906, 0.923, 0.937, 0.948, 0.958, 0.966, 0.972, 0.977, 0.982, 0.985, 0.988, 0.99, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+  --toast-flow-ms: 463ms;
+  --toast-spread: linear(0, 0.026, 0.085, 0.165, 0.249, 0.338, 0.421, 0.5, 0.57, 0.634, 0.689, 0.738, 0.779, 0.816, 0.846, 0.872, 0.893, 0.912, 0.927, 0.94, 0.951, 0.959, 0.967, 0.973, 0.978, 0.982, 0.985, 0.988, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 1);
+  --toast-spread-ms: 550ms;
+  --toast-suck: linear(0, 0.028, 0.093, 0.177, 0.269, 0.36, 0.447, 0.527, 0.598, 0.661, 0.716, 0.763, 0.803, 0.837, 0.866, 0.889, 0.909, 0.926, 0.939, 0.95, 0.96, 0.967, 0.973, 0.978, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+  --toast-suck-ms: 440ms;
+  --toast-press: linear(0, 0.029, 0.095, 0.177, 0.269, 0.362, 0.45, 0.526, 0.599, 0.662, 0.718, 0.765, 0.804, 0.838, 0.866, 0.89, 0.909, 0.926, 0.94, 0.951, 0.96, 0.967, 0.974, 0.979, 0.983, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+  --toast-press-ms: 436ms;
+}
+
+/* snappy: più rapido, rimbalzo dimezzato; anche le durate fisse × 0.75 */
+.toast[data-motion-preset='snappy'] {
+  --toast-tempo: calc(var(--toast-speed) * 4 / 3);
+  --toast-flow: linear(0, 0.031, 0.099, 0.195, 0.302, 0.404, 0.508, 0.598, 0.683, 0.756, 0.815, 0.866, 0.906, 0.937, 0.962, 0.979, 0.993, 1.002, 1.008, 1.011, 1.013, 1.014, 1.013, 1.012, 1.011, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1, 1);
+  --toast-flow-ms: 353ms;
+  --toast-spread: linear(0, 0.027, 0.093, 0.182, 0.286, 0.389, 0.488, 0.58, 0.662, 0.734, 0.796, 0.848, 0.892, 0.925, 0.952, 0.972, 0.987, 0.997, 1.005, 1.009, 1.012, 1.013, 1.014, 1.013, 1.012, 1.011, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+  --toast-spread-ms: 423ms;
+  --toast-suck: linear(0, 0.024, 0.082, 0.152, 0.237, 0.325, 0.41, 0.491, 0.56, 0.627, 0.686, 0.738, 0.782, 0.818, 0.851, 0.879, 0.902, 0.921, 0.936, 0.949, 0.959, 0.968, 0.975, 0.98, 0.985, 0.988, 0.991, 0.993, 0.995, 0.996, 0.997, 0.998, 0.999, 0.999, 0.999, 1, 1, 1, 1, 1, 1);
+  --toast-suck-ms: 296ms;
+  --toast-press: linear(0, 0.028, 0.1, 0.189, 0.294, 0.394, 0.495, 0.583, 0.661, 0.733, 0.79, 0.841, 0.88, 0.913, 0.937, 0.957, 0.972, 0.983, 0.992, 0.997, 1.001, 1.003, 1.005, 1.005, 1.006, 1.005, 1.005, 1.004, 1.004, 1.003, 1.003, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+  --toast-press-ms: 349ms;
+}
+
+/* Fondo liquido: bordo, goccia e pillola passano dal filtro goo, il contenuto no */
+.toast__goo {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Niente box-shadow esterno sugli elementi filtrati: l'ombra la aggiunge GooFilter */
+.toast__shape {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 22px;
+  background: var(--toast-surface);
+  box-shadow: inset 0 0 0 1px var(--toast-divider);
+}
+
+.toast__drop,
+.toast__source {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--toast-surface);
+}
+
+.toast__drop {
+  top: calc(50% - var(--toast-drop) / 2);
+  left: calc(50% - var(--toast-drop) / 2);
+  width: var(--toast-drop);
+  height: var(--toast-drop);
+}
+
+/* Mezza goccia centrata sul bordo dello schermo: metà resta fuori dalla vista */
+.toast__source {
+  left: calc(50% - var(--toast-source) / 2);
+  width: var(--toast-source);
+  height: var(--toast-source);
+}
+
+[data-position='top'] .toast__source {
+  top: calc(-1 * var(--toast-offset) - var(--toast-source) / 2);
+}
+
+[data-position='bottom'] .toast__source {
+  bottom: calc(-1 * var(--toast-offset) - var(--toast-source) / 2);
+}
+
+.toast__content {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+  padding: 8px 8px 8px 20px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.toast__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--toast-icon);
+
+  & svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.toast__text {
+  flex: 1;
+  min-width: 0;
+  padding-block: 6px;
+  overflow-wrap: anywhere;
+}
+
+.toast__title {
+  font-weight: 600;
+}
+
+.toast__message {
+  opacity: 0.8;
+
+  .toast__title + & {
+    margin-top: 2px;
+  }
+}
+
+/* Senza X il testo ha lo stesso respiro a destra */
+.toast__content:not(:has(.toast__close)) {
+  padding-right: 20px;
+}
+
+.toast__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
+  background: var(--toast-close-bg);
+  cursor: pointer;
+
+  & svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------- Apertura: la goccia cola dal bordo e si gonfia nella pillola ---------- */
+
+/* Scala della pillola per asse: le due molle sono diverse (registrate per animarle a parte) */
+@property --toast-sx {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+@property --toast-sy {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+/* Il bordo dello schermo si gonfia e si ritira */
+.toast__source {
+  scale: 0;
+  animation: toast-source-in calc(0.6s / var(--toast-tempo)) ease-in-out both;
+}
+
+@keyframes toast-source-in {
+  25%,
+  40% {
+    scale: 1;
+  }
+}
+
+/* La goccia scende fino al centro del toast, allungata nel verso del moto */
+.toast__drop {
+  animation: toast-drop-in calc(var(--toast-flow-ms) / var(--toast-speed)) var(--toast-flow)
+    calc(0.06s / var(--toast-tempo)) both;
+}
+
+@keyframes toast-drop-in {
+  from {
+    translate: 0 var(--toast-to-edge);
+    scale: 0.7 1.5;
+  }
+}
+
+/*
+ * La pillola parte dalla goccia: l'asse verticale con flow, l'orizzontale con spread più
+ * tardi; resta tonda finché è quasi gonfia
+ */
+.toast__goo .toast__shape {
+  scale: var(--toast-sx) var(--toast-sy);
+  animation:
+    toast-shape-sy calc(var(--toast-flow-ms) / var(--toast-speed)) var(--toast-flow) calc(0.16s / var(--toast-tempo)) both,
+    toast-shape-sx calc(var(--toast-spread-ms) / var(--toast-speed)) var(--toast-spread) calc(0.2s / var(--toast-tempo)) both,
+    toast-shape-pill calc(0.45s / var(--toast-tempo)) cubic-bezier(0.5, 0, 0.2, 1) calc(0.16s / var(--toast-tempo)) both,
+    toast-shape-show calc(0.01s / var(--toast-tempo)) linear calc(0.16s / var(--toast-tempo)) both;
+}
+
+@keyframes toast-shape-sy {
+  from {
+    --toast-sy: var(--toast-from-sy);
+  }
+}
+
+@keyframes toast-shape-sx {
+  from {
+    --toast-sx: var(--toast-from-sx);
+  }
+}
+
+@keyframes toast-shape-pill {
+  from {
+    border-radius: var(--toast-round);
+  }
+}
+
+@keyframes toast-shape-show {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Il contenuto arriva quando la goccia ha quasi preso forma */
+.toast__content {
+  animation: toast-reveal calc(0.25s / var(--toast-tempo)) cubic-bezier(0.23, 1, 0.32, 1)
+    calc(0.28s / var(--toast-tempo)) both;
+}
+
+@keyframes toast-reveal {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+/* ---------- Chiusura (data-exit, deciso in Toast.tsx) ---------- */
+
+.toast[data-exit] {
+  pointer-events: none;
+
+  & .toast__content {
+    animation: toast-conceal calc(0.08s / var(--toast-tempo)) ease-in-out forwards;
+  }
+
+  /* La pillola si richiude nella goccia e lascia il posto a lei */
+  & .toast__goo .toast__shape {
+    animation:
+      toast-shape-shrink calc(var(--toast-suck-ms) / var(--toast-speed)) var(--toast-suck) calc(0.04s / var(--toast-tempo)) forwards,
+      toast-shape-unround calc(0.2s / var(--toast-tempo)) ease-in calc(0.04s / var(--toast-tempo)) forwards,
+      toast-hide calc(0.01s / var(--toast-tempo)) linear calc(0.28s / var(--toast-tempo)) forwards;
+  }
+
+  /* Lontano dal bordo (altri toast in mezzo): la goccia si asciuga sul posto */
+  & .toast__drop {
+    animation: toast-drop-dry calc(0.42s / var(--toast-tempo)) ease-in-out calc(0.06s / var(--toast-tempo)) forwards;
+  }
+}
+
+/*
+ * Attaccato al bordo: forma e goccia risalgono insieme, piano mentre si stringono e poi
+ * sempre più veloci, e il bordo si gonfia incontro al blob e lo risucchia
+ */
+.toast[data-exit='edge'] {
+  & .toast__source {
+    animation: toast-source-out calc(0.44s / var(--toast-tempo)) ease-in-out calc(0.12s / var(--toast-tempo)) both;
+  }
+
+  & .toast__goo .toast__shape {
+    animation:
+      toast-shape-shrink calc(var(--toast-suck-ms) / var(--toast-speed)) var(--toast-suck) calc(0.04s / var(--toast-tempo)) forwards,
+      toast-rise calc(0.38s / var(--toast-tempo)) cubic-bezier(0.55, 0, 0.75, 0.3) calc(0.06s / var(--toast-tempo)) forwards,
+      toast-shape-unround calc(0.2s / var(--toast-tempo)) ease-in calc(0.04s / var(--toast-tempo)) forwards,
+      toast-hide calc(0.01s / var(--toast-tempo)) linear calc(0.32s / var(--toast-tempo)) forwards;
+  }
+
+  /*
+   * La goccia resta tonda, nascosta dentro la forma che si stringe: si allunga solo quando
+   * la forma ha preso la sua misura, così salgono sovrapposte come un unico blob
+   */
+  & .toast__drop {
+    animation:
+      toast-rise calc(0.38s / var(--toast-tempo)) cubic-bezier(0.55, 0, 0.75, 0.3) calc(0.06s / var(--toast-tempo)) forwards,
+      toast-drop-squeeze calc(0.5s / var(--toast-tempo)) ease-in-out calc(0.06s / var(--toast-tempo)) forwards;
+  }
+}
+
+@keyframes toast-conceal {
+  to {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+@keyframes toast-shape-shrink {
+  to {
+    --toast-sx: var(--toast-from-sx);
+    --toast-sy: var(--toast-from-sy);
+  }
+}
+
+@keyframes toast-shape-unround {
+  to {
+    border-radius: var(--toast-round);
+  }
+}
+
+@keyframes toast-hide {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes toast-rise {
+  to {
+    translate: 0 var(--toast-to-edge);
+  }
+}
+
+@keyframes toast-drop-squeeze {
+  40% {
+    scale: 1;
+  }
+  70% {
+    scale: 0.7 1.5;
+  }
+  100% {
+    scale: 0;
+  }
+}
+
+@keyframes toast-drop-dry {
+  50% {
+    scale: 1;
+  }
+  100% {
+    scale: 0;
+  }
+}
+
+@keyframes toast-source-out {
+  0% {
+    scale: 0;
+  }
+  55% {
+    scale: 1;
+  }
+  100% {
+    scale: 0;
+  }
+}
+
+/* La X: gira e cresce al passaggio del mouse, si schiaccia alla pressione */
+.toast__close {
+  transition:
+    scale calc(var(--toast-press-ms) / var(--toast-speed)) var(--toast-press),
+    rotate calc(var(--toast-press-ms) / var(--toast-speed)) var(--toast-press);
+
+  @media (hover: hover) {
+    &:hover {
+      scale: 1.08;
+      rotate: 90deg;
+    }
+  }
+
+  &:active {
+    scale: 0.9;
+  }
+}
+
+/* Movimento ridotto: niente goccia, solo una dissolvenza (in entrata e in uscita) */
+.toast[data-motion='reduced'] {
+  animation: toast-fade-in calc(0.18s / var(--toast-tempo)) ease-in-out both;
+
+  /* Senza goccia da aspettare, il contenuto compare subito */
+  & .toast__content {
+    animation-delay: 0s;
+  }
+
+  & .toast__close {
+    transition: none;
+  }
+
+  &[data-exit] {
+    animation: toast-hide calc(0.12s / var(--toast-tempo)) ease-in-out forwards;
+  }
+}
+
+@keyframes toast-fade-in {
+  from {
+    opacity: 0;
+  }
+}

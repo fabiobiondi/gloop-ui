@@ -1,0 +1,159 @@
+/* Misure impostate da ListCore (--list-item-height, --list-gap, --list-radius) */
+.list__body {
+  position: relative;
+
+  /* Colore della pillola: si personalizza con --list-pill */
+  & .goo-pill__blob {
+    background: var(--list-pill, var(--ui-fg));
+  }
+}
+
+.list__items {
+  position: relative;
+  display: grid;
+  gap: var(--list-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: var(--list-item-height);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--list-radius);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  color: var(--list-fg-muted, color-mix(in srgb, var(--ui-fg) 80%, transparent));
+  background: none;
+  cursor: pointer;
+  transition: color calc(150ms / var(--ui-motion-speed, 1)) ease;
+
+  &[aria-current]:not([aria-current='false']) {
+    font-weight: 500;
+    color: var(--list-fg, var(--ui-fg));
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--list-focus, var(--ui-fg));
+    outline-offset: -2px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .list__item:not(:disabled, [aria-disabled='true']):hover {
+    color: var(--list-fg, var(--ui-fg));
+  }
+}
+
+.list__icon {
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+
+  & svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.list__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list__meta {
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--list-fg-muted, color-mix(in srgb, var(--ui-fg) 60%, transparent));
+}
+
+/* ---------- Gruppi e divisori (altezze fisse, vedi ListCore) ---------- */
+
+.list__group {
+  display: grid;
+  gap: var(--list-gap);
+}
+
+.list__group-label {
+  display: flex;
+  align-items: flex-end;
+  height: var(--list-group-label-height);
+  padding: 0 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--list-fg-muted, color-mix(in srgb, var(--ui-fg) 55%, transparent));
+}
+
+.list__divider {
+  height: var(--list-divider-height);
+  margin: 0 12px;
+  /* Linea di 1px al centro della riga */
+  background: linear-gradient(
+      color-mix(in srgb, var(--ui-fg) 14%, transparent),
+      color-mix(in srgb, var(--ui-fg) 14%, transparent)
+    )
+    center / 100% 1px no-repeat;
+}
+
+/* ---------- Pressione (solo CSS) ---------- */
+
+/*
+ * La voce premuta si stringe appena, con la molla morph campionata in linear()
+ * (una per preset); la durata si divide per --ui-motion-speed. Le variabili stanno su
+ * .list__body, così valgono anche nei sottomenu di TabFab.
+ */
+.list__body {
+  --list-morph: linear(0, 0.025, 0.091, 0.174, 0.269, 0.377, 0.474, 0.566, 0.657, 0.731, 0.8, 0.854, 0.898, 0.937, 0.965, 0.986, 1.003, 1.013, 1.021, 1.025, 1.027, 1.027, 1.025, 1.023, 1.021, 1.018, 1.016, 1.013, 1.01, 1.008, 1.006, 1.005, 1.003, 1.002, 1.001, 1.001, 1, 1, 1, 0.999, 1);
+  --list-morph-ms: 494ms;
+}
+
+[data-motion-preset='smooth'] > .list__body,
+[data-motion-preset='smooth'] .tab-fab__list-wrap > .list__body {
+  --list-morph: linear(0, 0.027, 0.088, 0.168, 0.262, 0.35, 0.434, 0.511, 0.582, 0.644, 0.702, 0.749, 0.79, 0.824, 0.853, 0.878, 0.899, 0.918, 0.932, 0.944, 0.954, 0.962, 0.969, 0.974, 0.979, 0.983, 0.986, 0.989, 0.991, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 1);
+  --list-morph-ms: 526ms;
+}
+
+[data-motion-preset='snappy'] > .list__body,
+[data-motion-preset='snappy'] .tab-fab__list-wrap > .list__body {
+  --list-morph: linear(0, 0.025, 0.085, 0.164, 0.253, 0.345, 0.435, 0.519, 0.596, 0.665, 0.725, 0.772, 0.817, 0.855, 0.887, 0.913, 0.934, 0.951, 0.964, 0.974, 0.982, 0.989, 0.993, 0.997, 0.999, 1.001, 1.002, 1.002, 1.003, 1.003, 1.003, 1.002, 1.002, 1.002, 1.002, 1.002, 1.001, 1.001, 1.001, 1.001, 1);
+  --list-morph-ms: 398ms;
+}
+
+.list__item {
+  transition:
+    color calc(150ms / var(--ui-motion-speed, 1)) ease,
+    scale calc(var(--list-morph-ms) / var(--ui-motion-speed, 1)) var(--list-morph);
+
+  &:active:not(:disabled, [aria-disabled='true']) {
+    scale: 0.97;
+  }
+}
+
+/* Movimento ridotto: la pressione non si anima. animated={false}: niente transizioni */
+[data-motion='reduced'] .list__item {
+  transition-property: color;
+}
+
+[data-motion='off'] .list__item {
+  transition: none;
+}

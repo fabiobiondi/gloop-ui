@@ -9,3 +9,10 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+// Solo in dev: interruttore Motion / CSS (vedi src/engine.ts). In build il ramo sparisce.
+if (import.meta.env.DEV) {
+  const { default: EngineSwitch } = await import('./EngineSwitch.tsx')
+  const el = document.body.appendChild(document.createElement('div'))
+  createRoot(el).render(<EngineSwitch />)
+}

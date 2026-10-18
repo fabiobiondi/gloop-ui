@@ -26,7 +26,10 @@ export default defineConfig(({ command, isPreview }) => ({
       command === 'serve' && !isPreview
         ? [
             { find: /^gloop-ui\/styles\.css$/, replacement: lib('src/components/theme.css') },
-            { find: /^gloop-ui$/, replacement: lib('src/index.ts') },
+            // gloop-ui passa da src/engine.ts: Motion o le copie in CSS (?engine=css)
+            { find: /^gloop-ui$/, replacement: fileURLToPath(new URL('./src/engine.ts', import.meta.url)) },
+            { find: /^gloop-ui-motion$/, replacement: lib('src/index.ts') },
+            { find: /^gloop-ui-css$/, replacement: lib('src/css/index.ts') },
           ]
         : [],
   },
