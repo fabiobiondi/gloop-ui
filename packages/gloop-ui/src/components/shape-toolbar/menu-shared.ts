@@ -1,4 +1,5 @@
 import { createContext, useContext, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import { cssDuration } from '../css-time'
 
 /*
  * Menu annidabile a qualsiasi profondità.
@@ -102,7 +103,7 @@ export function useSharedLayout(key: string, ref: RefObject<HTMLElement | null>,
       const to = el.getBoundingClientRect()
       const css = getComputedStyle(el)
       const easing = css.getPropertyValue(`--st-${curve}`).trim() || 'ease-out'
-      const ms = parseFloat(css.getPropertyValue(`--st-${curve}-ms`)) || 350
+      const ms = cssDuration(css, `--st-${curve}-ms`, 350)
       const speed = parseFloat(css.getPropertyValue('--ui-motion-speed')) || 1
       el.animate(
         [

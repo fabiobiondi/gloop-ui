@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties
 import { GooFilter, useOffscreen } from './goo'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
 import { useGloopMotion } from './gloop-motion'
+import { cssDuration } from './css-time'
 import { usePresence } from './jelly'
 import './theme.css'
 import './ExpandButton.css'
@@ -188,7 +189,7 @@ function ExpandButton({
     if (label) labelLeft.current = label.offsetLeft
     if (from === null || Math.abs(from - to) < 0.5 || m.reduced || !btn.animate) return
     const css = getComputedStyle(btn)
-    const ms = parseFloat(css.getPropertyValue('--expand-morph-ms')) || 416
+    const ms = cssDuration(css, '--expand-morph-ms', 416)
     const anim = btn.animate([{ width: `${from}px` }, { width: `${to}px` }], {
       duration: ms / m.speed,
       easing: css.getPropertyValue('--expand-morph').trim() || 'ease-out',

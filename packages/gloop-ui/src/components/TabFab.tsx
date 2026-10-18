@@ -23,6 +23,7 @@ import {
 } from './tab-drop'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
 import { useGloopMotion } from './gloop-motion'
+import { cssDuration } from './css-time'
 import './theme.css'
 import './TabFab.css'
 
@@ -66,7 +67,7 @@ const panelHeight = (count: number) => PANEL_PADDING * 2 + count * ITEM_HEIGHT +
 function morphTiming(el: Element, speed: number): KeyframeAnimationOptions {
   const css = getComputedStyle(el)
   return {
-    duration: (parseFloat(css.getPropertyValue('--tf-morph-ms')) || 500) / speed,
+    duration: cssDuration(css, '--tf-morph-ms', 500) / speed,
     easing: css.getPropertyValue('--tf-morph').trim() || 'ease-out',
   }
 }

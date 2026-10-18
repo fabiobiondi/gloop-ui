@@ -34,3 +34,12 @@
 [data-offscreen] * {
   animation-play-state: paused !important;
 }
+
+/*
+ * Niente evidenziazione grigia del tap su iOS: i componenti hanno già il loro feedback
+ * alla pressione, e il riquadro di Safari resta dov'era quando il layout cambia al tap
+ * (es. TabFab che si ricentra aprendosi). Si eredita: basta sulla root (data-motion)
+ */
+[data-motion] {
+  -webkit-tap-highlight-color: transparent;
+}
