@@ -208,6 +208,14 @@
   position: relative;
 }
 
+/*
+ * Pillole sopra i tab: durante l'apertura il tab ha un transform e la sua goccia
+ * (z-index -1) viene dipinta dentro il tab, sopra una pillola rimasta sotto
+ */
+.tab-fab__tabs > .goo-pill {
+  z-index: 1;
+}
+
 /* ---------- Effetto goo di apertura (goo.tsx) ---------- */
 
 .tab-fab-wrap {

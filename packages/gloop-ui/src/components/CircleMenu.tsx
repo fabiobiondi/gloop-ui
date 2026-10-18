@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type PointerEvent,
   type ReactElement,
   type ReactNode,
 } from 'react'
@@ -438,7 +439,8 @@ function CircleMenu({
   }
 
   const hoverProps = (key: string) => ({
-    onPointerEnter: () => setHovered(key),
+    // Solo mouse e penna: al tocco l'hover resterebbe "appeso" (e rifarebbe scalare il blob)
+    onPointerEnter: (e: PointerEvent) => e.pointerType !== 'touch' && setHovered(key),
     onPointerLeave: () => setHovered((h) => (h === key ? null : h)),
     onFocus: () => setHovered(key),
     onBlur: () => setHovered((h) => (h === key ? null : h)),
@@ -498,8 +500,14 @@ function CircleMenu({
                 così ampio il browser li calcola a bassa risoluzione e si vedrebbero scalini
               */}
               <feFlood style={{ floodColor: 'var(--ui-bg)' }} result="color" />
-              <feComposite in="color" in2="goo" operator="in" />
-              <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#000" floodOpacity="0.25" />
+              <feComposite in="color" in2="goo" operator="in" result="shape" />
+              {/* Ombra dal blur già calcolato: un feDropShadow sarebbe un secondo blur sull'intera area */}
+              <feOffset in="blur" dy="8" result="offset" />
+              <feColorMatrix in="offset" mode="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.25 0" result="shadow" />
+              <feMerge>
+                <feMergeNode in="shadow" />
+                <feMergeNode in="shape" />
+              </feMerge>
             </filter>
           </svg>
 

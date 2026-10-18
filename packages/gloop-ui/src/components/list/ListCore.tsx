@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import GooPill, { usePresence } from '../GooPill'
 import '../theme.css'
 import './List.css'
@@ -110,6 +110,9 @@ function ListCore({
 
   // Le voci disabilitate non ricevono la pillola
   const track = (i: number) => (hover && !flat[i].disabled ? () => setHovered(i) : undefined)
+  // Solo mouse e penna: al tocco l'hover resterebbe "appeso" e ogni tap muoverebbe due pillole
+  const trackPointer = (i: number) =>
+    hover && !flat[i].disabled ? (e: PointerEvent) => e.pointerType !== 'touch' && setHovered(i) : undefined
   const neutral = itemRole ? 'none' : undefined
 
   const renderItem = (item: ListItem, i: number) => {
@@ -129,7 +132,7 @@ function ListCore({
       className: 'list__item',
       role: itemRole,
       onClick: (e: MouseEvent) => onItemClick?.(i, item, e),
-      onPointerEnter: track(i),
+      onPointerEnter: trackPointer(i),
       onFocus: track(i),
       onBlur: hover ? () => setHovered(null) : undefined,
     }
