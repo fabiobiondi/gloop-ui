@@ -67,9 +67,22 @@ export function GooFilter({ id, blur = 8, region, shadow = true, color = 'var(--
         */}
         <feFlood style={{ floodColor: color }} result="color" />
         <feComposite in="color" in2="goo" operator="in" result="solid" />
-        <feComposite in="SourceGraphic" in2="solid" operator="over" />
-        {/* L'ombra va aggiunta qui, dopo la fusione: un box-shadow verrebbe "fuso" con la forma */}
-        {shadow && <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#000" floodOpacity="0.25" />}
+        <feComposite in="SourceGraphic" in2="solid" operator="over" result="shape" />
+        {/*
+          L'ombra va aggiunta qui, dopo la fusione: un box-shadow verrebbe "fuso" con la forma.
+          Riusa il blur già calcolato invece di un feDropShadow: un secondo blur gaussiano
+          sull'intera area, che su Safari/iOS (filtri in software) costa quanto la fusione
+        */}
+        {shadow && (
+          <>
+            <feOffset in="blur" dy="10" result="offset" />
+            <feColorMatrix in="offset" mode="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.25 0" result="shadow" />
+            <feMerge>
+              <feMergeNode in="shadow" />
+              <feMergeNode in="shape" />
+            </feMerge>
+          </>
+        )}
       </filter>
     </svg>
   )

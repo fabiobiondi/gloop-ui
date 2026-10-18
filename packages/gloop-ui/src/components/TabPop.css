@@ -241,8 +241,10 @@
 }
 
 /*
- * Tab a cascata (--tab-delay dallo style, in secondi): da trasparenti, un po' più piccoli,
- * più in basso e sfocati. In uscita restano come sono. La pressione usa scale.
+ * Tab a cascata (--tab-delay dallo style, in secondi): da trasparenti, un po' più piccoli
+ * e più in basso. In uscita restano come sono. La pressione usa scale.
+ * Niente blur: dentro il filtro goo ogni tab sfocata è un altro filtro da ricalcolare a
+ * ogni frame, e su iOS l'apertura scatta
  */
 .tab-pop__bar .tab-fab__tab {
   --tab-wait: calc(var(--tab-delay, 0s) * var(--tween) / var(--speed));
@@ -251,7 +253,6 @@
     color calc(200ms / var(--speed)) ease,
     opacity calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring) var(--tab-wait),
     transform calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring) var(--tab-wait),
-    filter calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring) var(--tab-wait),
     scale calc(var(--tf-spring-ms) / var(--speed)) var(--tf-spring);
 
   &:active {
@@ -263,7 +264,6 @@
   .tab-pop__bar .tab-fab__tab {
     opacity: 0;
     transform: translateY(6px) scale(0.8);
-    filter: blur(4px);
   }
 }
 
@@ -281,7 +281,7 @@
   }
 
   & .tab-pop__bar .tab-fab__tab {
-    transition-property: color, opacity, filter !important;
+    transition-property: color, opacity !important;
   }
 }
 
