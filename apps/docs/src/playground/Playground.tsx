@@ -345,20 +345,16 @@ function useMobileMenu(pageId: string) {
     const wide = window.matchMedia('(min-width: 761px)')
     const onWide = () => wide.matches && setOpen(false)
     /*
-     * La pagina sotto non scorre. Body fisso al punto di scroll: su iOS overflow: hidden
-     * non basta, il dito sul cassetto farebbe scorrere la pagina
+     * La pagina sotto non scorre. Su iOS non basta: ci pensano anche touch-action sul velo
+     * e overscroll-behavior sul cassetto (Playground.css). Niente body in position: fixed,
+     * che su iOS sposta in alto anche il cassetto
      */
-    const body = document.body.style
-    const saved = { position: body.position, top: body.top, left: body.left, right: body.right }
-    const y = window.scrollY
-    const hash = window.location.hash
-    Object.assign(body, { position: 'fixed', top: `${-y}px`, left: '0', right: '0' })
+    const overflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
     document.addEventListener('keydown', onKeyDown)
     wide.addEventListener('change', onWide)
     return () => {
-      Object.assign(body, saved)
-      // Stessa pagina: torna dov'era. Scelta un'altra pagina: dall'inizio
-      window.scrollTo({ top: window.location.hash === hash ? y : 0 })
+      document.documentElement.style.overflow = overflow
       document.removeEventListener('keydown', onKeyDown)
       wide.removeEventListener('change', onWide)
     }

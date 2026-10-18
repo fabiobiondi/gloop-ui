@@ -459,6 +459,8 @@
     &[data-open] {
       opacity: 1;
       pointer-events: auto;
+      /* Il dito sul velo non fa scorrere la pagina sotto (iOS ignora overflow: hidden) */
+      touch-action: none;
     }
   }
 
@@ -503,6 +505,7 @@
     flex-direction: column;
     height: 100%;
     overflow-y: auto;
+    /* Arrivati in fondo (o in cima) lo scroll non passa alla pagina */
     overscroll-behavior: contain;
     padding: calc(24px + env(safe-area-inset-top)) 16px 0;
   }
