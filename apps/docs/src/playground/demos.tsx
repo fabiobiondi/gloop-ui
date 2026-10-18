@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import {
+  ArcMenu,
   CircleMenu,
   ExpandButton,
   GloopLoading,
@@ -757,6 +758,478 @@ function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
           />
         ),
         code: `<CircleMenu
+  label="custom"
+  angle={-90}
+  arc={120}
+  radius={90}
+  items={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+    ],
+  },
+  {
+    id: 'arc-menu',
+    name: 'ArcMenu',
+    group: 'menus',
+    status: 'experimental',
+    description:
+      'The same "+" with liquid blobs as CircleMenu, animated with CSS only: springs become linear() easings, no Motion.',
+    notice:
+      'ArcMenu is a copy of CircleMenu without Motion: same props, same behavior, but every animation is a CSS transition or keyframe. It is a test bench to drop the motion dependency.',
+    demos: [
+      {
+        title: 'Circle · 3 icons',
+        description: 'Share opens a sub-menu.',
+        preview: (
+          <ArcMenu
+            label="quick actions"
+            items={[
+              { icon: HomeIcon, label: 'Home' },
+              { icon: SearchIcon, label: 'Search' },
+              {
+                icon: ShareIcon,
+                label: 'Share',
+                items: [
+                  { icon: MailIcon, label: 'Email' },
+                  { icon: LinkIcon, label: 'Copy link' },
+                  { icon: MessageIcon, label: 'Message' },
+                ],
+              },
+            ]}
+          />
+        ),
+        code: `<ArcMenu
+  label="quick actions"
+  items={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    {
+      icon: ShareIcon,
+      label: 'Share',
+      items: [
+        { icon: MailIcon, label: 'Email' },
+        { icon: LinkIcon, label: 'Copy link' },
+        { icon: MessageIcon, label: 'Message' },
+      ],
+    },
+  ]}
+/>`,
+      },
+      {
+        title: 'Circle · 6 icons',
+        description: 'Share opens 5 icons, Camera opens 2.',
+        preview: (
+          <ArcMenu
+            label="actions"
+            items={[
+              { icon: HomeIcon, label: 'Home' },
+              { icon: SearchIcon, label: 'Search' },
+              { icon: HeartIcon, label: 'Favorites' },
+              {
+                icon: ShareIcon,
+                label: 'Share',
+                items: [
+                  { icon: MailIcon, label: 'Email' },
+                  { icon: LinkIcon, label: 'Copy link' },
+                  { icon: CopyIcon, label: 'Duplicate' },
+                  { icon: MessageIcon, label: 'Message' },
+                  { icon: DownloadIcon, label: 'Download' },
+                ],
+              },
+              {
+                icon: CameraIcon,
+                label: 'Camera',
+                items: [
+                  { icon: ImageIcon, label: 'Photo' },
+                  { icon: VideoIcon, label: 'Video' },
+                ],
+              },
+              { icon: UserIcon, label: 'Profile' },
+            ]}
+          />
+        ),
+        code: `<ArcMenu
+  label="actions"
+  items={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    { icon: HeartIcon, label: 'Favorites' },
+    {
+      icon: ShareIcon,
+      label: 'Share',
+      items: [
+        { icon: MailIcon, label: 'Email' },
+        { icon: LinkIcon, label: 'Copy link' },
+        { icon: CopyIcon, label: 'Duplicate' },
+        { icon: MessageIcon, label: 'Message' },
+        { icon: DownloadIcon, label: 'Download' },
+      ],
+    },
+    {
+      icon: CameraIcon,
+      label: 'Camera',
+      items: [
+        { icon: ImageIcon, label: 'Photo' },
+        { icon: VideoIcon, label: 'Video' },
+      ],
+    },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+      {
+        title: 'Arc · bottom-left · 3 icons',
+        description: 'direction: top, right, bottom, left or any diagonal.',
+        preview: (
+          <ArcMenu
+            label="share"
+            direction="bottom-left"
+            items={[
+              { icon: MailIcon, label: 'Email' },
+              { icon: LinkIcon, label: 'Copy link' },
+              {
+                icon: MessageIcon,
+                label: 'Message',
+                items: [
+                  { icon: ImageIcon, label: 'Photo' },
+                  { icon: VideoIcon, label: 'Video' },
+                ],
+              },
+            ]}
+          />
+        ),
+        code: `<ArcMenu
+  label="share"
+  direction="bottom-left"
+  items={[
+    { icon: MailIcon, label: 'Email' },
+    { icon: LinkIcon, label: 'Copy link' },
+    {
+      icon: MessageIcon,
+      label: 'Message',
+      items: [
+        { icon: ImageIcon, label: 'Photo' },
+        { icon: VideoIcon, label: 'Video' },
+      ],
+    },
+  ]}
+/>`,
+      },
+      {
+        title: 'Arc · bottom-left · overlay',
+        description:
+          'With reserveSpace={false} the menu only takes the size of the "+": icons open on a layer above the content, which never moves.',
+        stage: { minHeight: 280 },
+        preview: (
+          <div className="pg-overlay-card">
+            <p>
+              The text wraps right next to the "+", because the closed menu only takes 56px. Open it: the
+              icons and the Message sub-menu drop over this paragraph without pushing it. Nothing in this card
+              moves or reflows while the menu opens and closes, and once it is closed the text underneath can be
+              selected and clicked again, right up to the edge of the button.
+            </p>
+            <ArcMenu
+              label="share"
+              direction="bottom-left"
+              reserveSpace={false}
+              items={[
+                { icon: MailIcon, label: 'Email' },
+                { icon: LinkIcon, label: 'Copy link' },
+                {
+                  icon: MessageIcon,
+                  label: 'Message',
+                  items: [
+                    { icon: ImageIcon, label: 'Photo' },
+                    { icon: VideoIcon, label: 'Video' },
+                  ],
+                },
+              ]}
+            />
+          </div>
+        ),
+        code: `<div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+  <p style={{ flex: 1 }}>Some content…</p>
+  <ArcMenu
+    label="share"
+    direction="bottom-left"
+    reserveSpace={false}
+    items={[
+      { icon: MailIcon, label: 'Email' },
+      { icon: LinkIcon, label: 'Copy link' },
+      {
+        icon: MessageIcon,
+        label: 'Message',
+        items: [
+          { icon: ImageIcon, label: 'Photo' },
+          { icon: VideoIcon, label: 'Video' },
+        ],
+      },
+    ]}
+  />
+</div>`,
+      },
+      {
+        title: 'Arc · top-right · 5 icons',
+        description: 'With a narrow arc the icons move further out so they never touch.',
+        preview: (
+          <ArcMenu
+            label="create"
+            direction="top-right"
+            items={[
+              { icon: HomeIcon, label: 'Home' },
+              { icon: SearchIcon, label: 'Search' },
+              {
+                icon: CameraIcon,
+                label: 'Camera',
+                items: [
+                  { icon: ImageIcon, label: 'Photo' },
+                  { icon: VideoIcon, label: 'Video' },
+                ],
+              },
+              { icon: HeartIcon, label: 'Favorites' },
+              { icon: UserIcon, label: 'Profile' },
+            ]}
+          />
+        ),
+        code: `<ArcMenu
+  label="create"
+  direction="top-right"
+  items={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    {
+      icon: CameraIcon,
+      label: 'Camera',
+      items: [
+        { icon: ImageIcon, label: 'Photo' },
+        { icon: VideoIcon, label: 'Video' },
+      ],
+    },
+    { icon: HeartIcon, label: 'Favorites' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+      {
+        title: 'Arc · top-right · 5 icons · closer',
+        description:
+          'Set radius to bring the icons closer. If the arc is too narrow for that distance, it widens (still centered on the direction) so they never touch.',
+        preview: (
+          <ArcMenu
+            label="create"
+            direction="top-right"
+            radius={100}
+            items={[
+              { icon: HomeIcon, label: 'Home' },
+              { icon: SearchIcon, label: 'Search' },
+              {
+                icon: CameraIcon,
+                label: 'Camera',
+                items: [
+                  { icon: ImageIcon, label: 'Photo' },
+                  { icon: VideoIcon, label: 'Video' },
+                ],
+              },
+              { icon: HeartIcon, label: 'Favorites' },
+              { icon: UserIcon, label: 'Profile' },
+            ]}
+          />
+        ),
+        code: `<ArcMenu
+  label="create"
+  direction="top-right"
+  radius={100}
+  items={[
+    { icon: HomeIcon, label: 'Home' },
+    { icon: SearchIcon, label: 'Search' },
+    {
+      icon: CameraIcon,
+      label: 'Camera',
+      items: [
+        { icon: ImageIcon, label: 'Photo' },
+        { icon: VideoIcon, label: 'Video' },
+      ],
+    },
+    { icon: HeartIcon, label: 'Favorites' },
+    { icon: UserIcon, label: 'Profile' },
+  ]}
+/>`,
+      },
+      {
+        title: 'Tooltips',
+        description:
+          'Set tooltip on any item, sub-menu items included: true shows the label, or pass text/JSX, or { content, placement, delay }. By default it opens on the side facing away from the menu.',
+        stage: { minHeight: 300 },
+        preview: (
+          <ArcMenu
+            label="quick actions"
+            items={[
+              { icon: HomeIcon, label: 'Home', tooltip: true },
+              { icon: SearchIcon, label: 'Search', tooltip: 'Search the docs' },
+              {
+                icon: ShareIcon,
+                label: 'Share',
+                tooltip: { content: 'Share with…', delay: 0 },
+                items: [
+                  { icon: MailIcon, label: 'Email', tooltip: true },
+                  { icon: LinkIcon, label: 'Copy link', tooltip: true },
+                  { icon: MessageIcon, label: 'Message', tooltip: true },
+                ],
+              },
+            ]}
+          />
+        ),
+        code: `<ArcMenu
+  label="quick actions"
+  items={[
+    { icon: HomeIcon, label: 'Home', tooltip: true },
+    { icon: SearchIcon, label: 'Search', tooltip: 'Search the docs' },
+    {
+      icon: ShareIcon,
+      label: 'Share',
+      tooltip: { content: 'Share with…', delay: 0 },
+      items: [
+        { icon: MailIcon, label: 'Email', tooltip: true },
+        { icon: LinkIcon, label: 'Copy link', tooltip: true },
+        { icon: MessageIcon, label: 'Message', tooltip: true },
+      ],
+    },
+  ]}
+/>`,
+      },
+      {
+        title: 'Custom panels · circle',
+        description:
+          'panel opens any component next to the icon: a slider, a list, swatches, a form… It receives { close, back }: close() closes everything, back() only the panel. Here every item is a panel.',
+        stage: { minHeight: 380 },
+        preview: <CircleMenuPanelsDemo variant="circle" menu="arc" />,
+        code: `const [style, setStyle] = useState(initial)
+
+<ArcMenu
+  label="style"
+  items={[
+    {
+      icon: PaletteIcon,
+      label: 'Color',
+      tooltip: true,
+      panel: ({ back }) => (
+        <ColorPanel value={style.color} onChange={(color) => { setStyle({ ...style, color }); back() }} />
+      ),
+    },
+    {
+      icon: OpacityIcon,
+      label: 'Opacity',
+      tooltip: true,
+      // Stays open: closes on outside click or Escape
+      panel: (
+        <input type="range" min={0} max={100} value={style.opacity}
+          onChange={(e) => setStyle({ ...style, opacity: +e.target.value })} />
+      ),
+    },
+    {
+      icon: SizeIcon,
+      label: 'Font size',
+      tooltip: true,
+      // { content, placement, label } for full control
+      panel: {
+        label: 'Font size',
+        content: ({ close }) => (
+          <FontSizeList value={style.fontSize} onChange={(fontSize) => { setStyle({ ...style, fontSize }); close() }} />
+        ),
+      },
+    },
+    { icon: DashIcon, label: 'Stroke style', tooltip: true, panel: (api) => <StrokeStylePanel {...api} /> },
+    { icon: WidthIcon, label: 'Stroke width', tooltip: true, panel: (api) => <StrokeWidthPanel {...api} /> },
+  ]}
+/>`,
+      },
+      {
+        title: 'Context menu · right-click',
+        description:
+          'Controlled with open / onOpenChange and reserveSpace={false}: right-click anywhere in the area and the menu opens at that point, with the same panels as above. Shift+F10 opens it from the keyboard.',
+        stage: { minHeight: 380 },
+        preview: <CircleMenuContextDemo menu="arc" />,
+        code: `const [pos, setPos] = useState({ x: 0, y: 0 })
+const [open, setOpen] = useState(false)
+
+function onContextMenu(e: React.MouseEvent<HTMLDivElement>) {
+  e.preventDefault()
+  const area = e.currentTarget.getBoundingClientRect()
+  // Icons are placed relative to the "+": move it and open it in the same render
+  setPos({ x: e.clientX - area.left, y: e.clientY - area.top })
+  setOpen(true)
+}
+
+<div className="canvas" style={{ position: 'relative' }} onContextMenu={onContextMenu}>
+  {/* Always mounted, hidden while closed. It only takes the "+" (56px): center it on the click */}
+  <div
+    className="context-menu"
+    data-open={open || undefined}
+    style={{ position: 'absolute', left: pos.x - 28, top: pos.y - 28 }}
+  >
+    <ArcMenu
+      label="style"
+      reserveSpace={false}
+      open={open}
+      onOpenChange={setOpen}
+      items={[color, opacity, fontSize, strokeStyle, strokeWidth]}
+    />
+  </div>
+</div>
+
+/* .context-menu:not([data-open]) { opacity: 0; visibility: hidden; transition: … } */`,
+      },
+      {
+        title: 'Custom panels · arc · sub-menus',
+        description:
+          'Panels work on the last branch too: Text and Line open a sub-menu, and each of its icons opens its own panel.',
+        stage: { minHeight: 420 },
+        preview: <CircleMenuPanelsDemo variant="arc" menu="arc" />,
+        code: `<ArcMenu
+  label="style"
+  direction="right"
+  items={[
+    { icon: PaletteIcon, label: 'Color', panel: (api) => <ColorPanel {...api} /> },
+    {
+      icon: TypeIcon,
+      label: 'Text',
+      items: [
+        { icon: SizeIcon, label: 'Font size', panel: (api) => <FontSizePanel {...api} /> },
+        { icon: OpacityIcon, label: 'Opacity', panel: <OpacitySlider /> },
+      ],
+    },
+    {
+      icon: LineIcon,
+      label: 'Line',
+      items: [
+        { icon: DashIcon, label: 'Stroke style', panel: (api) => <StrokeStylePanel {...api} /> },
+        { icon: WidthIcon, label: 'Stroke width', panel: (api) => <StrokeWidthPanel {...api} /> },
+      ],
+    },
+  ]}
+/>`,
+      },
+      {
+        title: 'Arc · custom angle',
+        description: 'angle (0 = right, 90 = down) and arc in degrees, radius in px.',
+        preview: (
+          <ArcMenu
+            label="custom"
+            angle={-90}
+            arc={120}
+            radius={90}
+            items={[
+              { icon: HomeIcon, label: 'Home' },
+              { icon: SearchIcon, label: 'Search' },
+              { icon: UserIcon, label: 'Profile' },
+            ]}
+          />
+        ),
+        code: `<ArcMenu
   label="custom"
   angle={-90}
   arc={120}

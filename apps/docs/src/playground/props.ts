@@ -79,6 +79,18 @@ const componentProps: Record<string, PropDoc[]> = {
     { name: 'open / defaultOpen', type: 'boolean', description: 'Controlled / initial open state, e.g. to open the menu from a right-click (context menu).' },
     { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called when the menu opens or closes: "+", Escape, outside click, a choice or close() from a panel.' },
   ],
+  'arc-menu': [
+    { name: 'items', type: 'ArcMenuItem[]', required: true, description: '1 to 6 items: { icon, label, onSelect?, tooltip?, panel?, items? }. items opens a sub-menu of 2 to 5 icons. panel (leaves only): any content or ({ close, back }) => content, or { content, placement?, label? }; opens a liquid panel next to the icon instead of onSelect. tooltip: true (shows the label), text/JSX, or { content, placement?, delay? }; it opens on the side facing away from the menu by default.' },
+    { name: 'label', type: 'string', default: "'Menu'", description: 'Accessible name of the "+" button.' },
+    { name: 'direction', type: 'ArcMenuDirection', description: "Where the arc opens: 'top', 'right', 'bottom-left'… Without it the items fill the whole circle." },
+    { name: 'angle', type: 'number', description: 'Free direction in degrees (0 = right, 90 = down). Wins over direction.' },
+    { name: 'arc', type: 'number', default: '90 / 180 / 360', description: 'Arc width in degrees (diagonal / side / no direction).' },
+    { name: 'radius', type: 'number', default: 'auto', description: 'Distance of the items from the center, in px. Defaults to the minimum that keeps them apart. If smaller than that, the arc widens so the items never touch.' },
+    { name: 'subRadius', type: 'number', default: '60', description: 'Distance of sub-menu items from their parent, in px.' },
+    { name: 'reserveSpace', type: 'boolean', default: 'true', description: 'true: the open menu area is reserved in the layout. false: only the "+" takes space and icons open on a layer above surrounding content (clipped by ancestors with overflow: hidden).' },
+    { name: 'open / defaultOpen', type: 'boolean', description: 'Controlled / initial open state, e.g. to open the menu from a right-click (context menu).' },
+    { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called when the menu opens or closes: "+", Escape, outside click, a choice or close() from a panel.' },
+  ],
   dialog: [
     { name: 'open', type: 'boolean', required: true, description: 'Whether the dialog is shown.' },
     { name: 'onClose', type: '() => void', required: true, description: 'Called on Escape, backdrop click or after an action.' },

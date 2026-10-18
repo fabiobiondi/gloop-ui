@@ -1,5 +1,5 @@
-import { useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
-import { CircleMenu, type CircleMenuItem, type CircleMenuPanelApi } from 'gloop-ui'
+import { useRef, useState, type ComponentProps, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
+import { ArcMenu, CircleMenu, type CircleMenuItem, type CircleMenuPanelApi } from 'gloop-ui'
 import './CircleMenuPanels.css'
 
 /* ---------- Icone ---------- */
@@ -253,7 +253,13 @@ function useStyleItems() {
  * variant 'circle': tutti i pannelli al primo livello.
  * variant 'arc': i pannelli stanno nell'ultimo ramo, dentro i sottomenu.
  */
-export function CircleMenuPanelsDemo({ variant }: { variant: 'circle' | 'arc' }) {
+/** menu: quale componente mostrare (CircleMenu, oppure ArcMenu senza Motion) */
+type MenuKind = { menu?: 'circle' | 'arc' }
+function Menu({ menu, ...props }: MenuKind & ComponentProps<typeof CircleMenu>) {
+  return menu === 'arc' ? <ArcMenu {...props} /> : <CircleMenu {...props} />
+}
+
+export function CircleMenuPanelsDemo({ variant, menu }: { variant: 'circle' | 'arc' } & MenuKind) {
   const { style, items: it } = useStyleItems()
   const items: CircleMenuItem[] =
     variant === 'circle'
@@ -266,7 +272,7 @@ export function CircleMenuPanelsDemo({ variant }: { variant: 'circle' | 'arc' })
 
   return (
     <div className="cmp-demo" data-variant={variant}>
-      <CircleMenu label="style" items={items} direction={variant === 'arc' ? 'right' : undefined} />
+      <Menu menu={menu} label="style" items={items} direction={variant === 'arc' ? 'right' : undefined} />
       <Sample style={style} />
     </div>
   )
@@ -276,7 +282,7 @@ export function CircleMenuPanelsDemo({ variant }: { variant: 'circle' | 'arc' })
 
 const CENTER = 56
 
-export function CircleMenuContextDemo() {
+export function CircleMenuContextDemo({ menu }: MenuKind = {}) {
   const { style, items: it } = useStyleItems()
   const items = [it.color, it.opacity, it.fontSize, it.strokeStyle, it.strokeWidth]
   const areaRef = useRef<HTMLDivElement>(null)
@@ -329,7 +335,7 @@ export function CircleMenuContextDemo() {
           data-open={open || undefined}
           style={pos ? { left: pos.x - CENTER / 2, top: pos.y - CENTER / 2 } : { left: 0, top: 0 }}
         >
-          <CircleMenu label="style" items={items} reserveSpace={false} open={open} onOpenChange={onOpenChange} />
+          <Menu menu={menu} label="style" items={items} reserveSpace={false} open={open} onOpenChange={onOpenChange} />
         </div>
       </div>
       <Sample style={style} />
