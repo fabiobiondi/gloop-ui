@@ -1,5 +1,31 @@
 # gloop-ui
 
+## 0.5.0
+
+### Minor Changes
+
+- 9f58e97: **Breaking:** gloop-ui no longer depends on `motion`. Every component is animated with CSS transitions and keyframes (springs sampled into `linear()` easings, one set per preset), with small Web Animations / requestAnimationFrame helpers where a value has to follow the pointer. Props, class names and behavior are unchanged; `speed`, `motion`, `animated`, `reducedMotion` and `GloopMotionProvider` work as before.
+  
+  - Remove `motion` from your dependencies if you only installed it for gloop-ui.
+  - `tuneTransition` is removed (it tuned motion/react transitions).
+  - `useGloopMotion` now returns `{ speed, preset, state, reduced, rootProps }`: the motion/react helpers `t` and `v` are gone.
+  - Needs browsers with CSS `linear()`, `@property` and `@starting-style` (Chrome 117+, Safari 17.5+, Firefox 129+); older ones skip the entrance animations.
+- de203ab: Breaking: `TabMenu` is renamed `TabPop` and `TabMenuMotion` is renamed `TabFab`. Types follow (`TabPopProps`, `TabPopAnimation`, `TabPopTab`, `TabPopDirection`, `TabPopPlacement`, `TabFabProps`, `TabFabTab`, `TabFabItem`), and so do the CSS classes (`.tab-menu*` → `.tab-pop*`, `.tab-menu-motion*` → `.tab-fab*`).
+- cf285ed: `Tooltip`: new `jelly` prop, the bubble wobbles like jelly when it opens (width and height bounce out of phase), with the same springs as `Modal`. Pass a number from 0 to 1, or just `jelly` for the Modal default (0.5). Off when omitted.
+
+### Patch Changes
+
+- 66300c7: TabFab, ExpandButton and the ShapeToolbar menus: the JS-driven animations (TabFab re-centering, ExpandButton width, menu layout) were instant in production builds, because minified CSS writes durations in seconds (`.494s`) and they were read as milliseconds. No more grey tap highlight on iOS.
+- fc14e2d: The goo filter is now on only while shapes move. `Dialog`, `Toast`, `Tooltip` and `Popover` drop it once their animation has finished (as `Modal` already did) and put it back when they close or move again. At rest the shadow is a regular `box-shadow`, so hovers, focus, typing and scrolling no longer re-run the filter (it runs in software on iOS). The arrow joint of `Tooltip`/`Popover` loses its tiny goo fillet while open.
+- f210256: `TabPop`, `TabFab` and gooey `Modal` showed up again on Safari/iOS: the goo filter area is now set relative to the element (objectBoundingBox) instead of `userSpaceOnUse`, which Safari ignores on HTML elements and hid the whole component. `TabPop` also uses a tighter filter area, only on the side the bar opens.
+- d78de6f: `Modal` filters a much smaller area while it animates: `swell` covers the card plus a margin (it was 2×3 times the card), `drop` covers the card and the drop's path (it was the whole window). `GooFilter`'s `region` can now be a function of the element's size.
+- cb58edc: Smoother animations on iOS: no component animates `filter: blur()` any more (TabFab pages, Modal and Dialog reveal, Toast, Tooltip and Popover content, ExpandButton label, ShapeEditor). Each blur was a filter recomputed on every frame, often nested inside a goo filter. Entrances and exits keep their fade, slide and scale.
+- 9c255a0: Infinite animations pause while off-screen: `GloopLoading`, indeterminate or dripping `ProgressBar` and dripping `ExpandButton` stop when scrolled out of view and resume when they come back, instead of re-running their goo filter on every frame for nobody.
+- 31df805: TabFab: hovering a tab while the bar is still opening no longer shows a solid circle inside the rollover pill. The tab's drop was painted over the pill while the tab was still moving.
+- 41a2e23: `TabFab` no longer uses an SVG goo filter, so it opens, closes and switches sub-menu smoothly on iOS. The bar background is made of three pieces animated with transform only (the "+" circle, a middle stretch that scales, a head that slides), the neck between tab and sub-menu is a CSS shape that moves with the panel, and shadows are regular `box-shadow`s on a layer underneath. Visible change: the tabs slide out with the bar instead of shooting ahead as drops melted by the goo.
+- 226fbad: Smooth `TabPop` opening on iOS: no more SVG goo filter, which Safari recomputes in software on every frame (and clipped the neck on iOS). The liquid neck between the "+" and the bar is now a CSS shape with concave sides, and everything animates with transform and opacity on the GPU. The shadow is a regular `box-shadow`, and tabs no longer animate `filter: blur()`. The goo filter shadow of the other gooey components reuses the goo blur instead of a second `feDropShadow` blur (slightly tighter).
+- 31df805: `List` and `CircleMenu` ignore hover on touch: a tap no longer leaves the hover pill (or the enlarged blob) stuck, nor animates a second goo layer. `CircleMenu`'s goo shadow reuses the goo blur instead of a second `feDropShadow` blur.
+
 ## 0.4.0
 
 ### Minor Changes
