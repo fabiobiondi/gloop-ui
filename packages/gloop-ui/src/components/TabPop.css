@@ -126,73 +126,68 @@
 }
 
 /*
- * Il collo liquido tra "+" e barra: un rettangolo con i fianchi scavati da due cerchi
- * (radial-gradient) di raggio metà distacco, tangenti a barra e trigger. Entra di 8px
- * sotto entrambi (sta sotto di loro), così se ne vede solo il tratto nel distacco.
- * Si anima solo con scale: cresce dal "+" verso la barra; staccato (attached={false})
- * poi si assottiglia fino a sparire. Chiudendo torna nel "+".
+ * Il collo liquido tra "+" e barra, disegnato verso l'alto e ruotato sugli altri lati.
+ * Un gambo dritto che entra di poco nel "+" (il cerchio fa da raccordo, il collo lì non
+ * si allarga) e, contro il bordo piatto della barra, due raccordi concavi
+ * (radial-gradient). Entra anche sotto la barra: se ne vede solo il tratto nel distacco.
+ * Si anima solo con scale, nel suo verso: cresce dal "+" verso la barra; staccato
+ * (attached={false}) poi si assottiglia fino a sparire. Chiudendo torna nel "+".
  */
 .tab-pop__neck {
-  --neck-overlap: 8px;
-  --neck-length: calc(16px + 2 * var(--neck-overlap));
-  --neck-width: 34px;
+  --neck-stem: 20px;
+  --neck-fillet: 8px;
+  /* Quanto entra sotto la barra e dentro il "+" */
+  --neck-into-bar: 8px;
+  --neck-into-trigger: 4px;
   --neck-ms: var(--tf-spring-ms);
   --neck-ease: var(--tf-spring);
   --neck-drop-ms: calc(600ms * var(--tween));
   --neck-back-delay: 0ms;
 
   position: absolute;
+  width: calc(var(--neck-stem) + 2 * var(--neck-fillet));
+  height: calc(var(--neck-into-bar) + 16px + var(--neck-into-trigger));
+  /* Il fondo del collo (lato "+") sta sul punto --neck-x/--neck-y del "+" e ruota attorno a lui */
+  left: calc(var(--neck-x) - var(--neck-stem) / 2 - var(--neck-fillet));
+  top: calc(var(--neck-y) - var(--neck-into-bar) - 16px - var(--neck-into-trigger));
+  transform-origin: 50% 100%;
   pointer-events: none;
-  scale: var(--neck-closed);
+  background:
+    linear-gradient(var(--ui-bg) 0 0) center / var(--neck-stem) 100% no-repeat,
+    radial-gradient(circle var(--neck-fillet) at 0 100%, #0000 calc(var(--neck-fillet) - 0.5px), var(--ui-bg) var(--neck-fillet))
+      0 var(--neck-into-bar) / var(--neck-fillet) var(--neck-fillet) no-repeat,
+    radial-gradient(circle var(--neck-fillet) at 100% 100%, #0000 calc(var(--neck-fillet) - 0.5px), var(--ui-bg) var(--neck-fillet))
+      100% var(--neck-into-bar) / var(--neck-fillet) var(--neck-fillet) no-repeat;
+  scale: 0.5 0;
   transition: scale calc(250ms * var(--tween) / var(--speed)) cubic-bezier(0.23, 1, 0.32, 1)
     calc(var(--neck-back-delay) * var(--tween) / var(--speed));
 }
 
-.tab-pop:is([data-direction='top'], [data-direction='bottom']) .tab-pop__neck {
-  --neck-closed: 0.5 0;
-  --neck-pinch: 0 1;
-
-  left: 50%;
-  width: var(--neck-width);
-  height: var(--neck-length);
-  margin-left: calc(var(--neck-width) / -2);
-  background:
-    radial-gradient(circle 8px at 0 50%, #0000 7.5px, var(--ui-bg) 8px) left / 50.5% 100% no-repeat,
-    radial-gradient(circle 8px at 100% 50%, #0000 7.5px, var(--ui-bg) 8px) right / 50.5% 100% no-repeat;
-}
-
-.tab-pop:is([data-direction='left'], [data-direction='right']) .tab-pop__neck {
-  --neck-closed: 0 0.5;
-  --neck-pinch: 1 0;
-
-  top: 50%;
-  width: var(--neck-length);
-  height: var(--neck-width);
-  margin-top: calc(var(--neck-width) / -2);
-  background:
-    radial-gradient(circle 8px at 50% 0, #0000 7.5px, var(--ui-bg) 8px) top / 100% 50.5% no-repeat,
-    radial-gradient(circle 8px at 50% 100%, #0000 7.5px, var(--ui-bg) 8px) bottom / 100% 50.5% no-repeat;
-}
-
-/* Ancorato al bordo del "+" rivolto verso la barra */
+/* Punto di partenza sul bordo del "+" (rientrato di --neck-into-trigger) e rotazione */
 .tab-pop[data-direction='top'] .tab-pop__neck {
-  bottom: calc(100% - var(--neck-overlap));
-  transform-origin: 50% 100%;
+  --neck-x: 26px;
+  --neck-y: var(--neck-into-trigger);
 }
 
 .tab-pop[data-direction='bottom'] .tab-pop__neck {
-  top: calc(100% - var(--neck-overlap));
-  transform-origin: 50% 0;
+  --neck-x: 26px;
+  --neck-y: calc(52px - var(--neck-into-trigger));
+
+  rotate: 180deg;
 }
 
 .tab-pop[data-direction='left'] .tab-pop__neck {
-  right: calc(100% - var(--neck-overlap));
-  transform-origin: 100% 50%;
+  --neck-x: var(--neck-into-trigger);
+  --neck-y: 26px;
+
+  rotate: -90deg;
 }
 
 .tab-pop[data-direction='right'] .tab-pop__neck {
-  left: calc(100% - var(--neck-overlap));
-  transform-origin: 0 50%;
+  --neck-x: calc(52px - var(--neck-into-trigger));
+  --neck-y: 26px;
+
+  rotate: 90deg;
 }
 
 /* pop e bounce: cresce per primo e più in fretta; in chiusura aspetta che la barra si richiuda */
@@ -210,19 +205,19 @@
 }
 
 .tab-pop[data-open]:not([data-attached]) .tab-pop__neck {
-  scale: var(--neck-pinch);
+  scale: 0 1;
   animation: tab-pop-neck-drop calc(var(--neck-drop-ms) / var(--speed)) linear;
 }
 
 @keyframes tab-pop-neck-in {
   from {
-    scale: var(--neck-closed);
+    scale: 0.5 0;
   }
 }
 
 @keyframes tab-pop-neck-drop {
   0% {
-    scale: var(--neck-closed);
+    scale: 0.5 0;
     animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
   }
   50% {
