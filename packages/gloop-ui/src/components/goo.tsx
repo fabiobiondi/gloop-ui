@@ -1,4 +1,31 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+
+/*
+ * Il filtro goo serve solo mentre le forme si muovono: da ferme sono forme normali, e il
+ * filtro (su Safari/iOS calcolato in software) si ricalcolerebbe a ogni repaint, per un
+ * hover, un focus o uno scroll. true quando sono finite tutte le animazioni dentro ref
+ * partite da quando ready è diventato true o key è cambiata: a quel punto il componente
+ * toglie il filtro (e mette un box-shadow al posto dell'ombra di GooFilter).
+ * Le animazioni infinite non contano. Senza Web Animations (jsdom) resta false.
+ */
+export function useSettled(ref: RefObject<Element | null>, ready: boolean, key?: unknown) {
+  const [done, setDone] = useState<{ key: unknown } | null>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!ready || !el || typeof el.getAnimations !== 'function') return
+    let live = true
+    const running = el
+      .getAnimations({ subtree: true })
+      .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+    Promise.allSettled(running.map((a) => a.finished)).then(() => {
+      if (live) setDone({ key })
+    })
+    return () => {
+      live = false
+    }
+  }, [ref, ready, key])
+  return ready && done !== null && Object.is(done.key, key)
+}
 
 export type GooFilterProps = {
   id: string

@@ -27,6 +27,15 @@
   flex-direction: column;
   align-items: center;
   width: min(420px, 100%);
+
+  /* Da fermo, senza filtro goo (useSettled): la stessa ombra di GooFilter, come box-shadow */
+  &[data-settled] {
+    --dialog-drop: 0 10px 24px rgb(0 0 0 / 0.25);
+
+    & .dialog__actions .expand-button {
+      box-shadow: var(--dialog-drop);
+    }
+  }
 }
 
 .dialog__badge {
@@ -35,7 +44,9 @@
   border-radius: 50%;
   color: var(--ui-fg);
   background: var(--dialog-surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-fg) 10%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ui-fg) 10%, transparent),
+    var(--dialog-drop, 0 0 #0000);
 }
 
 .dialog__badge-icon {
@@ -49,7 +60,10 @@
   }
 }
 
-/* Niente box-shadow: dentro il filtro goo allargherebbe la forma. L'ombra la aggiunge GooFilter */
+/*
+ * Niente box-shadow esterno mentre c'è il filtro goo: allargherebbe la forma. L'ombra la
+ * aggiunge GooFilter; da fermo è --dialog-drop
+ */
 .dialog {
   width: 100%;
   padding: 24px;
@@ -57,12 +71,16 @@
   color: var(--ui-fg);
   background: var(--dialog-surface);
   /* Bordo interno sottile: stacca la scheda dal fondo anche in tema scuro (dentro la forma, il goo non lo tocca) */
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-fg) 10%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ui-fg) 10%, transparent),
+    var(--dialog-drop, 0 0 #0000);
   outline: none;
 
   /* Contorno dentro la scheda: fuori, il filtro goo lo fonderebbe in un alone */
   &:focus-visible {
-    box-shadow: inset 0 0 0 2px var(--ui-accent);
+    box-shadow:
+      inset 0 0 0 2px var(--ui-accent),
+      var(--dialog-drop, 0 0 #0000);
   }
 }
 

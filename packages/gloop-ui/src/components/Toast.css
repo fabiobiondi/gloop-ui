@@ -151,9 +151,16 @@
   z-index: -1;
   inset: 0;
   pointer-events: none;
+
+  /* Da fermo, senza filtro goo (useSettled): la stessa ombra di GooFilter, come box-shadow */
+  &[data-settled] .toast__shape {
+    box-shadow:
+      inset 0 0 0 1px var(--toast-divider),
+      0 10px 24px rgb(0 0 0 / 0.25);
+  }
 }
 
-/* Niente box-shadow esterno sugli elementi filtrati: l'ombra la aggiunge GooFilter */
+/* Niente box-shadow esterno mentre c'è il filtro goo: l'ombra la aggiunge GooFilter */
 .toast__shape {
   position: absolute;
   z-index: -1;

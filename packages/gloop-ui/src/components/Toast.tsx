@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { GooFilter } from './goo'
+import { GooFilter, useSettled } from './goo'
 import { useThemeVars } from './floating/useThemeVars'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
 import { useGloopMotion, type GloopMotion } from './gloop-motion'
@@ -135,8 +135,11 @@ let openings = 0
  * e il collo si strappa. Chiusura: la pillola si richiude nella goccia, che risale
  * e viene risucchiata nel bordo.
  */
-function ToastBlob({ size, dir }: { size: Size; dir: 1 | -1 }) {
+function ToastBlob({ size, dir, exiting }: { size: Size; dir: 1 | -1; exiting: boolean }) {
   const filterId = useId()
+  const ref = useRef<HTMLDivElement>(null)
+  // Filtro goo solo in apertura e chiusura: il toast resta a lungo fermo (o scivola nella pila)
+  const settled = useSettled(ref, !exiting)
   // Distanza tra il centro del toast e il bordo dello schermo (dir: -1 in alto, 1 in basso)
   const toEdge = dir * (size.height / 2 + OFFSET)
   // Da goccia: la forma è scalata a un cerchio grande quanto DROP
@@ -147,11 +150,13 @@ function ToastBlob({ size, dir }: { size: Size; dir: 1 | -1 }) {
 
   return (
     <div
+      ref={ref}
       className="toast__goo"
       aria-hidden="true"
+      data-settled={settled || undefined}
       style={
         {
-          filter: `url(#${CSS.escape(filterId)})`,
+          filter: settled ? undefined : `url(#${CSS.escape(filterId)})`,
           '--toast-to-edge': `${toEdge}px`,
           '--toast-from-sx': from.scaleX,
           '--toast-from-sy': from.scaleY,
@@ -278,7 +283,7 @@ function ToastCard({
       {m.reduced ? (
         <span className="toast__shape" aria-hidden="true" style={{ borderRadius: RADIUS }} />
       ) : (
-        size && <ToastBlob size={size} dir={dir} />
+        size && <ToastBlob size={size} dir={dir} exiting={exiting} />
       )}
 
       {/* Il contenuto arriva quando la goccia ha quasi preso forma */}

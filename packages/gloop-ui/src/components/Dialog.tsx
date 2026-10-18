@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import ExpandButton from './ExpandButton'
-import { GooFilter } from './goo'
+import { GooFilter, useSettled } from './goo'
 import { useThemeVars } from './floating/useThemeVars'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
 import { useGloopMotion } from './gloop-motion'
@@ -83,6 +83,8 @@ function Dialog({
   const titleId = useId()
   const bodyId = useId()
   const filterId = useId()
+  // Filtro goo solo in apertura e chiusura: da fermo il contenuto resta fuori dal filtro
+  const settled = useSettled(rootRef, mounted && !closing)
   // onClose arriva spesso inline (nuova a ogni render): l'effetto sotto la legge da qui,
   // altrimenti ripartirebbe a ogni tasto premuto in un input e il focus salterebbe via
   const onCloseRef = useRef(onClose)
@@ -171,7 +173,8 @@ function Dialog({
               <div
                 ref={rootRef}
                 className="dialog-goo"
-                style={{ gap: GAP, filter: `url(#${CSS.escape(filterId)})` }}
+                data-settled={settled || undefined}
+                style={{ gap: GAP, filter: settled ? undefined : `url(#${CSS.escape(filterId)})` }}
               >
                 <GooFilter id={filterId} blur={9} />
 

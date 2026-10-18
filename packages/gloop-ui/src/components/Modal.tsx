@@ -6,11 +6,10 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
-  type RefObject,
 } from 'react'
 import { createPortal } from 'react-dom'
 import ExpandButton from './ExpandButton'
-import { GooFilter } from './goo'
+import { GooFilter, useSettled } from './goo'
 import { DEFAULT_JELLY, JELLY_X, JELLY_Y, jellySpring, usePresence } from './jelly'
 import { useThemeVars } from './floating/useThemeVars'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from './motion-context'
@@ -163,29 +162,6 @@ function JellySides({ sides }: { sides: ReturnType<typeof jellySides> }) {
   return sides.map((side) => <span key={side} className="modal__bulge" data-side={side} />)
 }
 
-/*
- * Il filtro goo serve solo mentre la forma si muove: da ferma la scheda è un rettangolo
- * e il filtro su un'area così grande costerebbe a ogni repaint (anche durante lo scroll).
- * Scala e lati finiscono in momenti diversi: si aspetta che siano finite tutte le
- * animazioni del blob (WAAPI .finished). In chiusura il filtro torna.
- */
-function useSettled(ref: RefObject<HTMLElement | null>, ready: boolean, closing: boolean) {
-  const [settled, setSettled] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!ready || closing || !el?.getAnimations) return
-    let live = true
-    Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)).then(
-      () => live && setSettled(true),
-      () => {},
-    )
-    return () => {
-      live = false
-    }
-  }, [ref, ready, closing])
-  return settled && !closing
-}
-
 // Le due molle della gelatina, già campionate, come variabili per il CSS
 function jellyVars(m: GloopMotion, jelly: number) {
   const x = jellySpring(JELLY_X, jelly, m.preset)
@@ -214,7 +190,7 @@ function ModalBlob({ m, jelly, closing }: { m: GloopMotion; jelly: number; closi
   const sides = jellySides(jelly)
   const ref = useRef<HTMLDivElement>(null)
   const filterId = useId()
-  const gooey = !useSettled(ref, !m.reduced, closing)
+  const gooey = !useSettled(ref, !m.reduced && !closing)
 
   // Movimento ridotto: niente goo né rimbalzi, il fondo compare in dissolvenza
   if (m.reduced) {
@@ -266,7 +242,7 @@ function DropBlob({ m, origin, jelly, closing }: { m: GloopMotion; origin: Point
   const bodyRef = useRef<HTMLSpanElement>(null)
   const filterId = useId()
   const [geo, setGeo] = useState<Geo | null>(null)
-  const gooey = !useSettled(ref, !!geo, closing)
+  const gooey = !useSettled(ref, !!geo && !closing)
 
   // Prima del primo frame: posizione della scheda e del pulsante (il focus non si è ancora spostato)
   useLayoutEffect(() => {

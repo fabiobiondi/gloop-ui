@@ -1,6 +1,6 @@
 import { useId, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { createPortal } from 'react-dom'
-import { GooFilter } from '../goo'
+import { GooFilter, useSettled } from '../goo'
 import { JELLY_X, JELLY_Y, jellySpring, usePresence } from '../jelly'
 import { GloopMotionProvider, pickMotionProps, type MotionProps } from '../motion-context'
 import type { GloopMotion } from '../gloop-motion'
@@ -64,7 +64,7 @@ function origin(pos: FloatingPosition | null) {
 /*
  * Bolla "liquida" con freccia, condivisa da Tooltip e Popover.
  * Freccia e bolla stanno in un filtro goo: mentre la bolla si gonfia dalla freccia,
- * le due forme si fondono in un collo liquido. Il filtro ridisegna l'originale sopra,
+ * le due forme si fondono in un collo liquido. Da aperta il filtro si toglie (useSettled). Il filtro ridisegna l'originale sopra,
  * quindi testo e campi dei form restano nitidi.
  * Animata in CSS (Floating.css): data-state sceglie apertura (hidden → open, keyframe dalla
  * goccia misurata) o chiusura (closing, transizioni che partono dal valore corrente).
@@ -88,6 +88,9 @@ function FloatingBubble({
   const layerRef = useRef<HTMLDivElement>(null)
   // Resta montata durante la chiusura, finché le transizioni non sono finite
   const { mounted, closing } = usePresence(open, m.state === 'off', layerRef)
+  // Filtro goo solo mentre si gonfia o viene risucchiata: da aperta il contenuto (campi,
+  // scroll, hover) non deve passare dal filtro a ogni repaint
+  const settled = useSettled(layerRef, mounted && !closing && !!position)
   // Sul server non c'è <body> né portal: la bolla esiste solo nel browser
   if (typeof document === 'undefined') return null
 
@@ -107,6 +110,7 @@ function FloatingBubble({
           className={`floating floating--${variant}`}
           data-placement={placement}
           data-state={closing ? 'closing' : position ? 'open' : 'hidden'}
+          data-settled={settled || undefined}
           style={
             {
               ...m.rootProps.style,
@@ -115,7 +119,7 @@ function FloatingBubble({
               transform: position ? `translate3d(${position.x}px, ${position.y}px, 0)` : undefined,
               // Il primo frame serve solo a misurare
               visibility: position ? undefined : 'hidden',
-              filter: `url(#${CSS.escape(filterId)})`,
+              filter: settled ? undefined : `url(#${CSS.escape(filterId)})`,
               '--floating-arrow': `${ARROW}px`,
               '--floating-arrow-offset': `${position?.arrowOffset ?? 0}px`,
               '--floating-drop-x': d.x,
